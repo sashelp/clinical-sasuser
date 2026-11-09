@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>相对风险 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html" class="current">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / 统计分析</p>
+<h2>事件发生率不低的时候，怎么估计相对风险，而不是拿 OR 顶替？</h2>
+<p class="subtitle">OR 只在事件很罕见时才近似 RR；事件不少时，可以用 PROC FREQ 的 RELRISK、NLMeans 宏、log-binomial 模型，或者 Zou 的修正 Poisson。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>相对风险就是两个事件概率的比，多数时候比 OR 好解释。只有在事件罕见（比如低于 10%）时，OR 才近似 RR，可以拿来代替。事件不罕见时，四条路可选：<b>不建模直接算 2×2 表</b>、<b>logistic 模型配 NLMeans 宏</b>、<b>log-binomial 模型</b>、<b>Zou 的修正 Poisson</b>。日常最稳的是前两条；样本小、模型不好收敛时用第四条。</p>
+</div>
+
+<h3 id="why">为什么不能把 OR 当 RR 用</h3>
+<p>举个具体的数：100 名男性里 30 人回答“是”，100 名女性里 45 人回答“是”。</p>
+<ul class="notes">
+<li>女性的风险 45/100 = 0.45，男性 30/100 = 0.30，相对风险 = 1.50</li>
+<li>优势比 = (45/55) ÷ (30/70) = 1.91</li>
+</ul>
+<p>两个数差了 27%。原因很简单：整体事件率约 37.5%，一点也不罕见，OR 会把 RR 往外推。这种情况下报 OR 说“风险高了 91%”，是误导。</p>
+
+<h3 id="freq">方法一：不建模，直接算</h3>
+<p>单个二分类预测变量，把数据摆成 2×2 表，用 <code>RELRISK</code> 就能同时拿到 RR 和 OR：</p>
+
+<pre class="code">data question;
+   input Gender $ Response $ Count;
+   datalines;
+Women Yes 45
+Women  No 55
+Men   Yes 30
+Men    No 70
+;
+run;
+
+proc freq data=question order=data;
+   weight Count;
+   tables Gender*Response / relrisk;
+run;</pre>
+
+<p><code>ORDER=DATA</code> 让 Yes 排在第一个列，于是 RR 出现在 <code>Cohort (Col1 Risk)</code> 那一行：1.50，置信区间 (1.0365, 2.1707)。如果顺序反了，读到的就是 1/1.5，方向搞错。</p>
+<p>有分层变量时改用 <code>CMH</code>，把分层变量写在表定义的前面：</p>
+
+<pre class="code">proc freq data=example2 order=data;
+   tables strata*treat*outcome / cmh noprint;
+run;</pre>
+
+<p>这条限制要记住：<code>RELRISK</code> 只在行变量只有两个水平时才能给 RR。</p>
+
+<h3 id="nlmeans">方法二：logistic 模型 + NLMeans 宏</h3>
+<p>logistic 模型能直接给的是 log odds，线性组合算不出概率的比。要拿概率的比，得对参数做非线性组合，NLMeans 宏把这件事封装好了。</p>
+<p>先在 LOGISTIC 里拟合模型，用 <code>LSMEANS / E ILINK</code> 拿到每个性别的概率和对应的系数表，用 <code>STORE</code> 存下模型：</p>
+
+<pre class="code">proc logistic data=question;
+   freq count;
+   class gender(ref="Men") / param=glm;
+   model response(event="Yes")=gender;
+   lsmeans gender / e ilink;
+   ods output coef=coeffs;
+   store out=ques;
+run;</pre>
+
+<p>然后调宏。三个关键参数：<code>options=ratio</code> 让它算比而不是差，<code>null=1</code> 让零假设变成“RR = 1”，<code>link=logit</code> 告诉它模型用的链接函数：</p>
+
+<pre class="code">%nlmeans(instore=ques, coef=coeffs, link=logit, options=ratio,
+         null=1, title=Relative Risk)</pre>
+
+<p>估出来 RR = 1.5，95% 置信区间 (0.95, 2.05)，p = 0.0771。和直接算的 1.50 一致，区间略宽，因为用的是模型估计而不是原始比例。要反向的比（男/女），加 <code>reverse</code>。</p>
+<p>底层还有 NLEST 宏，直接写函数式。同一个例子写成“女性的概率除以男性的概率”：</p>
+
+<pre class="code">%nlest(instore=ques, label=Rel. Risk (Women/Men), null=1,
+       f=logistic(b_p1+b_p2)/logistic(b_p1))</pre>
+
+<h3 id="logbin">方法三：log-binomial 模型</h3>
+<p>换一个链接函数，RR 就变成了参数的直接指数。因为 log(p) = a + bx，x 增加一个单位时两个 log 概率相减就是 b，而 log(p1) − log(p2) = log(p1/p2)，所以 exp(b) 就是 RR。</p>
+
+<pre class="code">proc genmod data=a;
+   class a;
+   model y(event="1") = x|a / dist=binomial link=log;
+   weight f;
+   lsmeans a / diff exp cl;
+   estimate "RR (X+1)/X" x 1 x*a 1;
+run;</pre>
+
+<p>这条路的问题是会不收敛。原因是 log 链接不保证预测概率落在 0 到 1 之间，极大似然解可能跑到参数空间边界上。实用上有两个补救：</p>
+<ul class="notes">
+<li><b>给截距一个负的起点</b>：在 MODEL 语句加 <code>INTERCEPT=-4</code>。因为 0 &lt; p &lt; 1，必然有 log(p) &lt; 0，从负数出发更容易找到解。</li>
+<li><b>把数据复制多份，再补一份响应取反的</b>，把解从边界拉回参数空间内部。这样做参数估计是对的，但标准误会因为样本被复制而偏小，所以要按复制份数开方修正；更方便的做法是给权重做归一化，让权重和等于真实样本量。</li>
+</ul>
+
+<p>文章里的示例就是这么干的：原始数据权重 10000，取反的数据权重 1，再统一乘 20/200020 归一化到 20 例。跑出来 X 每增加一个单位，事件可能性变成 1.23 倍。</p>
+
+<h3 id="zou">方法四：Zou 的修正 Poisson</h3>
+<p>思路是：把二分类结局硬当成计数来拟合 Poisson 模型，用 <code>REPEATED</code> 得到稳健方差，这个稳健标准误正好是 RR 的标准误。</p>
+
+<pre class="code">proc genmod data=example2;
+   class id strata treat(ref="0");
+   model outcome = treat strata / dist=poisson link=log;
+   repeated subject=id;
+   lsmeans treat / diff exp cl;
+run;</pre>
+
+<p>28 天死亡率那组数据算出来 RR = 2.30，置信区间 (1.27, 4.15)。同一批数据换几种方法对比一下很有意思：</p>
+
+<table class="kb-table">
+<col width="46%" />
+<col width="24%" />
+<col width="30%" />
+<thead>
+<tr><th>方法</th><th>RR 估计</th><th>95% 置信区间</th></tr>
+</thead>
+<tbody>
+<tr><td>Zou 修正 Poisson（GEE 稳健方差）</td><td>2.30</td><td>1.27 – 4.15</td></tr>
+<tr><td>Mantel-Haenszel（PROC FREQ CMH）</td><td>2.28</td><td>1.27 – 4.09</td></tr>
+<tr><td>log-binomial 模型</td><td>1.94</td><td>1.05 – 3.59</td></tr>
+</tbody>
+</table>
+
+<p>三个数不完全一样，说明估计方法确实会影响结论。写报告时把用了哪种方法写清楚，比纠结哪个“最对”更重要。</p>
+
+<h3 id="choose">四条路怎么选</h3>
+<table class="kb-table">
+<col width="24%" />
+<col width="38%" />
+<col width="38%" />
+<thead>
+<tr><th>情形</th><th>推荐做法</th><th>理由</th></tr>
+</thead>
+<tbody>
+<tr><td>一个二分类变量，不分层</td><td>PROC FREQ + RELRISK</td><td>不用建模，结果最直观</td></tr>
+<tr><td>要调整多个协变量</td><td>logistic + NLMeans 宏</td><td>模型成熟、收敛稳定，代价是要装宏</td></tr>
+<tr><td>样本量小、事件少</td><td>Zou 修正 Poisson</td><td>log-binomial 容易不收敛，这个方法更稳</td></tr>
+<tr><td>只想快速出一版</td><td>log-binomial</td><td>代码最短，exp(参数) 就是 RR</td></tr>
+</tbody>
+</table>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS Support, <a href="https://sas.service-now.com/csm?id=kb_article_view&sys_kb_id=cdfdb86193ae8b18c978f8566aba106d" target="_blank" rel="noopener"><i>Estimating a relative risk (also called risk ratio, prevalence ratio)</i></a>（SAS 知识库文章，sas.service-now.com）。<span class="src">四种方法的完整代码与结果，事件罕见时 OR 近似 RR 的说明。</span></li>
+<li>Zou, G. (2004), <a href="https://doi.org/10.1093/aje/kwh090" target="_blank" rel="noopener">“A Modified Poisson Regression Approach to Prospective Studies with Binary Data”</a>, <i>American Journal of Epidemiology</i> 159: 702–706。<span class="src">修正 Poisson 与稳健方差。</span></li>
+<li>Deddens, J.A., Petersen, M.R., and Lei, X. (2003), <a href="https://www2.sas.com/proceedings/sugi28/111-28.pdf" target="_blank" rel="noopener">“Estimation of prevalence ratios when PROC GENMOD does not converge”</a>。<span class="src">log-binomial 的收敛问题、INTERCEPT=-4 与数据复制加权。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>subject 还是 participant - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html" class="current">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SDTM</p>
+<h2>都在说“参与者”了，CDISC 为什么还叫“study subject”？</h2>
+<p class="subtitle">因为 SDTM 不只用于人体试验，还有动物和真实世界数据；这些词属于元数据，改了代价大，展示层面换词就够了。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>CDISC 短期内不会改 <code>USUBJID</code>、<code>SUBJID</code> 这些名字，也不会改 Subject Visits、Subject Characteristics 这些域名。原因有四条：SDTM 也用于非人体研究；这些是元数据不是文案；改了会牵动大量系统和程序；而且 "participant" 也未必是最终的词。要照顾读者感受，在<b>展示层面</b>换词就行，不用动数据集的字段名。</p>
+</div>
+
+<h3 id="background">背景</h3>
+<p>在人体临床试验里，越来越多人主张把 "study subject" 换成更尊重人、承认受试者主体性的说法。ICH E6 R3 已经改用 "participant"，TransCelerate 的通用方案模板也说面向患者的文件里可以用 "participant"。</p>
+<p>于是就有了一个问题：CDISC 标准里这些带 Subject 的名字，要不要跟着改？涉及的包括变量标签（USUBJID、SUBJID）、以及一批域名（Subject Elements、Subject Visits、Subject Disease Milestones、Subject Characteristics、Subject Status）。</p>
+
+<h3 id="reasons">四条理由</h3>
+
+<h4>1. SDTM 不只用于人体临床试验</h4>
+<p>非临床研究里受试者是动物，动物没有主体性，"participant" 放在那里完全不合适。SDTM 也被用于人类但不是“参与者”的场景，比如用历史数据的观察性研究、真实世界数据。一个词要覆盖这么多场景，"subject" 反而更中性。</p>
+
+<h4>2. 变量名和域名是元数据</h4>
+<p>元数据是给系统和程序读的。面向对 "subject" 这个词敏感的人群做展示时，表格标题、图注、患者材料里换一种说法完全可以，这不影响数据集里叫什么。</p>
+
+<h4>3. 改元数据代价大、破坏性强</h4>
+<p>这些名字已经嵌在很多机构的系统、程序、宏、校验规则里。改一处，上下游都要跟着改，而且历史研究和在研研究会分裂成两套。相比之下，改展示文案的成本低得多。</p>
+
+<h4>4. "participant" 也未必是终点</h4>
+<p>原文对比了两个词的定义：</p>
+<div class="callout">
+<p>participant：a person who takes part in something.<br/>
+subject：a person or thing that is being discussed, described, or dealt with.</p>
+</div>
+<p>"participant" 承认了人的主体性，但它区分不出“参加研究的人”和“研究工作人员”——研究者、协调员也是 participant。所以未来可能会出现一个更准确、更有描述力的词。</p>
+
+<h3 id="practice">实际工作中怎么做</h3>
+<ul class="notes">
+<li><b>数据集、变量名、define.xml</b>：照标准写，不要自作主张把 SUBJID 改成 PARTID。</li>
+<li><b>CSR、患者材料、对外展示</b>：按当地法规和公司规范用“受试者”或“参与者”，这是文案层面的选择。</li>
+<li><b>图表标题</b>：如果要给非专业读者看，用“参与者”没问题，脚注说明数据来自 ADSL 即可。</li>
+<li><b>别在 SDTM 里造新词</b>：为了“政治正确”改域名或变量标签，会让审阅方以为你交的不是标准数据。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>CDISC, <a href="https://www.cdisc.org/kb/articles/cdisc-published/why-study-subject-instead-study-participant" target="_blank" rel="noopener"><i>Why "study subject" Instead of "study participant"?</i></a>（CDISC 知识库文章，cdisc.org/kb）。<span class="src">四条不改的理由、ICH E6 R3 与 TransCelerate 的用语、两个词的定义对比。</span></li>
+<li>ICH, <a href="https://www.ich.org/page/efficacy-guidelines" target="_blank" rel="noopener"><i>E6(R3) Good Clinical Practice</i></a>。<span class="src">使用 "participant" 的表述。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

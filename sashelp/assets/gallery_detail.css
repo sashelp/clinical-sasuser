@@ -1,0 +1,55 @@
+/* Gallery 详情页样式（在 base.css 之后加载，只保留本分区的差异部分） */
+
+/* 样式 - 左侧导航栏 */
+#nav {
+  padding-top: 1rem;
+}
+
+#nav li {
+  margin: 25px 0;
+}
+
+#nav li a {
+  padding: 0 1rem;
+  font-size: 1rem;
+}
+
+/* 样式 - 右侧原图、描述和链接 */
+#section {
+  padding-left: 2.5rem;
+}
+
+#section h2 {
+  font-size: 20px;
+  font-weight: normal;
+}
+
+#section .graph {
+  width: 640px;
+  float: left;
+  padding-right: 20px;
+}
+
+#section .graph img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+#section .desc {
+  width: 600px;
+  float: left;
+  padding-right: 20px;
+}
+
+#section .desc a {
+  text-decoration: none;
+  color: #00B0F0;
+}
+
+#section .desc a:hover {
+  font-weight: bold;
+  color: #00B0F0;
+  cursor: pointer;
+}

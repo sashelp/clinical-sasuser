@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>多次参与（ADPL） - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html" class="current">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / ADaM</p>
+<h2>同一个受试者参加了不止一次，ADaM 该怎么建数据集？</h2>
+<p class="subtitle">ADSL 仍然一人一条（选一次主要参与），参与级别的信息放 ADPL，一人多次参与就多条记录，其它数据集按 USUBJID + SUBJID 去合并 ADPL。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>只要分析上不需要区分多次参与，就什么都不用做，按常规建 ADSL 即可。一旦分析需要按“参与”来报（比如筛选失败后重新入组、不同参与用了不同治疗），就用 <b>ADPL</b>（Participation-Level Analysis Dataset）装参与级别的数据：<b>一次参与一条记录</b>，键是 <code>USUBJID + SUBJID</code>，变量和 ADSL 基本一样，只是同一个人可以有多行。ADSL 仍然保持一人一条，用哪一次参与由你自己定义。</p>
+</div>
+
+<h3 id="when">什么情况算多次参与</h3>
+<ul class="notes">
+<li><b>筛选失败后重新筛选</b>：最常见。第一次没进组，过一段时间再来一次，两次都算参与。</li>
+<li><b>同一个人的不同部位</b>：比如先用左眼参加，后来用右眼再入组。</li>
+<li><b>完成研究后再次参加</b>：某些罕见病研究允许。</li>
+<li><b>不同参与接受不同治疗</b>：这也是为什么参与级别的治疗变量不能只放在 ADSL 里。</li>
+</ul>
+
+<h3 id="why-not-adsl">为什么不能塞进 ADSL</h3>
+<p>ADSL 的定义就是<b>一个受试者一条记录</b>，这是硬约束。你没法在一个人的那一行里放下三次参与的三套日期、三套治疗、三套年龄。硬塞的结果就是宽表，变量名开始出现 TRT01A_2、TRT01A_3 这种，没有一个符合 ADaM 的规则。</p>
+
+<h3 id="adpl">ADPL 是什么</h3>
+<p>它是一个参与级别的分析数据集，class 是 <b>ADAM OTHER</b>，符合 ADaM 的符合性规则。设计上就是把 ADSL 的变量原样搬过来，然后允许一个人有多行。</p>
+<p>为什么不叫 ADDC（模仿 SDTM 的 DC 域）？因为它装的不只是采集到的人口学信息，还包括治疗、基线、人群标志这些分析用的东西，叫 ADDC 会让人误以为它是个纯人口学数据集。</p>
+
+<h3 id="which">ADSL 该选哪一次</h3>
+<p>通常选<b>主要参与</b>（primary participation）。哪一次算主要，标准由你定，可以在 ADRG 里写清楚：</p>
+<ul class="notes">
+<li>直接取 ADPL 里某一条（最常见：取最后一次，或取实际接受治疗的那次）</li>
+<li>按分析需要把多次参与的信息合并成一条（比如年龄取首次、治疗取末次）</li>
+</ul>
+<p>无论哪种，ADSL 和 ADPL 的对应关系要能说清楚，否则审阅时对不上数。</p>
+
+<h3 id="example">三层数据长什么样</h3>
+<p>先看 SDTM 的 DC 域（多次参与的人口学），一个人可以有多条：</p>
+<table class="kb-table">
+<col width="8%" />
+<col width="20%" />
+<col width="14%" />
+<col width="10%" />
+<col width="18%" />
+<col width="8%" />
+<col width="22%" />
+<thead>
+<tr><th>ROW</th><th>USUBJID</th><th>SUBJID</th><th>DCSEQ</th><th>RFXSTDTC</th><th>AGE</th><th>ARM / ARMNRS</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>AB-123-0801</td><td>0801</td><td>1</td><td></td><td>62</td><td>SCREEN FAILURE</td></tr>
+<tr><td>2</td><td>AB-123-0808</td><td>0808</td><td>2</td><td>2023-01-23</td><td>62</td><td>Drug 1</td></tr>
+<tr><td>3</td><td>AB-123-5012</td><td>5012</td><td>1</td><td>2020-01-24</td><td>70</td><td>Drug 1</td></tr>
+<tr><td>4</td><td>AB-123-5050</td><td>5050</td><td>2</td><td>2023-03-18</td><td>73</td><td>Drug 2</td></tr>
+<tr><td>5</td><td>AB-123-9999</td><td>9999</td><td>1</td><td>2023-04-01</td><td>65</td><td>Drug 1</td></tr>
+</tbody>
+</table>
+
+<p>ADPL 就是把这张表翻译成分析变量，一次参与一行：</p>
+<table class="kb-table">
+<col width="8%" />
+<col width="22%" />
+<col width="14%" />
+<col width="18%" />
+<col width="16%" />
+<col width="10%" />
+<col width="12%" />
+<thead>
+<tr><th>ROW</th><th>USUBJID</th><th>SUBJID</th><th>TRTSDT</th><th>TRT01A</th><th>AGE</th><th>BLWT</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>AB-123-0801</td><td>0801</td><td></td><td>SCREEN FAILURE</td><td>62</td><td>55</td></tr>
+<tr><td>2</td><td>AB-123-0808</td><td>0808</td><td>2023-01-23</td><td>Drug 1</td><td>62</td><td>57</td></tr>
+<tr><td>3</td><td>AB-123-5012</td><td>5012</td><td>2020-01-24</td><td>Drug 1</td><td>70</td><td>53</td></tr>
+<tr><td>4</td><td>AB-123-5050</td><td>5050</td><td>2023-03-18</td><td>Drug 2</td><td>73</td><td>46</td></tr>
+<tr><td>5</td><td>AB-123-9999</td><td>9999</td><td>2023-04-01</td><td>Drug 1</td><td>65</td><td>50</td></tr>
+</tbody>
+</table>
+
+<p>ADSL 保留三条记录（0808、5050、9999），也就是每个受试者的主要参与。0801 那次筛选失败没有进 ADSL，但它是 ADPL 里的一行，需要分析筛选失败时可以取到。</p>
+
+<h3 id="merge">其它数据集怎么用 ADPL</h3>
+<p>关键在合并的键。ADVS 这类数据集要拿到正确的计划治疗（<code>TRTP</code>）和基线标志（<code>ABLFL</code>），必须按 <b>USUBJID + SUBJID</b> 去 merge ADPL，而不是只按 USUBJID。</p>
+<p>示例里 AB-123-5012 和 AB-123-5050 这两个 SUBJID 属于同一个受试者 AB-123，但一次用 Drug 1、一次用 Drug 2。只按 USUBJID 合并，两次参与的治疗会混在一起，基线圈也会圈错。</p>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>CDISC, <a href="https://www.cdisc.org/kb/articles/cdisc-published/multiple-participations-adam" target="_blank" rel="noopener"><i>Multiple Participations - ADaM</i></a>（CDISC 知识库文章，cdisc.org/kb）。<span class="src">ADPL 的定义与命名理由、ADSL 的主要参与选择、DC/DM/ADPL/ADSL/ADVS 示例。</span></li>
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/adam/adamig-v1-3" target="_blank" rel="noopener"><i>ADaMIG v1.3</i></a>，Section 2.3.1。<span class="src">ADSL 一人一条的约束与数据集类别划分。</span></li>
+<li>Dennis E, Fawcett G, Minjoe S., <a href="https://pharmasug.org/proceedings/2023/SS/PharmaSUG-2023-SS-146.pdf" target="_blank" rel="noopener"><i>ADaM Datasets with Multiple Participations per Subject</i></a>, PharmaSUG 2023 Paper SS-146。<span class="src">ADPL 的完整建模思路。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

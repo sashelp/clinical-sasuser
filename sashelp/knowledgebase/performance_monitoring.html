@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>性能问题怎么查 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html" class="current">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / 性能与调优</p>
+<h2>性能问题怎么查？先量什么、用什么工具量？</h2>
+<p class="subtitle">先把“慢在哪”量出来——I/O 吞吐、系统资源、SAS 自己的日志，再谈调优；没有数据的调优都是猜。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>性能排查的顺序是“先量再改”，量三样东西：<b>I/O 吞吐</b>（存储跟不跟得上）、<b>系统资源</b>（CPU、内存、磁盘忙闲）、<b>SAS 自己的日志与性能数据</b>（哪一步慢、慢多久）。三样凑齐了，问题基本能定位到某一层；三样都没有就直接调参数，改完你也不知道是改对了还是撞对了。</p>
+</div>
+
+<h3 id="evidence">三层证据，缺一不可</h3>
+<table class="kb-table">
+<col width="18%" />
+<col width="44%" />
+<col width="38%" />
+<thead>
+<tr><th>层次</th><th>要回答的问题</th><th>怎么拿到</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>I/O</td>
+<td>存储的真实吞吐是多少？和理论上限差多远？</td>
+<td>I/O 吞吐测试（SAS KB0036668）</td>
+</tr>
+<tr>
+<td>系统</td>
+<td>跑的时候 CPU、内存、磁盘、网络谁先到瓶颈？</td>
+<td>nmon（Linux/AIX）、<code>gather_info.sh</code>（RHEL）、VMware 信息收集问题清单</td>
+</tr>
+<tr>
+<td>SAS</td>
+<td>哪一步最慢？读了多少观测？用了多少内存？</td>
+<td>日志、FULLSTIMER、SAS Environment Manager 的度量数据</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="tools">常用工具和资料</h3>
+<table class="kb-table">
+<col width="30%" />
+<col width="34%" />
+<col width="36%" />
+<thead>
+<tr><th>工具 / 资料</th><th>用途</th><th>适用环境</th></tr>
+</thead>
+<tbody>
+<tr><td><code>nmon</code></td><td>实时看 CPU、内存、磁盘、网络的忙闲</td><td>Linux、AIX</td></tr>
+<tr><td><code>gather_info.sh</code></td><td>一次性收集 RHEL 上与性能相关的系统信息，方便提交给 SAS 技术支持</td><td>RHEL</td></tr>
+<tr><td>I/O 吞吐测试</td><td>测出存储实际能跑多少，作为基线和上限</td><td>通用</td></tr>
+<tr><td>VMware 信息收集问题清单</td><td>虚机上出问题时，按清单收集宿主层信息</td><td>VMware 虚拟化</td></tr>
+<tr><td>SAS Environment Manager 数据仓库</td><td>集中看日志、事件、性能度量与 SLA</td><td>SAS 9.4 部署</td></tr>
+<tr><td>Enhanced Logging</td><td>开启更细的日志，定位是哪一步、哪个库拖慢的</td><td>SAS 9.4</td></tr>
+<tr><td>《Solving SAS Performance Problems》系列论文</td><td>方法论与主机层工具的实战用法，含各平台的监控脚本</td><td>通用</td></tr>
+</tbody>
+</table>
+
+<h3 id="flow">排查顺序</h3>
+<p>按这个顺序走，每一步都要留下数据，不要凭印象跳到下一步。</p>
+
+<div class="flow">
+<p class="flow-title">从“用户说慢”到“定位到层”</p>
+<svg viewBox="0 0 680 430" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="pm-ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <rect x="180" y="8" width="320" height="44" rx="4" fill="#0070C0" stroke="#005a9e"/>
+  <text x="340" y="35" text-anchor="middle" fill="#ffffff" font-size="14">用户说：这个程序很慢</text>
+
+  <line x1="340" y1="52" x2="340" y2="78" stroke="#8a8a8a" marker-end="url(#pm-ar)"/>
+
+  <rect x="80" y="78" width="520" height="48" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="107" text-anchor="middle" fill="#e6e6e6" font-size="13">1. 先把它变可量：记录运行时长、数据量、并发情况</text>
+
+  <line x1="340" y1="126" x2="340" y2="152" stroke="#8a8a8a" marker-end="url(#pm-ar)"/>
+
+  <rect x="80" y="152" width="520" height="48" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="181" text-anchor="middle" fill="#e6e6e6" font-size="13">2. 开日志：看是哪一步慢、读了多少数据、有无排序与多次扫描</text>
+
+  <line x1="340" y1="200" x2="340" y2="226" stroke="#8a8a8a" marker-end="url(#pm-ar)"/>
+
+  <rect x="80" y="226" width="520" height="48" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="255" text-anchor="middle" fill="#e6e6e6" font-size="13">3. 同时段跑 nmon：看 CPU、内存、磁盘谁先满</text>
+
+  <line x1="340" y1="274" x2="340" y2="300" stroke="#8a8a8a" marker-end="url(#pm-ar)"/>
+
+  <rect x="80" y="300" width="520" height="48" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="329" text-anchor="middle" fill="#e6e6e6" font-size="13">4. 对照 I/O 吞吐基线，判断是不是存储到顶了</text>
+
+  <line x1="340" y1="348" x2="340" y2="374" stroke="#8a8a8a" marker-end="url(#pm-ar)"/>
+
+  <rect x="150" y="374" width="380" height="44" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="340" y="402" text-anchor="middle" fill="#ffffff" font-size="13">拿到结论：程序问题 / 系统问题 / 容量问题</text>
+</svg>
+</div>
+
+<h3 id="tradeoff">几个容易走偏的地方</h3>
+<ul class="notes">
+<li><b>拿“感觉慢”当问题描述。</b>慢是相对的，跟什么比慢、慢多少、多少人同时跑，这三个信息不给，排查无从下手。</li>
+<li><b>只看平均值。</b>平均 10 分钟的作业里有一步占了 9 分钟，平均值会把这一步完全藏起来，必须看每一步的耗时。</li>
+<li><b>监控和作业不同时开。</b>事后看监控图，不知道作业卡在哪一分钟，等于没测。</li>
+<li><b>把容量问题当性能问题。</b>数据量涨了十倍、程序没改，变慢是必然的，这时候要谈的是扩容或者改设计，不是调参数。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS Support, <a href="https://sas.service-now.com/csm?id=kb_article_view&sys_kb_id=2aecc744470b56106a2d44c4236d4319" target="_blank" rel="noopener"><i>Performance monitoring and troubleshooting</i></a>（SAS 知识库文章，sas.service-now.com）。<span class="src">性能监控与排错的资料索引，含 I/O 吞吐测试、nmon、gather_info.sh、VMware 信息收集清单。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/resources/papers/proceedings19/3490-2019.pdf" target="_blank" rel="noopener"><i>Solving SAS Performance Problems: Our Methodology</i></a>（SAS Global Forum 2019, Paper 3490）。<span class="src">性能问题的分层定位方法。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/rnd/scalability/papers/practicalperf.pdf" target="_blank" rel="noopener"><i>Solving SAS Performance Problems: Employing Host Based Tools</i></a>。<span class="src">各主机的监控脚本与用法。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/resources/papers/proceedings12/366-2012.pdf" target="_blank" rel="noopener"><i>Logging 101: Leveraging the SAS Enhanced Logging Facility</i></a>（SAS Global Forum 2012, Paper 366）。<span class="src">增强日志的开启与解读。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

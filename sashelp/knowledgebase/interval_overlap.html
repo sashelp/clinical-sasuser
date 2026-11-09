@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>区间重叠怎么判 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html" class="current">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SAS 编程</p>
+<h2>如何判定两个区间重叠？</h2>
+<p class="subtitle">两个闭区间的重叠天数 = min(两个终点) − max(两个起点) + 1；结果小于等于 0 就说明不重叠。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>设两个区间 <code>[A1, A2]</code> 和 <code>[B1, B2]</code>，两端都算，那么：<br/>
+<b>重叠长度 = min(A2, B2) − max(A1, B1) + 1</b><br/>
+结果大于 0 就是共享的天数；等于 0 表示两个区间紧挨着、一天都不共享；小于 0 表示中间有空档，绝对值就是空了多少天。不关心空档就套一层 <code>max(0, …)</code>，一行搞定。</p>
+</div>
+
+<div class="flow">
+<p class="flow-title">两个区间、四个端点，重叠段由“晚的那个起点”和“早的那个终点”夹出来</p>
+<svg viewBox="0 0 680 230" xmlns="http://www.w3.org/2000/svg">
+  <rect x="300" y="70" width="120" height="80" fill="#70AD47" opacity="0.28" stroke="#70AD47"/>
+  <text x="360" y="58" text-anchor="middle" fill="#70AD47" font-size="12">重叠段</text>
+
+  <rect x="140" y="70" width="280" height="26" fill="#333333" stroke="#555555"/>
+  <text x="210" y="88" text-anchor="middle" fill="#e6e6e6" font-size="12">事件 A</text>
+
+  <rect x="300" y="124" width="260" height="26" fill="#333333" stroke="#555555"/>
+  <text x="480" y="142" text-anchor="middle" fill="#e6e6e6" font-size="12">事件 B</text>
+
+  <line x1="140" y1="96" x2="140" y2="176" stroke="#8a8a8a" stroke-dasharray="3,3"/>
+  <line x1="300" y1="60" x2="300" y2="176" stroke="#8a8a8a" stroke-dasharray="3,3"/>
+  <line x1="420" y1="60" x2="420" y2="176" stroke="#8a8a8a" stroke-dasharray="3,3"/>
+  <line x1="560" y1="150" x2="560" y2="176" stroke="#8a8a8a" stroke-dasharray="3,3"/>
+
+  <line x1="110" y1="176" x2="600" y2="176" stroke="#555555"/>
+
+  <text x="140" y="196" text-anchor="middle" fill="#8a8a8a" font-size="11">A1</text>
+  <text x="300" y="196" text-anchor="middle" fill="#8a8a8a" font-size="11">B1</text>
+  <text x="420" y="196" text-anchor="middle" fill="#8a8a8a" font-size="11">A2</text>
+  <text x="560" y="196" text-anchor="middle" fill="#8a8a8a" font-size="11">B2</text>
+
+  <text x="230" y="166" text-anchor="middle" fill="#8a8a8a" font-size="11">起点取大 → B1</text>
+  <text x="490" y="166" text-anchor="middle" fill="#8a8a8a" font-size="11">终点取小 → A2</text>
+</svg>
+</div>
+
+<h3 id="define">先把问题说清楚</h3>
+<p>这里的区间是<b>闭区间</b>：起点和终点都算在内。<code>[1, 5]</code> 包含 1、2、3、4、5 共五天。而且约定起点不晚于终点，也就是 A1 ≤ A2。</p>
+<p>SAS 里日期是从 1960-01-01 起算的天数，本身就是一个整数；datetime 是秒。所以这套算法对日期完全适用，对任意整数区间也适用。</p>
+
+<h3 id="brute">解法一：暴力数一遍</h3>
+<p>最直白的办法：从最早的起点循环到最晚的终点，逐天判断这一天是不是同时落在两个区间里。</p>
+
+<pre class="code">data RESULTS;
+   set EVENTS;
+   OVERLAP = 0;
+   do i = min(A1,B1) to max(A2,B2);
+      if (A1&lt;=i&lt;=A2) and (B1&lt;=i&lt;=B2) then OVERLAP + 1;
+   end;
+run;</pre>
+
+<p>好处是不用动脑子，写出来就能对上；坏处是循环次数等于两个区间合起来跨了多少天。跨十年的两个区间就是三千多次循环，一行数据还好，几十万行就明显吃不消了。通常只把它当验证用的参考答案。</p>
+
+<h3 id="logic">解法二：分情况写 if-then</h3>
+<p>把两个区间的相对位置拆成几种情形，每种情形单独算。代码长一点，但不循环。</p>
+
+<pre class="code">data RESULTS;
+   set EVENTS;
+   if A1&lt;=B1 and A2&gt;=B2      then OVERLAP = B2 - B1 + 1; else
+   if A1&gt;=B1 and A2&lt;=B2      then OVERLAP = A2 - A1 + 1; else
+   if A1&lt;=B1&lt;=A2 and B2&gt;A2   then OVERLAP = A2 - B1 + 1; else
+   if B1&lt;=A1&lt;=B2 and A2&gt;B2   then OVERLAP = B2 - A1 + 1; else
+   if B1&gt;A2 or A1&gt;B2         then OVERLAP = 0;
+run;</pre>
+
+<p>五个分支对应的位置关系：</p>
+
+<table class="kb-table">
+<col width="26%" />
+<col width="40%" />
+<col width="34%" />
+<thead>
+<tr><th>情形</th><th>条件</th><th>重叠长度</th></tr>
+</thead>
+<tbody>
+<tr><td>A 完全罩住 B</td><td>A1 ≤ B1 且 A2 ≥ B2</td><td>B2 − B1 + 1</td></tr>
+<tr><td>B 完全罩住 A</td><td>B1 ≤ A1 且 B2 ≥ A2</td><td>A2 − A1 + 1</td></tr>
+<tr><td>A 先开始、B 后结束</td><td>A1 ≤ B1 ≤ A2 且 B2 &gt; A2</td><td>A2 − B1 + 1</td></tr>
+<tr><td>B 先开始、A 后结束</td><td>B1 ≤ A1 ≤ B2 且 A2 &gt; B2</td><td>B2 − A1 + 1</td></tr>
+<tr><td>不相交</td><td>B1 &gt; A2 或 A1 &gt; B2</td><td>0</td></tr>
+</tbody>
+</table>
+
+<p>写的时候容易漏情形、也容易把边界写反（比如把 <code>A1≤B1≤A2</code> 写成 <code>A1≤B1&lt;A2</code>，端点那天就丢了）。这种写法适合当中间过程，帮自己把问题想清楚。</p>
+
+<h3 id="math">解法三：一个公式</h3>
+<p>把上面五种情形合起来看，其实都是同一件事：重叠段的起点，是<b>两个起点里较晚的那个</b>；重叠段的终点，是<b>两个终点里较早的那个</b>。所以：</p>
+
+<div class="callout">
+<p>Overlap = min(A2, B2) − max(A1, B1) + 1</p>
+</div>
+
+<pre class="code">data RESULTS;
+   set EVENTS;
+   OVERLAP = min(A2,B2) - max(A1,B1) + 1;
+   if OVERLAP &lt; 0 then OVERLAP = 0;
+run;</pre>
+
+<p>不想要那个 <code>if</code>，就用 <code>max(0, …)</code> 一步写完：</p>
+
+<pre class="code">data RESULTS;
+   set EVENTS;
+   OVERLAP = max(0, min(A2,B2) - max(A1,B1) + 1);
+run;</pre>
+
+<h3 id="result">三种写法跑出来的结果</h3>
+<p>用文中的七组样例（日期是 2022 年 1 月）实际跑一遍，三种写法结果完全一致：</p>
+
+<table class="kb-table">
+<col width="30%" />
+<col width="30%" />
+<col width="20%" />
+<col width="20%" />
+<thead>
+<tr><th>事件 A</th><th>事件 B</th><th>重叠天数</th><th>不截断的公式值</th></tr>
+</thead>
+<tbody>
+<tr><td>01-02 ~ 01-05</td><td>01-06 ~ 01-10</td><td>0</td><td>0</td></tr>
+<tr><td>01-22 ~ 01-30</td><td>01-16 ~ 01-18</td><td>0</td><td>−3</td></tr>
+<tr><td>01-02 ~ 01-05</td><td>01-03 ~ 01-10</td><td>3</td><td>3</td></tr>
+<tr><td>01-02 ~ 01-05</td><td>01-03 ~ 01-04</td><td>2</td><td>2</td></tr>
+<tr><td>01-10 ~ 01-15</td><td>01-06 ~ 01-14</td><td>5</td><td>5</td></tr>
+<tr><td>01-01 ~ 01-05</td><td>01-05 ~ 01-09</td><td>1</td><td>1</td></tr>
+<tr><td>01-07 ~ 01-13</td><td>01-10 ~ 01-13</td><td>4</td><td>4</td></tr>
+</tbody>
+</table>
+
+<p>第四行值得看一眼：B 完全落在 A 里面，重叠就是 B 本身的长度 2 天。第六行只有 1 月 5 日这一天是共有的，因为两端都算在内，正好卡在边界上的那一天也算重叠。</p>
+
+<h3 id="plus1">为什么都要 +1</h3>
+<p>因为两个日期相减得到的是“中间隔了几天”，不是“包含几天”。1 月 3 日到 1 月 4 日，4 − 3 = 1，但这两天都算的话是 2 天。所以闭区间的长度一律是 <b>终点 − 起点 + 1</b>。</p>
+<p>反过来，如果你的区间是<b>半开</b>的（含起点、不含终点，比如 <code>[start, end)</code>），那就不加 1。这两种约定混用，结果会差一天，而且很难发现。</p>
+
+<h3 id="gap">0 和负数怎么读</h3>
+<p>公式不截断时，0 和负数是有信息量的：</p>
+<ul class="notes">
+<li><b>等于 0</b>：两个区间不重叠，中间也没空档——一个结束的第二天，另一个就开始了。</li>
+<li><b>小于 0</b>：中间有空档，绝对值是空了多少天。上面第二行是 −3，就是 1 月 18 日结束后，到 1 月 22 日开始之前空了 19、20、21 三天。</li>
+</ul>
+<p>如果分析上只关心“重叠多久”，把负数抹成 0 就行；如果还要看“两个事件隔了多久”，就保留原始值，别急着截断。</p>
+
+<h3 id="pitfalls">实际用的时候几个坑</h3>
+<ul class="notes">
+<li><b>单位要统一。</b>datetime 变量存的是秒，直接套公式得到的是重叠秒数。要换算成天就除以 86400，或者干脆按秒比较，别一半用日期一半用 datetime。</li>
+<li><b>缺失值不会报错。</b>SAS 的 <code>MIN</code>/<code>MAX</code> 函数<b>忽略缺失值</b>，四个端点里缺一个，公式照样算得出一个看起来正常的数。我试过把 A1 置空，公式返回 3，日志里一句提示都没有。所以先确认四个变量都不缺，再算。</li>
+<li><b>半开区间不要 +1。</b>同理，如果数据里起点终点采用的是“包含起点、不包含终点”的约定，加 1 就多算了一天。</li>
+<li><b>月和年不能直接套。</b>月份、年份长度不等，减出来的数字没有统一含义。要么先转成天数，要么用 <code>INTCK</code> 按需要的单位算。</li>
+<li><b>只想回答“有没有重叠”，不用算长度。</b>闭区间下判断 <code>max(A1,B1) &lt;= min(A2,B2)</code> 就够了，等价写法是 <code>A1&lt;=B2 and B1&lt;=A2</code>，一步出 0/1 标志。</li>
+<li><b>一个受试者多条区间时</b>，要两两比较就用 SQL 自连接或 <code>PROC SQL</code> 的笛卡尔积按 USUBJID 限定，别在 DATA step 里写双重循环——数据量一大就跑不动。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>Leonid Batkhan, <a href="https://blogs.sas.com/content/sgf/2022/01/13/calculating-the-overlap-of-date-time-intervals/" target="_blank" rel="noopener"><i>Calculating the overlap of date/time intervals</i></a>，SAS Users（SAS Blogs），2022 年 1 月 13 日。<span class="src">问题定义、三种解法（暴力循环、分情况逻辑、min/max 公式）及各自代码、+1 的理由、0 与负值作为间隔度量的说明。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/en/software/base-sas-support.html#documentation" target="_blank" rel="noopener"><i>SAS 9.4 Functions and CALL Routines: Reference</i></a>。<span class="src">MIN、MAX 函数遇到缺失值的处理规则。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

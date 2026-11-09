@@ -1,0 +1,63 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.13 秒
+      
+1          /*===============================================================================
+2           * dir_attr_err_06.sas - Negative test: DIR= points to a file
+3           *===============================================================================
+4           * Macro under test : %dir_attr
+5           * Expected         : abort cancel with "Directory ... f1.txt not exist."
+6           * Note             : a regular file must not be accepted as a directory.
+7           *============================================================================*/
+8          
+9          /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+10         %let _qcboot_=%sysfunc(getoption(sysin));
+11         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+12         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+13         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+14         %include "&_qcboot_.\_framework\qc_env.sas";
+79         %let _qcboot_=;
+80         /*----------------------------------------------------------------------------*/
+81         
+82         %include "&_QCFW_.";
+375        %include "&_QCDEV_DIR_.\dir_exist.sas";
+415        %include "&_QCDEV_DIR_.\dir_attr.sas";
+477        %qc_begin(prog=dir_attr_err_06, macro=dir_attr);
+#####QC_BEGIN prog=dir_attr_err_06 macro=dir_attr
+478        %qc_case(desc=1 DIR= file path must abort);
+#####QC_CASE n=1 desc=1 DIR= file path must abort
+479        *EXPECTED_ERROR: dir_attr.sas not exist.;
+480        %qc_abort_marker;
+#####QC_ABORT_MARKER n=1
+481        %dir_attr(dir=&_QCDEV_DIR_.\dir_attr.sas,attr=NMEMS);
+ERROR: Directory .\codehub\macro\dev\dir\dir_attr.sas not exist.
+ERROR: 已通过 %ABORT CANCEL 语句取消执行。
+NOTE: 由于收到 CANCEL 请求，SAS 系统已停止处理。
+ERROR: 打印以下页时出错: 1.
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.20 秒
+      CPU 时间          0.17 秒
+      

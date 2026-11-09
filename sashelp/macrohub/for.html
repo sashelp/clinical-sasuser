@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>for - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html" class="current">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / 开源宏</p>
+<h2>for</h2>
+<p class="subtitle">数据驱动的循环宏，遍历数据集、值列表、数值区间或目录内容生成 SAS 代码</p>
+<p class="dependency">依赖: 无</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>for</code></p>
+
+<h3 id="brief">简介</h3>
+<p>依次遍历五类数据对象（值列表、数据集、数据集变量描述、目录内容、数值区间），每一轮把当前值赋给 <code>MACRO_VAR_LIST</code> 中指定的宏变量，并展开 <code>DO=</code> 中的代码。宏本身不返回值，其作用是生成 SAS 代码；适用于按数据集中的值或目录中的文件批量生成 REPORT、PRINT 或其他过程代码。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%for(&lt;variables&gt;, in=&lt;object&gt;, do=&lt;code&gt;)</pre>
+<p><code>IN=</code> 的对象类型由括号区分：<code>(a b c)</code> 为值列表，<code>[dataset]</code> 为数据集，<code>{dataset}</code> 为数据集变量描述，<code>&lt;directory&gt;</code> 为目录，<code>1:100</code> 为数值区间。<code>DO=</code> 通常用 <code>%nrstr()</code> 包裹，以延迟宏变量解析。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MACRO_VAR_LIST</td>
+<td>必需参数（位置参数）</td>
+<td>无</td>
+<td>每轮循环要赋值的宏变量名列表，多个名称以空格分隔。</td>
+</tr>
+<tr>
+<td>IN=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>要遍历的数据对象，按首字符区分类型。<br/>
+<code>(a b c)</code>：值列表，默认以空格分隔。<br/>
+<code>[dataset]</code>：数据集，可按观测遍历；支持 <code>WHERE=</code> 限定。<br/>
+<code>{dataset}</code>：数据集变量描述，可用变量名为 NAME、TYPE、FORMAT、LENGTH、LABEL。<br/>
+<code>&lt;directory&gt;</code>：目录内容，可用变量名为 FILEPATH、FILENAME、SHORTNAME、EXTENSION、ISDIR。<br/>
+<code>1:100</code> 或 <code>1:100:2</code>：数值区间，第三个数字为步长。</td>
+</tr>
+<tr>
+<td>DO=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>每轮循环要生成的 SAS 代码，通常用 <code>%nrstr()</code> 包裹，使 <code>&amp;var.</code> 在循环时解析。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：遍历值列表</h4>
+<pre class="code">%for(x y, in=(A B C D), do=%nrstr(%put NOTE: x=&amp;x. y=&amp;y.;))</pre>
+<p class="result-label">运行结果：</p>
+<pre class="result">NOTE: x=A y=B
+NOTE: x=C y=D</pre>
+<p>值列表默认以空格分隔，每轮取两个值依次赋给 <code>&amp;X.</code> 与 <code>&amp;Y.</code>，因此执行两轮。<code>DO=</code> 用 <code>%nrstr()</code> 包裹，使宏变量在循环时才解析。</p>
+
+<h4>示例 2：遍历数据集观测</h4>
+<pre class="code">%for(name sex, in=[sashelp.class(where=(sex='F'))], do=%nrstr(%put NOTE: name=&amp;name. sex=&amp;sex.;))</pre>
+<p class="result-label">运行结果：</p>
+<pre class="result">NOTE: name=Alice sex=F
+NOTE: name=Barbara sex=F
+NOTE: name=Carol sex=F
+NOTE: name=Jane sex=F
+NOTE: name=Janet sex=F
+NOTE: name=Joyce sex=F
+NOTE: name=Judy sex=F
+NOTE: name=Louise sex=F
+NOTE: name=Mary sex=F</pre>
+<p><code>[ ]</code> 表示按观测遍历数据集，<code>WHERE=</code> 先筛选出女生；每轮把同名变量值赋给 <code>&amp;NAME.</code> 与 <code>&amp;SEX.</code>，共 9 轮。</p>
+
+<h4>示例 3：遍历数值区间</h4>
+<pre class="code">%for(i, in=1:10:2, do=%nrstr(%put NOTE: i=&amp;i.;))</pre>
+<p class="result-label">运行结果：</p>
+<pre class="result">NOTE: i=1
+NOTE: i=3
+NOTE: i=5
+NOTE: i=7
+NOTE: i=9</pre>
+<p><code>1:10:2</code> 表示从 1 到 10、步长为 2，循环变量 <code>&amp;I.</code> 依次取 1、3、5、7、9。</p>
+
+<h4>示例 4：遍历数据集变量描述</h4>
+<pre class="code">%for(name type length, in={sashelp.class}, do=%nrstr(%put NOTE: name=&amp;name. type=&amp;type. length=&amp;length.;))</pre>
+<p class="result-label">运行结果：</p>
+<pre class="result">NOTE: name=Name type=2 length=8
+NOTE: name=Sex type=2 length=1
+NOTE: name=Age type=1 length=8
+NOTE: name=Height type=1 length=8
+NOTE: name=Weight type=1 length=8</pre>
+<p><code>{ }</code> 按变量遍历数据集：<code>NAME</code> 为变量名，<code>TYPE</code> 为 1（数值型）或 2（字符型），<code>LENGTH</code> 为变量长度。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+
+<li>值列表默认以空格分隔；其他分隔符使用嵌套括号指定，例如 <code>in=((|)Alice|Bob|Carol|Dave)</code>。显式分隔符允许空项，空格分隔不允许。</li>
+<li>遍历数据集变量描述时，<code>MACRO_VAR_LIST</code> 只能使用 <code>NAME</code>、<code>TYPE</code>、<code>FORMAT</code>、<code>LENGTH</code>、<code>LABEL</code>。</li>
+<li>遍历目录时，<code>MACRO_VAR_LIST</code> 只能使用 <code>FILEPATH</code>、<code>FILENAME</code>、<code>SHORTNAME</code>、<code>EXTENSION</code>、<code>ISDIR</code>；<code>FILEPATH</code> 使用 Windows 路径分隔符。</li>
+<li>该宏为 Jim Anderson 发布的开源宏，使用时请保留原作者署名信息。</li>
+
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<h4>1. 已知但未修复的风险</h4>
+<ul class="notes">
+<li>数据集遍历支持 <code>WHERE=</code>，但 <code>OBS=</code> 等数据集选项不生效；依赖这些选项控制遍历范围时，结果可能不符合预期。</li>
+</ul>
+
+<h4>2. 对输入参数的强假设</h4>
+<ul class="notes">
+<li><code>DO=</code> 中如含 <code>&amp;var.</code>，必须用 <code>%nrstr()</code> 包裹，否则宏变量会在调用 <code>%for</code> 之前被解析，导致遍历值不符合预期。</li>
+</ul>
+
+<h4>3. 临时变量冲突风险</h4>
+<ul class="notes">
+<li>该宏会把当前迭代序号写入宏变量 <code>_n_</code>，循环结束后仍保留；同时会创建或覆盖 <code>MACRO_VAR_LIST</code> 中指定的宏变量。若与现有宏变量同名，原值会丢失。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/opensource/for.sas" download>for.sas</a></p>
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr>
+<th>日期</th>
+<th>修订人</th>
+<th>修订内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>—</td>
+<td>Jim Anderson</td>
+<td>原始版本（开源宏，作者 Jim Anderson，UCSF）。</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

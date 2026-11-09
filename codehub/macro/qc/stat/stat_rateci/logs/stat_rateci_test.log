@@ -1,0 +1,2933 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.12 秒
+      
+1          /*==============================================================================
+2           * stat_rateci_test.sas - Positive (functional) acceptance tests
+3           *==============================================================================
+4           * Macro under test : %stat_rateci
+5           * File under test   : dev/stat/stat_rateci.sas
+6           * Dependencies      : %var_exist, %var_coexist, %ds_attr
+7           * Coverage          : single sample rate and confidence limits (EXACT / WALD /
+8           *                     WILSON / AC / BLAKER / JEFFREYS / LR / LOGIT / MIDP),
+9           *                     SMETHOD=ALL, pairwise rate difference with WALD /
+10          *                     NEWCOMBE / AC / MN / HA / EXACT, SMETHOD=NONE and
+11          *                     DMETHOD=NONE switches, 3 class levels, BY= processing
+12          *                     (one and two BY variables), custom format on VAR=,
+13          *                     missing response exclusion, numeric and character CLASS,
+14          *                     SALPHA / DALPHA, output structure / labels / lengths,
+15          *                     library-qualified OUT=, DEBUG= cleanup, LEVEL=N.
+16          *============================================================================*/
+17         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+18         %let _qcboot_=%sysfunc(getoption(sysin));
+19         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+20         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+21         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+22         %include "&_qcboot_.\_framework\qc_env.sas";
+87         %let _qcboot_=;
+88         /*----------------------------------------------------------------------------*/
+89         %include "&_QCFW_.";
+382        %include "&_QCDEV_VAR_.\var_exist.sas";
+433        %include "&_QCDEV_VAR_.\var_coexist.sas";
+499        %include "&_QCDEV_DS_.\ds_attr.sas";
+551        %include "&_QCDEV_STAT_.\stat_rateci.sas";
+948        
+949        %qc_begin(prog=stat_rateci_test, macro=stat_rateci);
+#####QC_BEGIN prog=stat_rateci_test macro=stat_rateci
+950        
+951        /* helper: read a variable label through PROC CONTENTS */
+952        %macro _qc_label(ds=, var=, mac=);
+953          %global &mac.;
+954          proc contents data=&ds. out=_qc_meta noprint;
+955          run;
+956          data _null_;
+957            set _qc_meta;
+958            if upcase(name)=upcase("&var.") then call symputx("&mac.", label);
+959          run;
+960        %mend _qc_label;
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+961        
+962        /*----------------------------------------------------------------------------
+963         * Shared input data (BY= study is a single level, so results equal the
+964         * ungrouped case):
+965         *   trt A : 20 subjects, 5 with resp=Y  -> 25.0 %
+966         *   trt B : 20 subjects, 11 with resp=Y -> 55.0 %
+967         *   by sex: A = 20.0 / 30.0, B = 50.0 / 60.0
+968         *--------------------------------------------------------------------------*/
+969        data rates;
+970          length subj $12 study $2 trt $1 sex $1 resp $1;
+971          retain _k 0;
+972          input study $ trt $ sex $ resp $ n;
+973          do i=1 to n;
+974            _k+1;
+975            subj=cats(trt,sex,_k);
+976            output;
+977          end;
+978          drop n i;
+979        datalines;
+
+NOTE: 数据集 WORK.RATES 有 40 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+988        ;
+989        run;
+990        
+991        /*----------------------------------------------------------------------------
+992         * CASE 1 : default SMETHOD=EXACT / DMETHOD=WALD - rate, exact confidence
+993         *          limit, pairwise Wald difference, output structure
+994         *--------------------------------------------------------------------------*/
+995        %qc_case(desc=1 default exact rate and Wald rate difference);
+#####QC_CASE n=1 desc=1 default exact rate and Wald rate difference
+996        %stat_rateci(data=rates, out=r1, by=study, class=trt, var=resp, level=%str('Y'), debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 14 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_CLASSPAIR 创建完成，有 2 行，2 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_DIFF1 有 2 个观测和 8 个变量。
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 变量 _pair_ 存在于输入数据集中，但在 I/O 语句选项中也已指定。
+      变量不会包括在任何输出数据集中。
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF2 有 2 个观测和 9 个变量。
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL1 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_RATECI_DIFF_MANUAL2 创建完成，有 2 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL2. 读取了 0 个观测
+      WHERE ((_s1_=0) and (_s2_=0)) or ((_s1_=_n1_) and (_s2_=_n2_));
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL3 有 0 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL3. 读取了 0 个观测
+NOTE: 数据集 WORK.R1 有 4 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R1. 读取了 4 个观测
+NOTE: 数据集 WORK.R1 有 4 个观测和 9 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_CLASSPAIR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_PAIRWISE (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+997        
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+998        %qc_expect_ds(ds=r1, desc=C1 output dataset exists);
+#####QC_PASS n=1 desc=C1 output dataset exists
+999        %qc_expect_nobs(ds=r1, expect=4, desc=C1 two single rows and two difference rows);
+#####QC_PASS n=1 desc=C1 two single rows and two difference rows
+1000       %qc_expect_var(ds=r1, var=study, type=C, desc=C1 BY variable kept);
+#####QC_PASS n=1 desc=C1 BY variable kept
+1001       %qc_expect_var(ds=r1, var=trt, type=C, desc=C1 CLASS variable kept);
+#####QC_PASS n=1 desc=C1 CLASS variable kept
+1002       %qc_expect_var(ds=r1, var=ref_trt, type=C, desc=C1 reference class variable created);
+#####QC_PASS n=1 desc=C1 reference class variable created
+1003       %qc_expect_var(ds=r1, var=_method_, type=C, desc=C1 method variable character);
+#####QC_PASS n=1 desc=C1 method variable character
+1004       %qc_expect_var(ds=r1, var=_prop_, type=N, desc=C1 rate variable numeric);
+#####QC_PASS n=1 desc=C1 rate variable numeric
+1005       %qc_expect_var(ds=r1, var=_alpha_, type=N, desc=C1 alpha variable numeric);
+#####QC_PASS n=1 desc=C1 alpha variable numeric
+1006       %qc_expect_var(ds=r1, var=_cl_l_, type=N, desc=C1 lower limit numeric);
+#####QC_PASS n=1 desc=C1 lower limit numeric
+1007       %qc_expect_var(ds=r1, var=_cl_u_, type=N, desc=C1 upper limit numeric);
+#####QC_PASS n=1 desc=C1 upper limit numeric
+1008       %qc_expect_var(ds=r1, var=_source_, type=C, desc=C1 source variable character);
+#####QC_PASS n=1 desc=C1 source variable character
+1009       
+1010       proc sql noprint;
+1011         select count(*) into :c1a from r1
+1012           where trt='A' and missing(ref_trt) and _method_='Exact'
+1013             and strip(put(_prop_,8.1))='25.0'
+1014             and strip(put(_cl_l_,8.2))='8.66' and strip(put(_cl_u_,8.2))='49.10'
+1015             and strip(put(_alpha_,8.2))='0.05' and _source_='PROC FREQ';
+1016         select count(*) into :c1b from r1
+1017           where trt='B' and missing(ref_trt) and _method_='Exact'
+1018             and strip(put(_prop_,8.1))='55.0'
+1019             and strip(put(_cl_l_,8.2))='31.53' and strip(put(_cl_u_,8.2))='76.94';
+1020         select count(*) into :c1c from r1
+1021           where trt='A' and ref_trt='B' and _method_='Wald'
+1022             and strip(put(_prop_,8.1))='-30.0'
+1023             and strip(put(_cl_l_,8.2))='-58.91' and strip(put(_cl_u_,8.2))='-1.09';
+1024         select count(*) into :c1d from r1
+1025           where trt='B' and ref_trt='A' and _method_='Wald'
+1026             and strip(put(_prop_,8.1))='30.0'
+1027             and strip(put(_cl_l_,8.2))='1.09' and strip(put(_cl_u_,8.2))='58.91';
+1028       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1029       %qc_check_eq(actual=&c1a., expect=1, desc=C1 class A exact rate and limit);
+#####QC_PASS n=1 desc=C1 class A exact rate and limit
+1030       %qc_check_eq(actual=&c1b., expect=1, desc=C1 class B exact rate and limit);
+#####QC_PASS n=1 desc=C1 class B exact rate and limit
+1031       %qc_check_eq(actual=&c1c., expect=1, desc=C1 difference A minus B and Wald limit);
+#####QC_PASS n=1 desc=C1 difference A minus B and Wald limit
+1032       %qc_check_eq(actual=&c1d., expect=1, desc=C1 difference B minus A and Wald limit);
+#####QC_PASS n=1 desc=C1 difference B minus A and Wald limit
+1033       
+1034       /*----------------------------------------------------------------------------
+1035        * CASE 2 : all nine single sample confidence limit types
+1036        *--------------------------------------------------------------------------*/
+1037       %qc_case(desc=2 nine single sample confidence limit types);
+#####QC_CASE n=2 desc=2 nine single sample confidence limit types
+1038       %stat_rateci(data=rates, out=r2, by=study, class=trt, var=resp, level=%str('Y'),
+1039                    smethod=WALD WILSON EXACT JEFFREYS AC BLAKER LR LOGIT MIDP,
+1040                    dmethod=NONE, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+6                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 30 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.03 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 18 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 18 个观测
+NOTE: 数据集 WORK.R2 有 18 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R2. 读取了 18 个观测
+NOTE: 数据集 WORK.R2 有 18 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+7                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1041       %qc_expect_nobs(ds=r2, expect=18, desc=C2 nine methods for each of two classes);
+#####QC_PASS n=2 desc=C2 nine methods for each of two classes
+1042       data _null_;
+1043         length _s $200;
+1044         do until(_e);
+1045           set r2 end=_e;
+1046           if trt='A' then _s=catx(' ', _s, _method_);
+1047         end;
+1048         call symputx('c2seq', _s);
+1049       run;
+
+NOTE: 从数据集 WORK.R2. 读取了 18 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1050       %let c2exp=Agresti-Coull Blaker Exact Jeffreys Likelihood Ratio Logit Mid-p Wald Wilson;
+1051       %qc_check_eq(actual=&c2seq., expect=&c2exp., desc=C2 method names sorted and complete);
+#####QC_PASS n=2 desc=C2 method names sorted and complete
+1052       proc sql noprint;
+1053         select count(*) into :c2n from dictionary.columns
+1054           where libname='WORK' and memname='R2' and upcase(name)='REF_TRT';
+1055         select count(*) into :c2v from r2
+1056           where trt='A' and _method_='Blaker'
+1057             and strip(put(_cl_l_,8.2))='10.41' and strip(put(_cl_u_,8.2))='47.40';
+1058       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1059       %qc_check_eq(actual=&c2n., expect=0, desc=C2 no reference variable when DMETHOD=NONE);
+#####QC_PASS n=2 desc=C2 no reference variable when DMETHOD=NONE
+1060       %qc_check_eq(actual=&c2v., expect=1, desc=C2 Blaker limit computed for class A);
+#####QC_PASS n=2 desc=C2 Blaker limit computed for class A
+1061       
+1062       /*----------------------------------------------------------------------------
+1063        * CASE 3 : SMETHOD=ALL - requests every limit PROC FREQ computes in one call
+1064        *--------------------------------------------------------------------------*/
+1065       %qc_case(desc=3 smethod ALL option);
+#####QC_CASE n=3 desc=3 smethod ALL option
+1066       %stat_rateci(data=rates, out=r3, by=study, class=trt, var=resp, level=%str('Y'),
+1067                    smethod=ALL, dmethod=NONE, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+8                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 30 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.03 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 18 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 18 个观测
+NOTE: 数据集 WORK.R3 有 18 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R3. 读取了 18 个观测
+NOTE: 数据集 WORK.R3 有 18 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+9                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+1068       proc sql noprint;
+1069         select count(*) into :c3ac from r3 where trt='A' and _method_='Agresti-Coull';
+1070         select count(*) into :c3ex from r3 where trt='A' and _method_='Exact';
+1071         select count(*) into :c3je from r3 where trt='A' and _method_='Jeffreys';
+1072         select count(*) into :c3wa from r3 where trt='A' and _method_='Wald';
+1073         select count(*) into :c3wi from r3 where trt='A' and _method_='Wilson';
+1074       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1075       %qc_check_eq(actual=&c3ac., expect=1, desc=C3 Agresti-Coull computed by ALL);
+#####QC_PASS n=3 desc=C3 Agresti-Coull computed by ALL
+1076       %qc_check_eq(actual=&c3ex., expect=1, desc=C3 Exact computed by ALL);
+#####QC_PASS n=3 desc=C3 Exact computed by ALL
+1077       %qc_check_eq(actual=&c3je., expect=1, desc=C3 Jeffreys computed by ALL);
+#####QC_PASS n=3 desc=C3 Jeffreys computed by ALL
+1078       %qc_check_eq(actual=&c3wa., expect=1, desc=C3 Wald computed by ALL);
+#####QC_PASS n=3 desc=C3 Wald computed by ALL
+1079       %qc_check_eq(actual=&c3wi., expect=1, desc=C3 Wilson computed by ALL);
+#####QC_PASS n=3 desc=C3 Wilson computed by ALL
+1080       
+1081       /*----------------------------------------------------------------------------
+1082        * CASE 4 : SMETHOD=NONE - only the pairwise rate difference is produced
+1083        *--------------------------------------------------------------------------*/
+1084       %qc_case(desc=4 smethod NONE keeps only rate difference);
+#####QC_CASE n=4 desc=4 smethod NONE keeps only rate difference
+1085       %stat_rateci(data=rates, out=r4, by=study, class=trt, var=resp, level=%str('Y'),
+1086                    smethod=NONE, dmethod=WALD, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+10                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_CLASSPAIR 创建完成，有 2 行，2 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_DIFF1 有 2 个观测和 8 个变量。
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 变量 _pair_ 存在于输入数据集中，但在 I/O 语句选项中也已指定。
+      变量不会包括在任何输出数据集中。
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL1 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_RATECI_DIFF_MANUAL2 创建完成，有 2 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+11                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL2. 读取了 0 个观测
+      WHERE ((_s1_=0) and (_s2_=0)) or ((_s1_=_n1_) and (_s2_=_n2_));
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL3 有 0 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL3. 读取了 0 个观测
+NOTE: 数据集 WORK.R4 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R4. 读取了 2 个观测
+NOTE: 数据集 WORK.R4 有 2 个观测和 9 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_CLASSPAIR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_PAIRWISE (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1087       %qc_expect_nobs(ds=r4, expect=2, desc=C4 only the two difference rows);
+#####QC_PASS n=4 desc=C4 only the two difference rows
+1088       proc sql noprint;
+1089         select count(*) into :c4s from r4 where missing(ref_trt);
+1090         select count(*) into :c4d from r4
+1091           where trt='A' and ref_trt='B' and strip(put(_prop_,8.1))='-30.0';
+1092       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1093       %qc_check_eq(actual=&c4s., expect=0, desc=C4 no single sample rows);
+#####QC_PASS n=4 desc=C4 no single sample rows
+1094       %qc_check_eq(actual=&c4d., expect=1, desc=C4 rate difference still computed);
+#####QC_PASS n=4 desc=C4 rate difference still computed
+1095       
+1096       /*----------------------------------------------------------------------------
+1097        * CASE 5 : DMETHOD=NONE - only the single sample rate is produced
+1098        *--------------------------------------------------------------------------*/
+1099       %qc_case(desc=5 dmethod NONE keeps only single rate);
+#####QC_CASE n=5 desc=5 dmethod NONE keeps only single rate
+1100       %stat_rateci(data=rates, out=r5, by=study, class=trt, var=resp, level=%str('Y'),
+1101                    smethod=WALD, dmethod=NONE, debug=0);
+12                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 14 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 2 个观测
+NOTE: 数据集 WORK.R5 有 2 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R5. 读取了 2 个观测
+NOTE: 数据集 WORK.R5 有 2 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+13                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1102       %qc_expect_nobs(ds=r5, expect=2, desc=C5 only the two single sample rows);
+#####QC_PASS n=5 desc=C5 only the two single sample rows
+1103       proc sql noprint;
+1104         select count(*) into :c5n from dictionary.columns
+1105           where libname='WORK' and memname='R5' and upcase(name)='REF_TRT';
+1106         select count(*) into :c5v from r5
+1107           where trt='A' and strip(put(_prop_,8.1))='25.0'
+1108             and strip(put(_cl_l_,8.2))='6.02' and strip(put(_cl_u_,8.2))='43.98';
+1109       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1110       %qc_check_eq(actual=&c5n., expect=0, desc=C5 reference variable absent);
+#####QC_PASS n=5 desc=C5 reference variable absent
+1111       %qc_check_eq(actual=&c5v., expect=1, desc=C5 Wald rate limit of class A);
+#####QC_PASS n=5 desc=C5 Wald rate limit of class A
+1112       
+1113       /*----------------------------------------------------------------------------
+1114        * CASE 6 : six rate difference methods in one call
+1115        *--------------------------------------------------------------------------*/
+1116       %qc_case(desc=6 six rate difference methods in one call);
+#####QC_CASE n=6 desc=6 six rate difference methods in one call
+1117       %stat_rateci(data=rates, out=r6, by=study, class=trt, var=resp, level=%str('Y'),
+1118                    smethod=NONE, dmethod=WALD NEWCOMBE AC MN HA EXACT, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+14                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_CLASSPAIR 创建完成，有 2 行，2 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: The default method for EXACT RISKDIFF is now METHOD=SCORE. To use the previous default method (in SAS/STAT 14.2 and 
+      earlier releases), you can specify EXACT RISKDIFF(METHOD=NOSCORE).
+NOTE: 数据集 WORK.STAT_RATECI_DIFF1 有 12 个观测和 8 个变量。
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.77 秒
+      CPU 时间          0.76 秒
+      
+
+NOTE: 变量 _pair_ 存在于输入数据集中，但在 I/O 语句选项中也已指定。
+      变量不会包括在任何输出数据集中。
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF1. 读取了 12 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF2 有 12 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL1 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+15                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+NOTE: 表 WORK.STAT_RATECI_DIFF_MANUAL2 创建完成，有 2 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL2. 读取了 0 个观测
+      WHERE ((_s1_=0) and (_s2_=0)) or ((_s1_=_n1_) and (_s2_=_n2_));
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL3 有 0 个观测和 29 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF2. 读取了 12 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL3. 读取了 0 个观测
+NOTE: 数据集 WORK.R6 有 12 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R6. 读取了 12 个观测
+NOTE: 数据集 WORK.R6 有 12 个观测和 9 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_CLASSPAIR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_PAIRWISE (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1119       %qc_expect_nobs(ds=r6, expect=12, desc=C6 six methods for each ordered pair);
+#####QC_PASS n=6 desc=C6 six methods for each ordered pair
+1120       proc sql noprint;
+1121         select count(*) into :c6n from r6 where trt='A' and ref_trt='B';
+1122         select count(*) into :c6w from r6
+1123           where trt='A' and ref_trt='B' and _method_='Wald'
+1124             and strip(put(_cl_l_,8.2))='-58.91' and strip(put(_cl_u_,8.2))='-1.09';
+1125         select count(*) into :c6nc from r6
+1126           where trt='A' and ref_trt='B' and _method_='Newcombe'
+1127             and strip(put(_cl_l_,8.2))='-53.64' and strip(put(_cl_u_,8.2))='0.18';
+1128         select count(*) into :c6ac from r6
+1129           where trt='A' and ref_trt='B' and _method_='Agresti-Caffo'
+1130             and strip(put(_cl_l_,8.2))='-55.19' and strip(put(_cl_u_,8.2))='0.64';
+1131         select count(*) into :c6ha from r6
+1132           where trt='A' and ref_trt='B' and _method_='Hauck-Anderson'
+16                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+1133             and strip(put(_cl_l_,8.2))='-62.16' and strip(put(_cl_u_,8.2))='2.16';
+1134         select count(*) into :c6mn from r6
+1135           where trt='A' and ref_trt='B' and _method_='Miettinen-Nurminen'
+1136             and strip(put(_cl_l_,8.2))='-55.69' and strip(put(_cl_u_,8.2))='0.76';
+1137       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1138       %qc_check_eq(actual=&c6n., expect=6, desc=C6 six methods for pair A versus B);
+#####QC_PASS n=6 desc=C6 six methods for pair A versus B
+1139       %qc_check_eq(actual=&c6w., expect=1, desc=C6 Wald difference limit);
+#####QC_PASS n=6 desc=C6 Wald difference limit
+1140       %qc_check_eq(actual=&c6nc., expect=1, desc=C6 Newcombe difference limit);
+#####QC_PASS n=6 desc=C6 Newcombe difference limit
+1141       %qc_check_eq(actual=&c6ac., expect=1, desc=C6 Agresti-Caffo difference limit);
+#####QC_PASS n=6 desc=C6 Agresti-Caffo difference limit
+1142       %qc_check_eq(actual=&c6ha., expect=1, desc=C6 Hauck-Anderson difference limit);
+#####QC_PASS n=6 desc=C6 Hauck-Anderson difference limit
+1143       %qc_check_eq(actual=&c6mn., expect=1, desc=C6 Miettinen-Nurminen difference limit);
+#####QC_PASS n=6 desc=C6 Miettinen-Nurminen difference limit
+1144       
+1145       /*----------------------------------------------------------------------------
+1146        * CASE 7 : three class levels produce every ordered pair
+1147        *--------------------------------------------------------------------------*/
+1148       %qc_case(desc=7 three class levels produce six ordered pairs);
+#####QC_CASE n=7 desc=7 three class levels produce six ordered pairs
+1149       data rates3;
+1150         length subj $12 study $2 trt $1 resp $1;
+1151         retain _k 0;
+1152         input study $ trt $ resp $ n;
+1153         do i=1 to n;
+1154           _k+1;
+1155           subj=cats(trt,_k);
+1156           output;
+1157         end;
+1158         drop n i;
+1159       datalines;
+
+NOTE: 数据集 WORK.RATES3 有 30 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1166       ;
+1167       run;
+1168       %stat_rateci(data=rates3, out=r7, by=study, class=trt, var=resp, level=%str('Y'),
+1169                    smethod=NONE, dmethod=WALD, debug=0);
+
+NOTE: 从数据集 WORK.RATES3. 读取了 30 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES3. 读取了 30 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 30 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+17                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 6 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_CLASSPAIR 创建完成，有 6 行，2 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 6 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 24 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 24 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 24 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_DIFF1 有 6 个观测和 8 个变量。
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 24 个观测
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 变量 _pair_ 存在于输入数据集中，但在 I/O 语句选项中也已指定。
+      变量不会包括在任何输出数据集中。
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF1. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF2 有 6 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+18                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL1 有 3 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_RATECI_DIFF_MANUAL2 创建完成，有 6 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL2. 读取了 0 个观测
+      WHERE ((_s1_=0) and (_s2_=0)) or ((_s1_=_n1_) and (_s2_=_n2_));
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL3 有 0 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF2. 读取了 6 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL3. 读取了 0 个观测
+NOTE: 数据集 WORK.R7 有 6 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R7. 读取了 6 个观测
+NOTE: 数据集 WORK.R7 有 6 个观测和 9 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_CLASSPAIR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_PAIRWISE (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1170       %qc_expect_nobs(ds=r7, expect=6, desc=C7 six ordered pairs for three classes);
+#####QC_PASS n=7 desc=C7 six ordered pairs for three classes
+1171       data _null_;
+1172         length _s $60;
+1173         do until(_e);
+1174           set r7 end=_e;
+19                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+1175           _s=catx(' ', _s, cats(trt,ref_trt));
+1176         end;
+1177         call symputx('c7seq', _s);
+1178       run;
+
+NOTE: 从数据集 WORK.R7. 读取了 6 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1179       %let c7exp=AB AC BA BC CA CB;
+1180       %qc_check_eq(actual=&c7seq., expect=&c7exp., desc=C7 every ordered class pair present);
+#####QC_PASS n=7 desc=C7 every ordered class pair present
+1181       proc sql noprint;
+1182         select count(*) into :c7m from r7 where _method_='Wald';
+1183       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1184       %qc_check_eq(actual=&c7m., expect=6, desc=C7 one Wald row per ordered pair);
+#####QC_PASS n=7 desc=C7 one Wald row per ordered pair
+1185       
+1186       /*----------------------------------------------------------------------------
+1187        * CASE 8 : BY= variable with two levels (single sample rate only)
+1188        *--------------------------------------------------------------------------*/
+1189       %qc_case(desc=8 two BY levels single sample rate);
+#####QC_CASE n=8 desc=8 two BY levels single sample rate
+1190       %stat_rateci(data=rates, out=r8, by=sex, class=trt, var=resp, level=%str('Y'),
+1191                    smethod=WALD, dmethod=NONE, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 8 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+20                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 4 个观测和 14 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 4 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 4 个观测
+NOTE: 数据集 WORK.R8 有 4 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R8. 读取了 4 个观测
+NOTE: 数据集 WORK.R8 有 4 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1192       %qc_expect_nobs(ds=r8, expect=4, desc=C8 one row per BY and CLASS combination);
+#####QC_PASS n=8 desc=C8 one row per BY and CLASS combination
+1193       proc sql noprint;
+1194         select count(*) into :c8a from r8
+1195           where sex='F' and trt='A' and strip(put(_prop_,8.1))='20.0'
+1196             and strip(put(_cl_u_,8.2))='44.79';
+1197         select count(*) into :c8b from r8
+1198           where sex='F' and trt='B' and strip(put(_prop_,8.1))='50.0'
+1199             and strip(put(_cl_l_,8.2))='19.01' and strip(put(_cl_u_,8.2))='80.99';
+1200         select count(*) into :c8c from r8
+1201           where sex='M' and trt='A' and strip(put(_prop_,8.1))='30.0'
+1202             and strip(put(_cl_l_,8.2))='1.60' and strip(put(_cl_u_,8.2))='58.40';
+1203         select count(*) into :c8d from r8
+1204           where sex='M' and trt='B' and strip(put(_prop_,8.1))='60.0'
+1205             and strip(put(_cl_l_,8.2))='29.64' and strip(put(_cl_u_,8.2))='90.36';
+1206       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+21                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+1207       %qc_check_eq(actual=&c8a., expect=1, desc=C8 female class A rate);
+#####QC_PASS n=8 desc=C8 female class A rate
+1208       %qc_check_eq(actual=&c8b., expect=1, desc=C8 female class B rate);
+#####QC_PASS n=8 desc=C8 female class B rate
+1209       %qc_check_eq(actual=&c8c., expect=1, desc=C8 male class A rate);
+#####QC_PASS n=8 desc=C8 male class A rate
+1210       %qc_check_eq(actual=&c8d., expect=1, desc=C8 male class B rate);
+#####QC_PASS n=8 desc=C8 male class B rate
+1211       
+1212       /*----------------------------------------------------------------------------
+1213        * CASE 9 : two BY variables
+1214        *--------------------------------------------------------------------------*/
+1215       %qc_case(desc=9 two BY variables);
+#####QC_CASE n=9 desc=9 two BY variables
+1216       %stat_rateci(data=rates, out=r9, by=study sex, class=trt, var=resp, level=%str('Y'),
+1217                    smethod=WALD, dmethod=NONE, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 8 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 4 个观测和 15 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 4 个观测和 10 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+22                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 4 个观测
+NOTE: 数据集 WORK.R9 有 4 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.R9. 读取了 4 个观测
+NOTE: 数据集 WORK.R9 有 4 个观测和 9 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1218       %qc_expect_nobs(ds=r9, expect=4, desc=C9 one row per combination of two BY variables);
+#####QC_PASS n=9 desc=C9 one row per combination of two BY variables
+1219       %qc_expect_var(ds=r9, var=study, type=C, desc=C9 first BY variable kept);
+#####QC_PASS n=9 desc=C9 first BY variable kept
+1220       %qc_expect_var(ds=r9, var=sex, type=C, desc=C9 second BY variable kept);
+#####QC_PASS n=9 desc=C9 second BY variable kept
+1221       proc sql noprint;
+1222         select count(*) into :c9 from r9
+1223           where study='S1' and sex='M' and trt='A' and strip(put(_prop_,8.1))='30.0';
+1224       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1225       %qc_check_eq(actual=&c9., expect=1, desc=C9 value under two BY variables);
+#####QC_PASS n=9 desc=C9 value under two BY variables
+1226       
+1227       /*----------------------------------------------------------------------------
+1228        * CASE 10 : custom format on VAR= - LEVEL= refers to the formatted value
+1229        *--------------------------------------------------------------------------*/
+1230       %qc_case(desc=10 custom format on analysis variable);
+#####QC_CASE n=10 desc=10 custom format on analysis variable
+1231       proc format;
+1232         value $ynfmt 'Y'='Positive' 'N'='Negative';
+NOTE: 输出格式 $YNFMT 已输出。
+1233       run;
+
+NOTE: “PROCEDURE FORMAT”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+1234       data fmtdata;
+1235         set rates;
+1236         format resp $ynfmt.;
+1237       run;
+23                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.FMTDATA 有 40 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1238       %stat_rateci(data=fmtdata, out=r10, by=study, class=trt, var=resp,
+1239                    level=%str('Positive'), smethod=WALD, dmethod=WALD, debug=0);
+
+NOTE: 从数据集 WORK.FMTDATA. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.FMTDATA. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_INDS. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_FREQ 有 4 个观测和 6 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 14 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_CLASSPAIR 创建完成，有 2 行，2 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+24                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_DIFF1 有 2 个观测和 8 个变量。
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 变量 _pair_ 存在于输入数据集中，但在 I/O 语句选项中也已指定。
+      变量不会包括在任何输出数据集中。
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL1 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_RATECI_DIFF_MANUAL2 创建完成，有 2 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL2. 读取了 0 个观测
+      WHERE ((_s1_=0) and (_s2_=0)) or ((_s1_=_n1_) and (_s2_=_n2_));
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL3 有 0 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+25                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL3. 读取了 0 个观测
+NOTE: 数据集 WORK.R10 有 4 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.R10. 读取了 4 个观测
+NOTE: 数据集 WORK.R10 有 4 个观测和 9 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_CLASSPAIR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_PAIRWISE (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1240       %qc_expect_nobs(ds=r10, expect=4, desc=C10 same structure with formatted level);
+#####QC_PASS n=10 desc=C10 same structure with formatted level
+1241       proc sql noprint;
+1242         select count(*) into :c10a from r10
+1243           where trt='A' and missing(ref_trt) and strip(put(_prop_,8.1))='25.0'
+1244             and strip(put(_cl_l_,8.2))='6.02' and strip(put(_cl_u_,8.2))='43.98';
+1245         select count(*) into :c10b from r10
+1246           where trt='A' and ref_trt='B' and strip(put(_prop_,8.1))='-30.0';
+1247       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1248       %qc_check_eq(actual=&c10a., expect=1, desc=C10 formatted level rate and limit);
+#####QC_PASS n=10 desc=C10 formatted level rate and limit
+1249       %qc_check_eq(actual=&c10b., expect=1, desc=C10 difference on formatted level);
+#####QC_PASS n=10 desc=C10 difference on formatted level
+1250       
+1251       /*----------------------------------------------------------------------------
+1252        * CASE 11 : missing response values are excluded from the denominator
+1253        *--------------------------------------------------------------------------*/
+1254       %qc_case(desc=11 missing response excluded from denominator);
+#####QC_CASE n=11 desc=11 missing response excluded from denominator
+1255       data miss;
+1256         set rates;
+1257         if subj in ('AM1','BF31') then resp='';
+1258       run;
+26                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.MISS 有 40 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1259       %stat_rateci(data=miss, out=r11, by=sex, class=trt, var=resp, level=%str('Y'),
+1260                    smethod=WALD, dmethod=NONE, debug=0);
+
+NOTE: 从数据集 WORK.MISS. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.MISS. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 8 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 4 个观测和 14 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 4 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 4 个观测
+NOTE: 数据集 WORK.R11 有 4 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+27                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R11. 读取了 4 个观测
+NOTE: 数据集 WORK.R11 有 4 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1261       %qc_expect_nobs(ds=r11, expect=4, desc=C11 all BY and CLASS combinations kept);
+#####QC_PASS n=11 desc=C11 all BY and CLASS combinations kept
+1262       proc sql noprint;
+1263         select count(*) into :c11a from r11
+1264           where sex='M' and trt='A' and strip(put(_prop_,8.2))='22.22'
+1265             and strip(put(_cl_u_,8.2))='49.38';
+1266         select count(*) into :c11b from r11
+1267           where sex='F' and trt='B' and strip(put(_prop_,8.2))='44.44'
+1268             and strip(put(_cl_l_,8.2))='11.98' and strip(put(_cl_u_,8.2))='76.91';
+1269         select count(*) into :c11c from r11
+1270           where sex='F' and trt='A' and strip(put(_prop_,8.1))='20.0';
+1271       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1272       %qc_check_eq(actual=&c11a., expect=1, desc=C11 missing subject excluded from class A);
+#####QC_PASS n=11 desc=C11 missing subject excluded from class A
+1273       %qc_check_eq(actual=&c11b., expect=1, desc=C11 missing subject excluded from class B);
+#####QC_PASS n=11 desc=C11 missing subject excluded from class B
+1274       %qc_check_eq(actual=&c11c., expect=1, desc=C11 unaffected class keeps original denominator);
+#####QC_PASS n=11 desc=C11 unaffected class keeps original denominator
+1275       
+1276       /*----------------------------------------------------------------------------
+1277        * CASE 12 : variable labels and lengths of the output
+1278        *--------------------------------------------------------------------------*/
+1279       %qc_case(desc=12 output labels and lengths);
+#####QC_CASE n=12 desc=12 output labels and lengths
+1280       %qc_expect_len(ds=r1, var=_method_, expect=200, desc=C12 method length 200);
+#####QC_PASS n=12 desc=C12 method length 200
+1281       %qc_expect_len(ds=r1, var=_source_, expect=200, desc=C12 source length 200);
+#####QC_PASS n=12 desc=C12 source length 200
+1282       %_qc_label(ds=r1, var=_prop_, mac=c12lp);
+
+NOTE: 数据集 WORK._QC_META 有 9 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 9 个观测
+28                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1283       %_qc_label(ds=r1, var=_cl_l_, mac=c12ll);
+
+NOTE: 数据集 WORK._QC_META 有 9 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 9 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1284       %_qc_label(ds=r1, var=_cl_u_, mac=c12lu);
+
+NOTE: 数据集 WORK._QC_META 有 9 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 9 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1285       %qc_check_eq(actual=&c12lp., expect=Rate and Rate Difference, desc=C12 label of rate);
+#####QC_PASS n=12 desc=C12 label of rate
+1286       %qc_check_eq(actual=&c12ll., expect=Confidence Limit Lower, desc=C12 label of lower limit);
+#####QC_PASS n=12 desc=C12 label of lower limit
+1287       %qc_check_eq(actual=&c12lu., expect=Confidence Limit Upper, desc=C12 label of upper limit);
+#####QC_PASS n=12 desc=C12 label of upper limit
+1288       
+1289       /*----------------------------------------------------------------------------
+1290        * CASE 13 : SALPHA / DALPHA drive the confidence level per row
+1291        *--------------------------------------------------------------------------*/
+1292       %qc_case(desc=13 SALPHA and DALPHA options);
+#####QC_CASE n=13 desc=13 SALPHA and DALPHA options
+1293       %stat_rateci(data=rates, out=r13, by=study, class=trt, var=resp, level=%str('Y'),
+1294                    smethod=WALD, dmethod=WALD, salpha=0.1, dalpha=0.2, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+29                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 14 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_CLASSPAIR 创建完成，有 2 行，2 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+30                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+
+NOTE: 数据集 WORK.STAT_RATECI_DIFF1 有 2 个观测和 8 个变量。
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 变量 _pair_ 存在于输入数据集中，但在 I/O 语句选项中也已指定。
+      变量不会包括在任何输出数据集中。
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL1 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_RATECI_DIFF_MANUAL2 创建完成，有 2 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL2. 读取了 0 个观测
+      WHERE ((_s1_=0) and (_s2_=0)) or ((_s1_=_n1_) and (_s2_=_n2_));
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL3 有 0 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL3. 读取了 0 个观测
+NOTE: 数据集 WORK.R13 有 4 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R13. 读取了 4 个观测
+NOTE: 数据集 WORK.R13 有 4 个观测和 9 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_CLASSPAIR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL2 (memtype=DATA)。
+31                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_PAIRWISE (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1295       proc sql noprint;
+1296         select count(*) into :c13a from r13
+1297           where trt='A' and missing(ref_trt) and strip(put(_alpha_,8.2))='0.10'
+1298             and strip(put(_cl_l_,8.2))='9.07' and strip(put(_cl_u_,8.2))='40.93';
+1299         select count(*) into :c13b from r13
+1300           where trt='A' and ref_trt='B' and strip(put(_alpha_,8.2))='0.20'
+1301             and strip(put(_cl_l_,8.2))='-48.90' and strip(put(_cl_u_,8.2))='-11.10';
+1302       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1303       %qc_check_eq(actual=&c13a., expect=1, desc=C13 single rate uses SALPHA);
+#####QC_PASS n=13 desc=C13 single rate uses SALPHA
+1304       %qc_check_eq(actual=&c13b., expect=1, desc=C13 difference uses DALPHA);
+#####QC_PASS n=13 desc=C13 difference uses DALPHA
+1305       
+1306       /*----------------------------------------------------------------------------
+1307        * CASE 14 : library qualified OUT=
+1308        *--------------------------------------------------------------------------*/
+1309       %qc_case(desc=14 library qualified OUT);
+#####QC_CASE n=14 desc=14 library qualified OUT
+1310       libname qcstat "&_QCRES_.";
+NOTE: 已成功分配逻辑库引用名“QCSTAT”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_results
+1311       %stat_rateci(data=rates, out=qcstat.rateci_lib, by=study, class=trt, var=resp,
+1312                    level=%str('Y'), smethod=WALD, dmethod=WALD, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+32                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 14 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_CLASSPAIR 创建完成，有 2 行，2 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_DIFF1 有 2 个观测和 8 个变量。
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+33                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 变量 _pair_ 存在于输入数据集中，但在 I/O 语句选项中也已指定。
+      变量不会包括在任何输出数据集中。
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL1 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_RATECI_DIFF_MANUAL2 创建完成，有 2 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL2. 读取了 0 个观测
+      WHERE ((_s1_=0) and (_s2_=0)) or ((_s1_=_n1_) and (_s2_=_n2_));
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL3 有 0 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL3. 读取了 0 个观测
+NOTE: 数据集 QCSTAT.RATECI_LIB 有 4 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 QCSTAT.RATECI_LIB. 读取了 4 个观测
+NOTE: 数据集 QCSTAT.RATECI_LIB 有 4 个观测和 9 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_CLASSPAIR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_PAIRWISE (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+34                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1313       %qc_expect_ds(ds=qcstat.rateci_lib, desc=C14 library qualified output exists);
+#####QC_PASS n=14 desc=C14 library qualified output exists
+1314       %qc_expect_nobs(ds=qcstat.rateci_lib, expect=4, desc=C14 library qualified output rows);
+#####QC_PASS n=14 desc=C14 library qualified output rows
+1315       %qc_expect_var(ds=qcstat.rateci_lib, var=_prop_, type=N, desc=C14 output structure kept);
+#####QC_PASS n=14 desc=C14 output structure kept
+1316       
+1317       /*----------------------------------------------------------------------------
+1318        * CASE 15 : DEBUG= keeps or deletes the intermediate datasets
+1319        *--------------------------------------------------------------------------*/
+1320       %qc_case(desc=15 DEBUG keeps intermediate datasets);
+#####QC_CASE n=15 desc=15 DEBUG keeps intermediate datasets
+1321       %stat_rateci(data=rates, out=r15, by=study, class=trt, var=resp, level=%str('Y'),
+1322                    smethod=WALD, dmethod=WALD, debug=1);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.04 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 14 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+35                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_CLASSPAIR 创建完成，有 2 行，2 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_DIFF1 有 2 个观测和 8 个变量。
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 变量 _pair_ 存在于输入数据集中，但在 I/O 语句选项中也已指定。
+      变量不会包括在任何输出数据集中。
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL1 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_RATECI_DIFF_MANUAL2 创建完成，有 2 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.07 秒
+36                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL2. 读取了 0 个观测
+      WHERE ((_s1_=0) and (_s2_=0)) or ((_s1_=_n1_) and (_s2_=_n2_));
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL3 有 0 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL3. 读取了 0 个观测
+NOTE: 数据集 WORK.R15 有 4 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R15. 读取了 4 个观测
+NOTE: 数据集 WORK.R15 有 4 个观测和 9 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1323       %qc_expect_ds(ds=stat_rateci_freq, desc=C15 frequency dataset kept when DEBUG=1);
+#####QC_PASS n=15 desc=C15 frequency dataset kept when DEBUG=1
+1324       %qc_expect_ds(ds=stat_rateci_single2, desc=C15 single sample dataset kept when DEBUG=1);
+#####QC_PASS n=15 desc=C15 single sample dataset kept when DEBUG=1
+1325       %qc_expect_ds(ds=stat_rateci_diff2, desc=C15 difference dataset kept when DEBUG=1);
+#####QC_PASS n=15 desc=C15 difference dataset kept when DEBUG=1
+1326       %stat_rateci(data=rates, out=r15b, by=study, class=trt, var=resp, level=%str('Y'),
+1327                    smethod=WALD, dmethod=WALD, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+37                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 14 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_CLASSPAIR 创建完成，有 2 行，2 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_DIFF1 有 2 个观测和 8 个变量。
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 变量 _pair_ 存在于输入数据集中，但在 I/O 语句选项中也已指定。
+      变量不会包括在任何输出数据集中。
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF1. 读取了 2 个观测
+38                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: 数据集 WORK.STAT_RATECI_DIFF2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL1 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_RATECI_DIFF_MANUAL2 创建完成，有 2 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL2. 读取了 0 个观测
+      WHERE ((_s1_=0) and (_s2_=0)) or ((_s1_=_n1_) and (_s2_=_n2_));
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL3 有 0 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL3. 读取了 0 个观测
+NOTE: 数据集 WORK.R15B 有 4 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R15B. 读取了 4 个观测
+NOTE: 数据集 WORK.R15B 有 4 个观测和 9 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_CLASSPAIR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_PAIRWISE (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+39                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+1328       proc sql noprint;
+1329         select count(*) into :c15x from dictionary.tables
+1330           where libname='WORK' and memname like 'STAT_RATECI%';
+1331       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1332       %qc_check_eq(actual=&c15x., expect=0, desc=C15 intermediate datasets removed when DEBUG=0);
+#####QC_PASS n=15 desc=C15 intermediate datasets removed when DEBUG=0
+1333       
+1334       /*----------------------------------------------------------------------------
+1335        * CASE 16 : LEVEL= selects the other response level (complementary rate)
+1336        *--------------------------------------------------------------------------*/
+1337       %qc_case(desc=16 LEVEL option selects the other level);
+#####QC_CASE n=16 desc=16 LEVEL option selects the other level
+1338       %stat_rateci(data=rates, out=r16, by=sex, class=trt, var=resp, level=%str('N'),
+1339                    smethod=WALD, dmethod=NONE, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 8 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 4 个观测和 14 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 4 个观测和 9 个变量。
+40                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 4 个观测
+NOTE: 数据集 WORK.R16 有 4 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R16. 读取了 4 个观测
+NOTE: 数据集 WORK.R16 有 4 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1340       %qc_expect_nobs(ds=r16, expect=4, desc=C16 four rows for level N);
+#####QC_PASS n=16 desc=C16 four rows for level N
+1341       proc sql noprint;
+1342         select count(*) into :c16a from r16
+1343           where sex='F' and trt='A' and strip(put(_prop_,8.1))='80.0'
+1344             and strip(put(_cl_l_,8.2))='55.21' and strip(put(_cl_u_,8.2))='100.00';
+1345         select count(*) into :c16b from r16
+1346           where sex='F' and trt='B' and strip(put(_prop_,8.1))='50.0';
+1347         select count(*) into :c16c from r16
+1348           where sex='M' and trt='A' and strip(put(_prop_,8.1))='70.0'
+1349             and strip(put(_cl_l_,8.2))='41.60' and strip(put(_cl_u_,8.2))='98.40';
+1350         select count(*) into :c16d from r16
+1351           where sex='M' and trt='B' and strip(put(_prop_,8.1))='40.0';
+1352       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1353       %qc_check_eq(actual=&c16a., expect=1, desc=C16 female class A at level N);
+#####QC_PASS n=16 desc=C16 female class A at level N
+1354       %qc_check_eq(actual=&c16b., expect=1, desc=C16 female class B at level N);
+#####QC_PASS n=16 desc=C16 female class B at level N
+1355       %qc_check_eq(actual=&c16c., expect=1, desc=C16 male class A at level N);
+#####QC_PASS n=16 desc=C16 male class A at level N
+1356       %qc_check_eq(actual=&c16d., expect=1, desc=C16 male class B at level N);
+#####QC_PASS n=16 desc=C16 male class B at level N
+1357       
+1358       /*----------------------------------------------------------------------------
+1359        * CASE 17 : numeric CLASS variable (numeric WHERE= branch for the pairs)
+1360        *--------------------------------------------------------------------------*/
+1361       %qc_case(desc=17 numeric CLASS variable);
+#####QC_CASE n=17 desc=17 numeric CLASS variable
+1362       data numcls;
+41                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+1363         set rates;
+1364         trtn=ifn(trt='A',1,2);
+1365         drop trt;
+1366       run;
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.NUMCLS 有 40 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1367       %stat_rateci(data=numcls, out=r17, by=study, class=trtn, var=resp, level=%str('Y'),
+1368                    smethod=WALD, dmethod=WALD, debug=0);
+
+NOTE: 从数据集 WORK.NUMCLS. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.NUMCLS. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 14 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+42                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_CLASSPAIR 创建完成，有 2 行，2 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_DIFF1 有 2 个观测和 8 个变量。
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 变量 _pair_ 存在于输入数据集中，但在 I/O 语句选项中也已指定。
+      变量不会包括在任何输出数据集中。
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF2 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL1 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_RATECI_DIFF_MANUAL2 创建完成，有 2 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL2. 读取了 0 个观测
+43                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      WHERE ((_s1_=0) and (_s2_=0)) or ((_s1_=_n1_) and (_s2_=_n2_));
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL3 有 0 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL3. 读取了 0 个观测
+NOTE: 数据集 WORK.R17 有 4 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.R17. 读取了 4 个观测
+NOTE: 数据集 WORK.R17 有 4 个观测和 9 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_CLASSPAIR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_PAIRWISE (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1369       %qc_expect_nobs(ds=r17, expect=4, desc=C17 numeric class accepted);
+#####QC_PASS n=17 desc=C17 numeric class accepted
+1370       %qc_expect_var(ds=r17, var=trtn, type=N, desc=C17 numeric class variable kept);
+#####QC_PASS n=17 desc=C17 numeric class variable kept
+1371       %qc_expect_var(ds=r17, var=ref_trtn, type=N, desc=C17 numeric reference variable created);
+#####QC_PASS n=17 desc=C17 numeric reference variable created
+1372       proc sql noprint;
+1373         select count(*) into :c17a from r17
+1374           where trtn=1 and missing(ref_trtn) and strip(put(_prop_,8.1))='25.0';
+1375         select count(*) into :c17d from r17
+1376           where trtn=1 and ref_trtn=2 and strip(put(_prop_,8.1))='-30.0';
+1377       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1378       %qc_check_eq(actual=&c17a., expect=1, desc=C17 numeric class rate);
+#####QC_PASS n=17 desc=C17 numeric class rate
+1379       %qc_check_eq(actual=&c17d., expect=1, desc=C17 numeric class difference);
+#####QC_PASS n=17 desc=C17 numeric class difference
+1380       
+1381       %qc_end;
+44                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+#####QC_RESULT prog=stat_rateci_test macro=stat_rateci STATUS=PASS ncase=17 npass=80 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          3.02 秒
+      CPU 时间          2.10 秒
+      

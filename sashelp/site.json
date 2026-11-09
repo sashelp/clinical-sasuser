@@ -1,0 +1,191 @@
+{
+  "site": {
+    "name": "SAS/HELP",
+    "home": "index.html"
+  },
+  "macroSource": "../codehub/macro/dev",
+  "sections": {
+    "macrohub": {
+      "label": "宏程序库",
+      "home": "index.html",
+      "css": "assets/macrohub.css",
+      "headerLinks": [
+        { "text": "宏目录", "href": "index.html" },
+        { "text": "文档", "href": "" },
+        { "text": "开发约定", "href": "conventions.html" }
+      ],
+      "extras": [ "conventions" ],
+      "conventionsSource": "design/macrohub-conventions.md",
+      "categories": [
+        {
+          "name": "变量操作",
+          "items": [
+            { "slug": "var_attr" },
+            { "slug": "var_coexist" },
+            { "slug": "var_exist" },
+            { "slug": "var_nlevel" }
+          ]
+        },
+        {
+          "name": "数据集操作",
+          "items": [
+            { "slug": "ds_attr" },
+            { "slug": "ds_num2char" },
+            { "slug": "ds_varlist" },
+            { "slug": "ds_zipvarlen" }
+          ]
+        },
+        {
+          "name": "逻辑库操作",
+          "items": [
+            { "slug": "lib_memlist" },
+            { "slug": "lib_zipvarlen" }
+          ]
+        },
+        {
+          "name": "目录操作",
+          "items": [
+            { "slug": "dir_attr" },
+            { "slug": "dir_exist" },
+            { "slug": "dir_memlist" }
+          ]
+        },
+        {
+          "name": "文件操作",
+          "items": [
+            { "slug": "file_attr" }
+          ]
+        },
+        {
+          "name": "CDISC 标准",
+          "items": [
+            { "slug": "sdtm_epoch" },
+            { "slug": "sdtm_fulldomain" },
+            { "slug": "sdtm_lobxfl" }
+          ]
+        },
+        {
+          "name": "统计分析",
+          "items": [
+            { "slug": "stat_countocc" },
+            { "slug": "stat_rateci" },
+            { "slug": "stat_summaryc" },
+            { "slug": "stat_summaryn" }
+          ]
+        },
+        {
+          "name": "开源宏",
+          "items": [
+            { "slug": "for" },
+            { "slug": "nodup" },
+            { "slug": "parmv" },
+            { "slug": "prefix" },
+            { "slug": "range" },
+            { "slug": "seplist" },
+            { "slug": "sorted" },
+            { "slug": "splitmac" },
+            { "slug": "suffix" },
+            { "slug": "suffix_counter" },
+            { "slug": "windex" },
+            { "slug": "words" }
+          ]
+        }
+      ]
+    },
+    "knowledgebase": {
+      "label": "知识库",
+      "home": "index.html",
+      "css": "assets/knowledgebase.css",
+      "headerLinks": [
+        { "text": "知识目录", "href": "index.html" },
+        { "text": "文档", "href": "" },
+        { "text": "开发约定", "href": "conventions.html" }
+      ],
+      "extras": [ "conventions" ],
+      "conventionsSource": "design/knowledgebase-conventions.md",
+      "search": {
+        "placeholder": "搜索知识库：问题、结论或关键词…",
+        "label": "搜索知识库"
+      },
+      "categories": [
+        {
+          "name": "SDTM",
+          "items": [
+            { "slug": "orres_stat_empty", "label": "--ORRES / --STAT 双空" },
+            { "slug": "variable_labels", "label": "变量标签要不要一字不差" },
+            { "slug": "add_variable", "label": "能不能加变量" },
+            { "slug": "qnam_domain_code", "label": "QNAM 要不要带域代码" },
+            { "slug": "iso8601_interval", "label": "ISO8601 区间格式" },
+            { "slug": "physical_exam_performed", "label": "体检做没做" },
+            { "slug": "site_transfer", "label": "转中心怎么记" },
+            { "slug": "prior_ongo_timing", "label": "PRIOR / ONGO 映射" },
+            { "slug": "sdtm_and_cdash", "label": "SDTM 与 CDASH" },
+            { "slug": "study_subject_term", "label": "subject 还是 participant" }
+          ]
+        },
+        {
+          "name": "ADaM",
+          "items": [
+            { "slug": "sdtm_var_in_adam", "label": "SDTM 变量保留" },
+            { "slug": "population_flags", "label": "population flags" },
+            { "slug": "multiple_participations", "label": "多次参与（ADPL）" },
+            { "slug": "adam_criteria_vars", "label": "准则变量怎么选" },
+            { "slug": "adam_documents", "label": "ADaM 文档怎么配" }
+          ]
+        },
+        {
+          "name": "临床提交",
+          "items": [
+            { "slug": "reproducibility", "label": "程序文件可复现" },
+            { "slug": "external_macro", "label": "避免外部宏调用" }
+          ]
+        },
+        {
+          "name": "SAS 编程",
+          "items": [
+            { "slug": "macro_comments", "label": "宏里的注释" },
+            { "slug": "numeric_precision", "label": "浮点数精度" },
+            { "slug": "contrast_estimate", "label": "CONTRAST / ESTIMATE 系数" },
+            { "slug": "interval_overlap", "label": "区间重叠怎么判" },
+            { "slug": "special_symbols", "label": "图里的特殊符号" },
+            { "slug": "split_200_bytes", "label": "200 字节切变量" },
+            { "slug": "rtf_two_fonts", "label": "宋体 + 新罗马" }
+          ]
+        },
+        {
+          "name": "统计分析",
+          "items": [
+            { "slug": "rate_ratio", "label": "率与率比" },
+            { "slug": "relative_risk", "label": "相对风险" },
+            { "slug": "difference_in_differences", "label": "双重差分" }
+          ]
+        },
+        {
+          "name": "性能与调优",
+          "items": [
+            { "slug": "hardware_tuning", "label": "硬件与系统调优" },
+            { "slug": "performance_monitoring", "label": "性能问题怎么查" },
+            { "slug": "mixed_glimmix_memory", "label": "MIXED / GLIMMIX 太慢" }
+          ]
+        },
+        {
+          "name": "客户端",
+          "items": [
+            { "slug": "eg_dual_monitor", "label": "EG 双显示器问题" }
+          ]
+        }
+      ]
+    },
+    "gallery": {
+      "label": "Gallery",
+      "home": "index.html",
+      "css": "assets/gallery_index.css",
+      "headerLinks": [
+        { "text": "示例", "href": "index.html" },
+        { "text": "资源", "href": "" },
+        { "text": "文档", "href": "" }
+      ],
+      "staticNav": true
+    }
+  }
+}

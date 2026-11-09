@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>PRIOR / ONGO 映射 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html" class="current">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SDTM</p>
+<h2>CDASH 里的 PRIOR / ONGO，怎么落到 SDTM 的相对时间变量上？</h2>
+<p class="subtitle">有日志的起止日期或访视，就用 --STTPT/--STRTPT 和 --ENTPT/--ENRTPT，不用 --STRF/--ENRF；没有日期才退回 --STRF/--ENRF。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>分两种情况。日志页面（比如既往用药、病史）如果记录了<b>开始和结束的日期或访视</b>，就用 <code>--STTPT</code> + <code>--STRTPT</code> 和 <code>--ENTPT</code> + <code>--ENRTPT</code>，把 PRIOR / ONGO 填进“相对参照时间点”的那两个变量里，<b>这时不需要也不应该用 --STRF/--ENRF</b>。如果起止日期和访视都没记，才退回用 <code>--STRF</code> 和 <code>--ENRF</code>，按日志采集期和研究参照期的位置关系取值。</p>
+</div>
+
+<h3 id="case1">情况一：日志的起止有记录</h3>
+<p>这是最理想的情况，四个变量一一对应：</p>
+
+<table class="kb-table">
+<col width="30%" />
+<col width="26%" />
+<col width="44%" />
+<thead>
+<tr><th>采到的信息</th><th>SDTM 变量</th><th>说明</th></tr>
+</thead>
+<tbody>
+<tr><td>日志开始那天的日期或访视</td><td>--STTPT</td><td>Start Time Point，具体的时间点</td></tr>
+<tr><td>开始时间相对参照期是“之前”还是“进行中”</td><td>--STRTPT</td><td>Start Relative to Reference Time Point，填 PRIOR 或 ONGOING</td></tr>
+<tr><td>日志结束那天的日期或访视</td><td>--ENTPT</td><td>End Time Point</td></tr>
+<tr><td>结束时间相对参照期的位置</td><td>--ENRTPT</td><td>End Relative to Reference Time Point</td></tr>
+</tbody>
+</table>
+
+<p>为什么这时候不用 <code>--STRF</code>/<code>--ENRF</code>？因为这两个变量是“没有具体时间点”时的近似表达，一旦有了确切日期，再同时填 STRF 和 STTPT，审阅的人会问哪个为准。</p>
+
+<h3 id="case2">情况二：只有 PRIOR / ONGO 的勾选</h3>
+<p>实际数据里，日志的起止日期或访视经常没记。这时才用 <code>--STRF</code>（开始相对参照期的位置）和 <code>--ENRF</code>（结束相对参照期的位置）。</p>
+<p>参照期就是 DM 里的 <code>RFSTDTC</code> 到 <code>RFENDTC</code> 这一段。判断依据是：日志采集的那段时间，和参照期比，是落在前面、里面、还是后面。</p>
+
+<h3 id="cases">五种情形对照</h3>
+<p>下面这张表来自原文的示意图。左列是日志起始时采集到的 CDASH 值，右列是日志结束时采集到的值。</p>
+
+<table class="kb-table">
+<col width="8%" />
+<col width="38%" />
+<col width="54%" />
+<thead>
+<tr><th>情形</th><th>日志采集期与参照期的关系</th><th>怎么填</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>完全重合</td>
+<td>PRIOR=Y → STRF="BEFORE"；ONGO=Y → ENRF="AFTER"；ONGO=N → ENRF="BEFORE"</td>
+</tr>
+<tr>
+<td>2</td>
+<td>只在参照期开始时采集一次（比如入组时的病史）</td>
+<td>PRIOR=Y → STRF="BEFORE"；ONGO=N → ENRF="BEFORE"；ONGO=Y → ENRF="DURING/AFTER"</td>
+</tr>
+<tr>
+<td>3</td>
+<td>起点在参照期之前，终点在参照期之后</td>
+<td>PRIOR=Y → STRF="BEFORE"；ONGO=Y → ENRF="AFTER"；ONGO=N → ENRF="BEFORE"</td>
+</tr>
+<tr>
+<td>4</td>
+<td>起点在参照期之前，终点在参照期结束之前</td>
+<td>PRIOR=Y → STRF="BEFORE"；ONGO=N → ENRF="BEFORE"；ONGO=Y → 先等后续更新，最终可能是 DURING 或 AFTER，填 "DURING/AFTER"</td>
+</tr>
+<tr>
+<td>5</td>
+<td>起点在参照期之后</td>
+<td>PRIOR 无法准确翻译成 STRF 或 ENRF</td>
+</tr>
+</tbody>
+</table>
+
+<p>表里出现的 <code>BEFORE</code>、<code>DURING</code>、<code>AFTER</code>、<code>DURING/AFTER</code> 都是 --STRF/--ENRF 的受控术语取值。<code>DURING/AFTER</code> 这个看起来别扭的值，就是为“当时还确定不了是期内还是期后”准备的。</p>
+
+<h3 id="case5">第 5 种情形为什么麻烦</h3>
+<p>日志在参照期之后才开始，意味着起始时间点在参照期后面。可 CDASH 的 PRIOR 只回答“是不是之前”，回答不了“之后”这件事，所以翻译不过去。</p>
+<p>好在它很少见：日志数据几乎总是在研究参照期开始之前就开始采集了。真碰上，别硬凑一个值，在 define.xml 或 reviewer guide 里说明，或者回到原始数据确认时间点。</p>
+
+<h3 id="practice">实操建议</h3>
+<ul class="notes">
+<li><b>先确认参照期。</b>不同研究对 RFSTDTC 的定义可能不一样（首次给药？知情同意？），填之前先对齐，否则整批 STRF/ENRF 都会偏。</li>
+<li><b>不要两套都填。</b>有了 --STTPT 就别再给 --STRF，重复表达反而制造歧义。</li>
+<li><b>ONGO 的更新要有机制。</b>情形 4 里“等后续更新”意味着数据截止时可能还没定论，需要在数据管理流程里留一个回头更新的动作。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>CDISC, <a href="https://www.cdisc.org/kb/articles/translating-cdash-prior-and-ongo-sdtm-relative-timing-variables" target="_blank" rel="noopener"><i>Translating CDASH "PRIOR" and "ONGO" to SDTM relative timing variables</i></a>（CDISC 知识库文章，cdisc.org/kb）。<span class="src">两种情况的变量选择、五种情形的对照图（含 DURING/AFTER 的用法）、第 5 种情形的问题。</span></li>
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/sdtmig" target="_blank" rel="noopener"><i>SDTMIG</i></a>。<span class="src">--STTPT、--STRTPT、--ENTPT、--ENRTPT、--STRF、--ENRF 的变量定义与受控术语。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

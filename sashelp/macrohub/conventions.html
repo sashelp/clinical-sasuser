@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>开发约定 - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+<body>
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div><div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div><div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / 开发约定</p>
+<h2>开发约定</h2>
+<hr/>
+<div class="detail doc">
+<p>本文约定本库自研宏程序的写法。<code>opensource/</code> 目录下的宏是引入或独立维护的第三方代码，不适用本文的统一风格要求，保持原样即可。</p>
+
+<h3>1. 适用范围与命名</h3>
+
+<ul>
+<li>目标运行环境为 <strong>SAS 9.4M7</strong>；不要使用更高版本才有的语法或选项。
+</li>
+<li>宏名用小写、单词间用下划线分隔，含义要能看出对象和动作，例如 <code>ds_zipvarlen</code>、<code>stat_summaryn</code>。
+</li>
+<li>文件按主题放在 <code>dev/&lt;主题&gt;/</code> 下：变量 <code>var/</code>、数据集 <code>ds/</code>、逻辑库 <code>lib/</code>、目录 <code>dir/</code>、文件 <code>file/</code>、CDISC <code>cdisc/</code>、统计 <code>stat/</code>、开源 <code>opensource/</code>。
+</li>
+<li>一个文件只放一个宏；文件名与宏名一致（<code>&lt;宏名&gt;.sas</code>）。
+</li>
+<li>宏声明可选用 <code>des=</code> 描述，方便在 SAS 会话里查看用途。
+</li>
+</ul>
+
+<h3>2. 头部注释块</h3>
+
+<p>每个宏文件必须以块注释开头，字段顺序固定，缺项写 <code>NULL</code> 或 <code>none</code>：</p>
+
+<pre class="code">/*
+*Brief      : 一句话说明宏做什么
+*Param(Req) : (DATA=)   输入数据集名
+*Param(Opt) : (OUT=&amp;DATA.)  输出数据集名
+*Detail     : 返回值或输出数据集的细节、排序、保留策略
+*Note       : 使用前提、边界条件、缺失值约定
+*Usage      : 示例见站点的用法示例
+*Dependency : %var_exist, %var_coexist
+*Version    : SAS 9.4M7
+*History    : YYYY-MM-DD, Author, Original version
+*History    : YYYY-MM-DD, Author, 本次修改内容
+*/</pre>
+
+<p>约定：</p>
+
+<ul>
+<li>参数注释必须与实际默认值和可接受取值一致；枚举型参数在注释里列出全部合法值。
+</li>
+<li>续行与首字段左对齐，保持 <code>*字段名</code> 起头，便于脚本解析。
+</li>
+<li><code>Dependency</code> 只写直接依赖的宏名，用 <code>%</code> 前缀、逗号分隔；没有依赖写 <code>NULL</code>。
+</li>
+<li><code>History</code> 每行一条，日期 <code>YYYY-MM-DD</code>，按时间从旧到新追加，内容写"改了什么、为什么"。
+</li>
+<li>头部注释是详情页"参数说明 / 注意事项 / 修订记录"的唯一依据，改代码必须同步改注释。
+</li>
+</ul>
+
+<h3>3. 宏体结构</h3>
+
+<p>宏体按编号分段，便于阅读和定位：</p>
+
+<ol>
+<li>
+</li>
+<li>
+</li>
+<li>
+</li>
+</ol>
+
+<p>其它要求：</p>
+
+<ul>
+<li>所有工作变量用 <code>%local</code> 声明，包括错误信息、文件句柄、循环变量；名字要能看出用途。
+</li>
+<li>不要用全局宏变量做中间状态；不要依赖调用者会话里的残留值。
+</li>
+<li>返回值的宏用 <code>&amp;result.</code> 作为最后一行；过程式宏不要"顺便"返回值。
+</li>
+</ul>
+
+<h3>4. 参数校验与错误处理</h3>
+
+<p>主处理开始前完成全部校验，顺序固定：</p>
+
+<ol>
+<li>
+</li>
+<li>
+</li>
+<li>
+</li>
+<li>
+</li>
+</ol>
+
+<p>统一错误路径：</p>
+
+<pre class="code">%let errtext=ERROR: Parameter DATA= not specified.;
+%exception:
+%if %bquote(&amp;errtext.)^=%str() %then %do;
+  %put &amp;errtext.;
+  %abort cancel;
+%end;</pre>
+
+<ul>
+<li>错误信息以 <code>ERROR:</code> 开头，写清楚是哪个参数、期望什么、实际得到什么。
+</li>
+<li>不要对非法输入静默取默认值，也不要吞掉失败；能失败的地方检查返回码，必要时用 <code>%sysfunc(sysmsg())</code> 把系统信息带出来。
+</li>
+<li>校验分为多个独立 <code>%if</code> 时，注意 <code>%else</code> 链会短路；需要全部报告时拆成独立判断。
+</li>
+<li>宏声明里用到 <code>in</code> 运算符时，必须加 <code>/minoperator</code> 选项。
+</li>
+</ul>
+
+<h3>5. 处理逻辑</h3>
+
+<ul>
+<li>优先用可读的 DATA 步 / PROC 步和 SAS 函数，不要生成难以维护的宏代码。
+</li>
+<li>宏值可能含特殊字符（引号、括号、逗号、空格）时，用 <code>%quote</code> / <code>%bquote</code> / <code>%qscan</code> / <code>%qsysfunc</code> 保护。
+</li>
+<li>输入数据集默认只读；只有文档明确允许时才覆盖输出。输出排序、保留变量、值映射都要在 <code>Detail</code> 里写清楚。
+</li>
+<li>按 BY 组处理前，显式按完整 BY 键排序，不要假设多个子集拼接后仍有序或仍交错。
+</li>
+<li>明确写出边界假设：唯一性要求、缺失值约定、ISO8601 不完整日期的处理方式。
+</li>
+<li>不要写死本机路径、libref 或目录；路径一律通过参数传入，或由调用方先分配逻辑库。
+</li>
+</ul>
+
+<h3>6. 清理与收尾</h3>
+
+<ul>
+<li>中间数据集统一用固定前缀的 WORK 名称，正常退出前删除：
+</li>
+</ul>
+
+<pre class="code">/*3. Cleanup and exit*/
+proc datasets mtype=data nowarn nolist;
+  delete &lt;中间数据集&gt;;
+quit;</pre>
+
+<ul>
+<li>用 <code>PROC DATASETS</code> 配合 <code>NOWARN</code> / <code>NOLIST</code>：没有中间数据集时不产生多余警告和日志。
+</li>
+<li>不留调试输出、临时格式、临时 fileref；出错退出前也要尽量释放已打开的资源。
+</li>
+<li>宏中途 <code>%abort cancel</code> 时，尽量保证已创建的中间数据集不会残留。
+</li>
+</ul>
+
+<h3>7. 依赖与复用</h3>
+
+<ul>
+<li>依赖的宏必须存在且已声明；构建站点时会按 <code>Dependency</code> 与宏体里的调用推导依赖闭包，漏声明会被提示。
+</li>
+<li>复用前先确认语义：<code>%var_exist</code> / <code>%var_coexist</code> / <code>%var_attr</code> 的 <code>DATA=</code> 只接受数据集，不支持视图。
+</li>
+<li>被依赖的宏必须能单独编译；不要在宏内部 <code>%include</code> 别的源文件。
+</li>
+</ul>
+
+<h3>8. 修订记录</h3>
+
+<ul>
+<li>每次改动追加一条 <code>*History</code>，同时更新站点详情页的"修订记录"表格，两处内容与日期必须一致。
+</li>
+<li>只做注释/文档修订时也要记录，写明"更新文档说明：……"。
+</li>
+<li>破坏性改动（改默认值、改输出结构、改参数含义）要在记录里明确写出影响。
+</li>
+</ul>
+
+<h3>9. 测试</h3>
+
+<ul>
+<li>每个宏在 <code>qc/&lt;主题&gt;/&lt;宏名&gt;/</code> 下有验收测试：<code>*_test.sas</code>（正向用例）、<code>*_err_NN.sas</code>（负向用例，期望 <code>%abort cancel</code>）、<code>*_bug_*.sas</code>（缺陷回归）。
+</li>
+<li>正向用例至少覆盖：典型输入、空输入、边界值、无依赖与有依赖两条路径。
+</li>
+<li>负向用例用 <code>*EXPECTED_ERROR:</code> 注释声明期望的错误文本。
+</li>
+<li>改动后在 SAS 9.4M7 实机跑一遍，确认日志无 <code>ERROR</code>、无未预期 <code>WARNING</code>。
+</li>
+<li>测试程序不得依赖固定绝对路径；通过测试框架的路径变量定位宏源文件。
+</li>
+</ul>
+
+<h3>10. 交付前检查</h3>
+
+<ul>
+<li>[ ] 头注释字段齐全，参数注释与代码一致
+</li>
+<li>[ ] 宏体按 1/2/3 分段，工作变量全部 <code>%local</code>
+</li>
+<li>[ ] 校验完整，错误路径统一 <code>%put</code> + <code>%abort cancel</code>
+</li>
+<li>[ ] 依赖已声明且可单独编译
+</li>
+<li>[ ] 中间数据集已清理，未残留调试代码
+</li>
+<li>[ ] <code>*History</code> 已追加，且与站点详情页的修订记录一致
+</li>
+<li>[ ] QC 正向 / 负向 / 回归用例通过
+</li>
+</ul>
+</div>
+</div>
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>stat_rateci - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html" class="current">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / 统计分析</p>
+<h2>stat_rateci</h2>
+<p class="subtitle">计算样本率、率的置信限、率差及其置信限</p>
+<p class="dependency">依赖: <a href="var_exist.html">var_exist</a>, <a href="var_coexist.html">var_coexist</a>, <a href="ds_attr.html">ds_attr</a></p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>stat_rateci</code></p>
+
+<h3 id="brief">简介</h3>
+<p>对二分类分析变量，按 <code>CLASS=</code> 分组计算 <code>LEVEL=</code> 指定水平的样本率与置信限，并可为任意两个分组计算率差及其置信限。输出为长表：<code>_METHOD_</code> 标识方法，<code>_PROP_</code> 为率或率差（百分比），<code>_CL_L_</code> 与 <code>_CL_U_</code> 为置信下限与上限，<code>_ALPHA_</code> 为显著性水平，<code>_SOURCE_</code> 标识计算来源（<code>PROC FREQ</code> 或 <code>MANUAL</code>）。宏不返回值，结果写入 <code>OUT=</code> 数据集。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%stat_rateci(data=&lt;dataset&gt;, class=&lt;variable&gt;, var=&lt;variable&gt;, level=&lt;level&gt;)</pre>
+<p><code>LEVEL=</code> 必须使用带引号的格式化值，例如 <code>level='Y'</code>，否则宏会终止并提示格式错误。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DATA=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>输入数据集名，仅支持数据集，且观测数必须大于 0。</td>
+</tr>
+<tr>
+<td>OUT=</td>
+<td>可选参数</td>
+<td>_DATA_</td>
+<td>输出数据集名。</td>
+</tr>
+<tr>
+<td>BY=</td>
+<td>可选参数</td>
+<td>无</td>
+<td>分组变量，可指定多个变量；每个 BY 组分别计算。</td>
+</tr>
+<tr>
+<td>CLASS=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>定义分组分析的变量，仅支持一个变量。</td>
+</tr>
+<tr>
+<td>VAR=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>分析变量，仅支持一个变量，且格式化后必须恰好有 2 个水平。</td>
+</tr>
+<tr>
+<td>LEVEL=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>要计算率的目标水平，须使用带引号的格式化值，且必须存在于分析变量中。</td>
+</tr>
+<tr>
+<td>SMETHOD=</td>
+<td>可选参数</td>
+<td>EXACT</td>
+<td>单样本率置信限方法，可指定多个方法（空格分隔），不区分大小写。<br/>
+ALL、NONE、AC、BLAKER、EXACT、JEFFREYS、LR、LOGIT、MIDP、WALD、WILSON。</td>
+</tr>
+<tr>
+<td>SALPHA=</td>
+<td>可选参数</td>
+<td>0.05</td>
+<td>单样本率置信限的显著性水平，取值 0 至 1。</td>
+</tr>
+<tr>
+<td>DMETHOD=</td>
+<td>可选参数</td>
+<td>WALD</td>
+<td>率差置信限方法，可指定多个方法（空格分隔），不区分大小写。<br/>
+ALL、NONE、AC、EXACT、HA、MN、NEWCOMBE、WALD。</td>
+</tr>
+<tr>
+<td>DALPHA=</td>
+<td>可选参数</td>
+<td>0.05</td>
+<td>率差置信限的显著性水平，取值 0 至 1。</td>
+</tr>
+<tr>
+<td>DEBUG=</td>
+<td>可选参数</td>
+<td>0</td>
+<td>是否保留中间数据集。<br/>
+0：结束时删除中间数据集。<br/>
+1：保留中间数据集以便排查。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：默认方法计算单样本率与率差</h4>
+<pre class="code">data work.resp1;
+  length usubjid $4 trt $1 resp $1;
+  input usubjid $ trt $ resp $;
+  datalines;
+S01 A Y
+S02 A Y
+S03 A Y
+S04 A Y
+S05 A N
+S06 A N
+S07 B Y
+S08 B Y
+S09 B N
+S10 B N
+S11 B N
+S12 B N
+;
+run;
+
+%stat_rateci(data=work.resp1,out=work.rate1,class=trt,var=resp,level='Y')
+
+proc print data=work.rate1(keep=trt ref_trt _method_ _prop_ _cl_l_ _cl_u_ _source_);
+run;</pre>
+<p class="result-label">运行结果（WORK.RATE1）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="10%" />
+<col width="14%" />
+<col width="14%" />
+<col width="14%" />
+<col width="14%" />
+<col width="16%" />
+<thead>
+<tr><th>trt</th><th>ref_trt</th><th>_method_</th><th>_prop_</th><th>_cl_l_</th><th>_cl_u_</th><th>_source_</th></tr>
+</thead>
+<tbody>
+<tr><td>A</td><td></td><td>Exact</td><td>66.6667</td><td>22.2778</td><td>95.6728</td><td>PROC FREQ</td></tr>
+<tr><td>A</td><td>B</td><td>Wald</td><td>33.3333</td><td>-20.010</td><td>86.6768</td><td>PROC FREQ</td></tr>
+<tr><td>B</td><td></td><td>Exact</td><td>33.3333</td><td>4.3272</td><td>77.7222</td><td>PROC FREQ</td></tr>
+<tr><td>B</td><td>A</td><td>Wald</td><td>-33.3333</td><td>-86.677</td><td>20.0101</td><td>PROC FREQ</td></tr>
+</tbody>
+</table>
+<p>默认 <code>SMETHOD=EXACT</code> 计算各组单样本率的 Exact 置信限；<code>DMETHOD=WALD</code> 计算任意两组的率差及其 Wald 置信限。<code>_prop_</code> 与置信限均以百分比表示，<code>_source_</code> 为 <code>PROC FREQ</code>。</p>
+
+<h4>示例 2：一次输出多种单样本置信限</h4>
+<pre class="code">data work.resp1;
+  length usubjid $4 trt $1 resp $1;
+  input usubjid $ trt $ resp $;
+  datalines;
+S01 A Y
+S02 A Y
+S03 A Y
+S04 A Y
+S05 A N
+S06 A N
+S07 B Y
+S08 B Y
+S09 B N
+S10 B N
+S11 B N
+S12 B N
+;
+run;
+
+%stat_rateci(data=work.resp1,out=work.rate2,class=trt,var=resp,level='Y',
+             smethod=ALL,dmethod=NONE)
+
+proc print data=work.rate2(where=(trt='A')
+              keep=trt _method_ _prop_ _cl_l_ _cl_u_);
+run;</pre>
+<p class="result-label">运行结果（WORK.RATE2，TRT=A）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="22%" />
+<col width="16%" />
+<col width="18%" />
+<col width="18%" />
+<thead>
+<tr><th>trt</th><th>_method_</th><th>_prop_</th><th>_cl_l_</th><th>_cl_u_</th></tr>
+</thead>
+<tbody>
+<tr><td>A</td><td>Agresti-Coull</td><td>66.6667</td><td>29.5746</td><td>90.748</td></tr>
+<tr><td>A</td><td>Blaker</td><td>66.6667</td><td>27.1338</td><td>93.715</td></tr>
+<tr><td>A</td><td>Exact</td><td>66.6667</td><td>22.2778</td><td>95.673</td></tr>
+<tr><td>A</td><td>Jeffreys</td><td>66.6667</td><td>28.6423</td><td>92.323</td></tr>
+<tr><td>A</td><td>Likelihood Ratio</td><td>66.6667</td><td>28.0788</td><td>93.516</td></tr>
+<tr><td>A</td><td>Logit</td><td>66.6667</td><td>26.8110</td><td>91.610</td></tr>
+<tr><td>A</td><td>Mid-p</td><td>66.6667</td><td>26.1891</td><td>93.980</td></tr>
+<tr><td>A</td><td>Wald</td><td>66.6667</td><td>28.9471</td><td>100.000</td></tr>
+<tr><td>A</td><td>Wilson</td><td>66.6667</td><td>29.9993</td><td>90.323</td></tr>
+</tbody>
+</table>
+<p><code>SMETHOD=ALL</code> 展开为 AC、Blaker、Exact、Jeffreys、LR、Logit、Mid-p、Wald、Wilson 九种方法，每种方法输出一行；<code>DMETHOD=NONE</code> 不计算率差。</p>
+
+<h4>示例 3：只计算率差</h4>
+<pre class="code">data work.resp1;
+  length usubjid $4 trt $1 resp $1;
+  input usubjid $ trt $ resp $;
+  datalines;
+S01 A Y
+S02 A Y
+S03 A Y
+S04 A Y
+S05 A N
+S06 A N
+S07 B Y
+S08 B Y
+S09 B N
+S10 B N
+S11 B N
+S12 B N
+;
+run;
+
+%stat_rateci(data=work.resp1,out=work.rate3,class=trt,var=resp,level='Y',
+             smethod=NONE,dmethod=NEWCOMBE)
+
+proc print data=work.rate3(keep=trt ref_trt _method_ _prop_ _cl_l_ _cl_u_);
+run;</pre>
+<p class="result-label">运行结果（WORK.RATE3）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="10%" />
+<col width="14%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<thead>
+<tr><th>trt</th><th>ref_trt</th><th>_method_</th><th>_prop_</th><th>_cl_l_</th><th>_cl_u_</th></tr>
+</thead>
+<tbody>
+<tr><td>A</td><td>B</td><td>Newcombe</td><td>33.3333</td><td>-18.522</td><td>66.7882</td></tr>
+<tr><td>B</td><td>A</td><td>Newcombe</td><td>-33.3333</td><td>-66.788</td><td>18.5221</td></tr>
+</tbody>
+</table>
+<p><code>SMETHOD=NONE</code> 跳过单样本率计算，<code>DMETHOD=NEWCOMBE</code> 只输出两两率差及其 Newcombe 置信限。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+
+<li><code>CLASS=</code> 与 <code>VAR=</code> 均只支持一个变量。</li>
+<li>若分析变量只有一个水平，需要先为其指定格式以增加到两个水平。</li>
+<li><code>LEVEL=</code> 必须使用带引号的格式化值。</li>
+<li>置信限基于二项分布假设计算。</li>
+<li><code>DMETHOD=</code> 不为 <code>NONE</code> 时计算任意两组的率差；两组频率均为 0 或 100 时使用手工公式，此时 EXACT 置信限不可用。</li>
+<li><code>SMETHOD=</code> 支持 ALL、NONE、AC、BLAKER、EXACT、JEFFREYS、LR、LOGIT、MIDP、WALD、WILSON；<code>DMETHOD=</code> 支持 ALL、NONE、AC、EXACT、HA、MN、NEWCOMBE、WALD。</li>
+
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<p>以下列出当前版本已知但未修复的问题、使用约束与冲突风险。</p>
+
+<h4>1. 已知但未修复的风险</h4>
+<ul class="notes">
+<li>当 <code>DMETHOD=</code> 包含 <code>EXACT</code>，且某两个分组在 <code>LEVEL=</code> 上的频率同为 0 或同为 100 时，差值区间改由手工公式计算，此时不提供 EXACT 置信限，这类极值组合不会输出 EXACT 结果。</li>
+</ul>
+
+<h4>2. 对输入参数的强假设</h4>
+<ul class="notes">
+<li><code>VAR=</code> 必须恰好有两个水平，<code>LEVEL=</code> 必须是以引号包围的格式化值且为该两个水平之一；若分析变量只有一个水平，需先为其分配格式以产生第二个水平，否则宏报错中止。</li>
+<li><code>CLASS=</code> 仅支持一个变量。当 <code>CLASS=</code> 只有一个非缺失水平时，不会产生任何组间差值结果，只输出单样本率及其置信限。</li>
+<li><code>BY=</code> 中的变量须同时存在于输入数据集，且每个 BY 组内应至少有两个分组水平，否则该 BY 组无组间差值结果。</li>
+</ul>
+
+<h4>3. 临时变量与临时数据集冲突风险</h4>
+<ul class="notes">
+<li>宏会创建并覆盖固定名称的中间数据集（名称以 <code>STAT_RATECI_</code> 开头），并在 <code>DEBUG=0</code> 时删除 WORK 中所有以 <code>STAT_RATECI_</code> 开头的数据集；WORK 中该前缀的自有数据集会被覆盖或误删。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/stat/stat_rateci.sas" download>stat_rateci.sas</a></p>
+<p class="download"><a href="../assets/macropackages/stat_rateci.zip" download>stat_rateci and its dependencies.zip</a></p>
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr>
+<th>日期</th>
+<th>修订人</th>
+<th>修订内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-11-02</td>
+<td>Luo Hao</td>
+<td>新增异常捕获：输入数据集观测数为 0 时终止提交。</td>
+</tr>
+<tr>
+<td>2026-08-21</td>
+<td>Luo Hao</td>
+<td>原始版本。</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

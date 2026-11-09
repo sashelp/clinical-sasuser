@@ -1,0 +1,177 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.13 秒
+      CPU 时间          0.13 秒
+      
+1          /*===============================================================================
+2           * var_attr_test.sas - Positive (functional) acceptance tests
+3           *===============================================================================
+4           * Macro under test : %var_attr
+5           * File under test   : dev/var/var_attr.sas
+6           * Dependency        : %var_exist
+7           * Coverage          : NUM / NAME / TYPE / LENGTH / FORMAT / INFORMAT / LABEL
+8           *                     attributes, ATTR value case-insensitivity, attribute on
+9           *                     char and numeric variables.
+10          * Run               : qc/run_all.ps1  (or standalone batch, see README)
+11          *============================================================================*/
+12         
+13         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+14         %let _qcboot_=%sysfunc(getoption(sysin));
+15         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+16         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+17         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+18         %include "&_qcboot_.\_framework\qc_env.sas";
+83         %let _qcboot_=;
+84         /*----------------------------------------------------------------------------*/
+85         
+86         %include "&_QCFW_.";
+379        %include "&_QCDEV_VAR_.\var_exist.sas";
+430        %include "&_QCDEV_VAR_.\var_attr.sas";
+486        
+487        %qc_begin(prog=var_attr_test, macro=var_attr);
+#####QC_BEGIN prog=var_attr_test macro=var_attr
+488        
+489        data va1;
+490          length char1 $20;
+491          char1='abc';
+492          num1=1;
+493          num2=2.5;
+494          dt=mdy(1,15,2024);
+495          format dt date9.;
+496          pct=0.123;
+497          format pct percent8.2;
+498          label num1='Obs Number' char1='Char One';
+499        run;
+
+NOTE: 数据集 WORK.VA1 有 1 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      CPU 时间          0.01 秒
+      
+
+500        
+501        /*----------------------------------------------------------------------------
+502         * CASE 1 : NUM returns variable position
+503         *--------------------------------------------------------------------------*/
+504        %qc_case(desc=1 NUM position);
+#####QC_CASE n=1 desc=1 NUM position
+505        %let _r=%var_attr(data=va1,var=char1,attr=num);
+506        %qc_check_eq(actual=&_r., expect=1, desc=C1 char1 position 1);
+#####QC_PASS n=1 desc=C1 char1 position 1
+507        %let _r=%var_attr(data=va1,var=num1,attr=num);
+508        %qc_check_eq(actual=&_r., expect=2, desc=C1 num1 position 2);
+#####QC_PASS n=1 desc=C1 num1 position 2
+509        %let _r=%var_attr(data=va1,var=pct,attr=num);
+510        %qc_check_eq(actual=&_r., expect=5, desc=C1 pct position 5);
+#####QC_PASS n=1 desc=C1 pct position 5
+511        
+512        /*----------------------------------------------------------------------------
+513         * CASE 2 : NAME returns variable name
+514         *--------------------------------------------------------------------------*/
+515        %qc_case(desc=2 NAME);
+#####QC_CASE n=2 desc=2 NAME
+516        %let _r=%var_attr(data=va1,var=char1,attr=name);
+517        %qc_check_eq(actual=&_r., expect=char1, desc=C2 name char1);
+#####QC_PASS n=2 desc=C2 name char1
+518        
+519        /*----------------------------------------------------------------------------
+520         * CASE 3 : TYPE returns C / N
+521         *--------------------------------------------------------------------------*/
+522        %qc_case(desc=3 TYPE);
+#####QC_CASE n=3 desc=3 TYPE
+523        %let _r=%var_attr(data=va1,var=char1,attr=type);
+524        %qc_check_eq(actual=&_r., expect=C, desc=C3 char1 type C);
+#####QC_PASS n=3 desc=C3 char1 type C
+525        %let _r=%var_attr(data=va1,var=num1,attr=type);
+526        %qc_check_eq(actual=&_r., expect=N, desc=C3 num1 type N);
+#####QC_PASS n=3 desc=C3 num1 type N
+527        
+528        /*----------------------------------------------------------------------------
+529         * CASE 4 : LENGTH returns physical length
+530         *--------------------------------------------------------------------------*/
+531        %qc_case(desc=4 LENGTH);
+#####QC_CASE n=4 desc=4 LENGTH
+532        %let _r=%var_attr(data=va1,var=char1,attr=length);
+533        %qc_check_eq(actual=&_r., expect=20, desc=C4 char1 length 20);
+#####QC_PASS n=4 desc=C4 char1 length 20
+534        %let _r=%var_attr(data=va1,var=num2,attr=length);
+535        %qc_check_eq(actual=&_r., expect=8, desc=C4 num2 length 8);
+#####QC_PASS n=4 desc=C4 num2 length 8
+536        
+537        /*----------------------------------------------------------------------------
+538         * CASE 5 : FORMAT returns assigned format
+539         *--------------------------------------------------------------------------*/
+540        %qc_case(desc=5 FORMAT);
+#####QC_CASE n=5 desc=5 FORMAT
+541        %let _r=%var_attr(data=va1,var=dt,attr=format);
+542        %qc_check_eq(actual=&_r., expect=DATE9., desc=C5 dt format date9);
+#####QC_PASS n=5 desc=C5 dt format date9
+543        %let _r=%var_attr(data=va1,var=pct,attr=format);
+544        %qc_check_eq(actual=&_r., expect=PERCENT8.2, desc=C5 pct format percent);
+#####QC_PASS n=5 desc=C5 pct format percent
+545        
+546        /*----------------------------------------------------------------------------
+547         * CASE 6 : INFORMAT returns assigned informat (default none)
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+548         *--------------------------------------------------------------------------*/
+549        %qc_case(desc=6 INFORMAT);
+#####QC_CASE n=6 desc=6 INFORMAT
+550        %let _r=%var_attr(data=va1,var=num1,attr=informat);
+551        %qc_check_eq(actual=&_r., expect=, desc=C6 num1 no informat);
+#####QC_PASS n=6 desc=C6 num1 no informat
+552        
+553        /*----------------------------------------------------------------------------
+554         * CASE 7 : LABEL returns variable label
+555         *--------------------------------------------------------------------------*/
+556        %qc_case(desc=7 LABEL);
+#####QC_CASE n=7 desc=7 LABEL
+557        %let _r=%var_attr(data=va1,var=num1,attr=label);
+558        %qc_check_eq(actual=&_r., expect=Obs Number, desc=C7 num1 label);
+#####QC_PASS n=7 desc=C7 num1 label
+559        %let _r=%var_attr(data=va1,var=char1,attr=label);
+560        %qc_check_eq(actual=&_r., expect=Char One, desc=C7 char1 label);
+#####QC_PASS n=7 desc=C7 char1 label
+561        
+562        /*----------------------------------------------------------------------------
+563         * CASE 8 : ATTR= value is case-insensitive
+564         *--------------------------------------------------------------------------*/
+565        %qc_case(desc=8 ATTR case-insensitive);
+#####QC_CASE n=8 desc=8 ATTR case-insensitive
+566        %let _r=%var_attr(data=va1,var=num1,attr=NUM);
+567        %qc_check_eq(actual=&_r., expect=2, desc=C8 uppercase NUM);
+#####QC_PASS n=8 desc=C8 uppercase NUM
+568        %let _r=%var_attr(data=va1,var=char1,attr=Type);
+569        %qc_check_eq(actual=&_r., expect=C, desc=C8 mixed-case Type);
+#####QC_PASS n=8 desc=C8 mixed-case Type
+570        
+571        %qc_end;
+#####QC_RESULT prog=var_attr_test macro=var_attr STATUS=PASS ncase=8 npass=15 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.17 秒
+      CPU 时间          0.20 秒
+      

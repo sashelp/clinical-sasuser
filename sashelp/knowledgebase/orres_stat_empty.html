@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>ORRES/STAT 双空 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html" class="current">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SDTM</p>
+<h2>SDTM 中能允许 --ORRES 和 --STAT 同时为空的记录吗？</h2>
+<p class="subtitle">不允许。Findings 类记录要么有结果、要么有状态，两者互斥，至少得填一个。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>在 Findings 和 Findings About 这两类里，一条记录必须<b>“有结果”或“有状态”</b>，两者不能同时空着——这种记录既没测量值、也没解释为啥没值，是不合规的。P21 和 CDISC 一致性校验会直接报缺失结果或缺失状态。</p>
+</div>
+
+<h3 id="source">规则从哪来</h3>
+<ul class="notes">
+<li><b>SDTM 模型对 <code>--STAT</code> 的定义</b>：用来表示“这个问题没被问、检查没做、或者做了但没出结果”，取值只能是 <code>NOT DONE</code> 或空。</li>
+<li><b>SDTMIG 的约定</b>：<code>--ORRES</code> 只有在 <code>--STAT = "NOT DONE"</code> 或 <code>--DRVFL = "Y"</code>（派生）的时候才允许空；反过来 <code>--ORRES</code> 有值，<code>--STAT</code> 就必须空。也就是说两者<b>互斥，而且至少填一个</b>。</li>
+</ul>
+
+<h3 id="flow">判断顺序</h3>
+<div class="flow">
+<p class="flow-title">拿到一条 Findings 记录，--ORRES 和 --STAT 这么填</p>
+<svg viewBox="0 0 680 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <!-- 起点 -->
+  <rect x="70" y="12" width="200" height="44" rx="4" fill="#0070C0" stroke="#005a9e"/>
+  <text x="170" y="39" text-anchor="middle" fill="#ffffff" font-size="14">某条 Findings 记录</text>
+
+  <line x1="170" y1="56" x2="170" y2="90" stroke="#8a8a8a" marker-end="url(#ar)"/>
+
+  <!-- 判断 1 -->
+  <rect x="20" y="90" width="300" height="48" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="170" y="119" text-anchor="middle" fill="#e6e6e6" font-size="14">是否有结果（--ORRES）？</text>
+
+  <line x1="320" y1="114" x2="398" y2="114" stroke="#8a8a8a" marker-end="url(#ar)"/>
+  <text x="358" y="108" text-anchor="middle" fill="#70AD47" font-size="12">是</text>
+  <rect x="400" y="86" width="270" height="58" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="535" y="108" text-anchor="middle" fill="#ffffff" font-size="12">合规：--ORRES 填值、--STAT 空</text>
+  <text x="535" y="126" text-anchor="middle" fill="#e8f5e0" font-size="12">--STRESC 必填，数值再填 --STRESN</text>
+
+  <line x1="170" y1="138" x2="170" y2="172" stroke="#8a8a8a" marker-end="url(#ar)"/>
+  <text x="184" y="160" fill="#8a8a8a" font-size="12">否</text>
+
+  <!-- 判断 2 -->
+  <rect x="20" y="172" width="300" height="48" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="170" y="201" text-anchor="middle" fill="#e6e6e6" font-size="14">是否未做 / 做了但无结果？</text>
+
+  <line x1="320" y1="196" x2="398" y2="196" stroke="#8a8a8a" marker-end="url(#ar)"/>
+  <text x="358" y="190" text-anchor="middle" fill="#70AD47" font-size="12">是</text>
+  <rect x="400" y="168" width="270" height="58" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="535" y="190" text-anchor="middle" fill="#ffffff" font-size="12">合规：--STAT = NOT DONE</text>
+  <text x="535" y="208" text-anchor="middle" fill="#e8f5e0" font-size="12">--REASND 有原因则填，结果变量全空</text>
+
+  <line x1="170" y1="220" x2="170" y2="254" stroke="#8a8a8a" marker-end="url(#ar)"/>
+  <text x="184" y="242" fill="#8a8a8a" font-size="12">否</text>
+
+  <!-- 判断 3 -->
+  <rect x="20" y="254" width="300" height="48" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="170" y="283" text-anchor="middle" fill="#e6e6e6" font-size="14">是否为派生结果？</text>
+
+  <line x1="320" y1="278" x2="398" y2="278" stroke="#8a8a8a" marker-end="url(#ar)"/>
+  <text x="358" y="272" text-anchor="middle" fill="#70AD47" font-size="12">是</text>
+  <rect x="400" y="250" width="270" height="58" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="535" y="272" text-anchor="middle" fill="#ffffff" font-size="12">合规：--DRVFL = "Y"</text>
+  <text x="535" y="290" text-anchor="middle" fill="#e8f5e0" font-size="12">--STRESC / --STRESN 有值</text>
+
+  <line x1="170" y1="302" x2="170" y2="336" stroke="#8a8a8a" marker-end="url(#ar)"/>
+  <text x="184" y="324" fill="#8a8a8a" font-size="12">否</text>
+
+  <!-- 不合规 -->
+  <rect x="70" y="336" width="200" height="50" rx="4" fill="#c0504d" stroke="#9c3f3d"/>
+  <text x="170" y="356" text-anchor="middle" fill="#ffffff" font-size="13">不合规：双空</text>
+  <text x="170" y="373" text-anchor="middle" fill="#f5dcdb" font-size="11">--ORRES 与 --STAT 均为空</text>
+</svg>
+</div>
+
+<h3 id="cases">四种情形对照</h3>
+<table class="kb-table">
+<col width="24%" />
+<col width="12%" />
+<col width="14%" />
+<col width="12%" />
+<col width="38%" />
+<thead>
+<tr><th>情形</th><th>--ORRES</th><th>--STAT</th><th>--REASND</th><th>其他要求</th></tr>
+</thead>
+<tbody>
+<tr><td>正常有结果</td><td>值</td><td>空</td><td>空</td><td>--STRESC 必填；数值型再填 --STRESN</td></tr>
+<tr><td>单项未做（含做了但没结果）</td><td>空</td><td>NOT DONE</td><td>有原因就填</td><td>--ORRESU / --STRESC / --STRESN / --STRESU 全空</td></tr>
+<tr><td>整个 panel 未做</td><td>空</td><td>NOT DONE</td><td>有原因就填</td><td>--TESTCD = "--ALL"，--TEST 与 --CAT 填组名</td></tr>
+<tr><td>派生结果</td><td>空</td><td>空</td><td>空</td><td>必须 --DRVFL = "Y"，且 --STRESC / --STRESN 有值</td></tr>
+</tbody>
+</table>
+
+<h3 id="pitfalls">几个容易踩的坑</h3>
+<ul class="notes">
+<li><b>CRF 上勾了“NA / UNKNOWN / 不适用”</b>：这些是 null flavor，属于“值”，要写进 <code>--ORRES</code>（比如 <code>NOT APPLICABLE</code>），<code>--STAT</code> 还是空——不能两列都空。</li>
+<li><b>采血失败、样本溶血、仪器故障</b>：属于“做了但没出结果”，按定义要填 <code>NOT DONE</code>，理由放 <code>--REASND</code>（比如 <code>SPECIMEN HEMOLYZED</code>）。</li>
+<li><b>整次访视缺失、CRF 也没标“是否做了”</b>：通常<b>不建记录</b>。SDTMIG 的原则是别凭空造 <code>NOT DONE</code>，只有源数据明确回答“未做”时才建 NOT DONE 记录。</li>
+<li><b>只填了 <code>--STRESC</code>/<code>--STRESN</code>、<code>--ORRES</code> 空</b>：这不叫双空，但必须补 <code>--DRVFL = "Y"</code>，否则会被报 <code>--ORRES</code> 缺失。</li>
+<li><b><code>--STAT</code> 的取值</b>：只允许 <code>NOT DONE</code>，别写 <code>ND</code>、<code>MISSING</code>、<code>NA</code>。</li>
+<li><b>个别域模板本身没有 <code>--STAT</code></b>（比如部分肿瘤域）：这条规则不适用，按那个域的 assumptions 处理，缺失评估通常是不建记录，而不是硬塞一个 <code>--STAT</code>。</li>
+</ul>
+
+<h3 id="fda">FDA 有个特例：QS 逻辑跳转题</h3>
+<p>FDA 技术一致性指南要求 QS 里的“逻辑跳转题”必须交记录，写法是 <code>QSSTAT = "NOT DONE"</code>、<code>QSREASND = "LOGICALLY SKIPPED ITEM"</code>，结果是空的；只有当量表手册明确规定了跳转题怎么赋分时，才会出现 <code>QSSTAT</code> 和 <code>QSORRES</code> 同时有值。这是 FDA 的特别要求，属于“互斥”规则的例外，得在 cSDRG 里说明。</p>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/sdtm/sdtm-v1-7" target="_blank" rel="noopener"><i>SDTM v1.7 / SDTMIG v3.3</i></a>。<span class="src">--STAT、--ORRES、--DRVFL、--REASND 变量定义与域 assumptions。</span></li>
+<li>FDA, <a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/study-data-technical-conformance-guide-technical-specifications-document" target="_blank" rel="noopener"><i>Study Data Technical Conformance Guide</i></a>。<span class="src">QS 逻辑跳转题的记录要求。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

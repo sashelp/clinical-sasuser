@@ -1,0 +1,106 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.12 秒
+      
+1          /*===============================================================================
+2           * ds_zipvarlen_bug_nochar.sas - Regression test: ERROR noise on no-char dataset
+3           *===============================================================================
+4           * Defect       : when the input dataset has NO character variables, %cvarlist
+5           *               resolves to an empty string and
+6           *                   %let cvarcount=%sysfunc(countw(&cvarlist.));
+7           *               is submitted as countw() with no argument, which makes SAS log
+8           *                   ERROR: Argument ... COUNTW ... too few
+9           *               The macro still finishes correctly (it falls through to the
+10          *               "contains none character variables" branch), so the defect is
+11          *               log pollution rather than a wrong result.
+12          * Root cause   : countw() must be guarded, e.g.
+13          *                   %if %bquote(&cvarlist.)^=%str() %then %let cvarcount=%sysfunc(countw(&cvarlist.));
+14          *                   %else %let cvarcount=0;
+15          * Expected     : (once fixed) no ERROR line in the log; the assertions below
+16          *                keep passing and the log becomes clean
+17          * Current      : DEFECT - assertions pass but an ERROR is emitted
+18          *============================================================================*/
+19         
+20         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+21         %let _qcboot_=%sysfunc(getoption(sysin));
+22         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+23         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+24         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+25         %include "&_qcboot_.\_framework\qc_env.sas";
+90         %let _qcboot_=;
+91         /*----------------------------------------------------------------------------*/
+92         
+93         %include "&_QCFW_.";
+386        %include "&_QCDEV_DS_.\ds_attr.sas";
+438        %include "&_QCDEV_DS_.\ds_varlist.sas";
+490        %include "&_QCDEV_DS_.\ds_zipvarlen.sas";
+570        
+571        %qc_begin(prog=ds_zipvarlen_bug_nochar, macro=ds_zipvarlen);
+#####QC_BEGIN prog=ds_zipvarlen_bug_nochar macro=ds_zipvarlen
+572        %qc_case(desc=B1 numeric-only dataset must not emit ERROR);
+#####QC_CASE n=1 desc=B1 numeric-only dataset must not emit ERROR
+573        
+574        data zvb1;
+575          n1=1; n2=2;
+576        run;
+
+NOTE: 数据集 WORK.ZVB1 有 1 个观测和 2 个变量。
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+577        
+578        /* reset the condition code, then run the macro under test */
+579        %let _syscc_before=&syscc.;
+580        %ds_zipvarlen(data=zvb1);
+NOTE: Dataset zvb1 contains none character variables.
+581        %let _syscc_after=&syscc.;
+582        
+583        /* syscc becomes non-zero (1012 = ERROR) because countw() was called with no
+584         * argument: the defect is reproduced whenever the code is NOT 0/4 */
+585        %qc_check_eq(actual=&_syscc_after., expect=&_syscc_before.,
+586          desc=B1 no ERROR raised by macro (syscc unchanged));
+#####QC_PASS n=1 desc=B1 no ERROR raised by macro (syscc unchanged)
+587        
+588        /* functional behaviour must stay correct in any case */
+589        %qc_check_eq(actual=%ds_attr(data=zvb1,attr=nvars), expect=2,
+590          desc=B1 nvars unchanged);
+#####QC_PASS n=1 desc=B1 nvars unchanged
+591        %qc_check_eq(actual=%ds_attr(data=zvb1,attr=nobs), expect=1,
+592          desc=B1 nobs unchanged);
+#####QC_PASS n=1 desc=B1 nobs unchanged
+593        %qc_expect_len(ds=zvb1, var=n1, expect=8, desc=B1 numeric length untouched);
+#####QC_PASS n=1 desc=B1 numeric length untouched
+594        
+595        %qc_end;
+#####QC_RESULT prog=ds_zipvarlen_bug_nochar macro=ds_zipvarlen STATUS=PASS ncase=1 npass=4 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.17 秒
+      CPU 时间          0.15 秒
+      

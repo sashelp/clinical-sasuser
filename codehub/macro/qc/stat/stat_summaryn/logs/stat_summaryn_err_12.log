@@ -1,0 +1,64 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.14 秒
+      
+1          /*==============================================================================
+2           * stat_summaryn_err_12.sas - Negative test: SHOWDENOM= invalid value
+3           *==============================================================================
+4           * Macro under test : %stat_summaryn
+5           * Expected         : abort cancel with "ERROR: Invalid value of SHOWDENOM=, expecting one of the following: Y,
+5        !  N."
+6           *============================================================================*/
+7          /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+8          %let _qcboot_=%sysfunc(getoption(sysin));
+9          %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+10         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+11         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+12         %include "&_qcboot_.\_framework\qc_env.sas";
+77         %let _qcboot_=;
+78         /*----------------------------------------------------------------------------*/
+79         %include "&_QCFW_.";
+372        %include "&_QCDEV_VAR_.\var_exist.sas";
+423        %include "&_QCDEV_VAR_.\var_coexist.sas";
+489        %include "&_QCDEV_DS_.\ds_attr.sas";
+541        %include "&_QCDEV_STAT_.\stat_summaryn.sas";
+969        
+970        %qc_begin(prog=stat_summaryn_err_12, macro=stat_summaryn);
+#####QC_BEGIN prog=stat_summaryn_err_12 macro=stat_summaryn
+971        %qc_case(desc=1 invalid showdenom value must abort);
+#####QC_CASE n=1 desc=1 invalid showdenom value must abort
+972        *EXPECTED_ERROR: ERROR: Invalid value of SHOWDENOM=, expecting one of the following: Y, N.;
+973        %qc_abort_marker;
+#####QC_ABORT_MARKER n=1
+974        %stat_summaryn(data=sashelp.class, out=oerr, class=sex, var=age, showdenom=YES);
+ERROR: Invalid value of SHOWDENOM=, expecting one of the following: Y, N.
+ERROR: 已通过 %ABORT CANCEL 语句取消执行。
+NOTE: 由于收到 CANCEL 请求，SAS 系统已停止处理。
+ERROR: 打印以下页时出错: 1.
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.17 秒
+      CPU 时间          0.17 秒
+      

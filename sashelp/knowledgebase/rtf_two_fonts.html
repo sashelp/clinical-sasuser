@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>同时输出宋体和新罗马 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html" class="current">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SAS 编程</p>
+<h2>如何同时输出宋体和新罗马字体？</h2>
+<p class="subtitle">SAS 一个单元格只能设一种字体，所以先按常规出 RTF，再把文件头的 \f1、\f2 改成宋体和 Times New Roman，并把正文的 \f1\ 换成 \f1\f2\。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>SAS 的样式选项是按单元格设字体的，一个单元格只能一种，做不到“中文宋体、西文新罗马”混排。但 RTF 文件本身支持：<b>在字体表里把两个编号分别定义成两种字体，然后在正文文本前把这两个控制字连着写</b>，Word 就会用前一个排中文、后一个排西文。落实成程序就是三步：正常出 RTF → 逐行读进来改字体表和正文的字体控制字 → 写回文件。</p>
+</div>
+
+<h3 id="req">监管是怎么要求的</h3>
+<div class="callout">
+<p>“电子申报资料的中文字体应为宋体，字号不小于小四号字，英文字体应为 Times New Roman，叙述性文本字号推荐为 12 号；表格中字号不小于五号字；行间距离至少为单倍行距。”</p>
+<p>—— 国家药监局药审中心，《申报资料电子光盘技术要求》</p>
+</div>
+<p>如果在生成 TFL 时就把这条落实，团队标准统一，统计师也不用事后再调。字号和行距可以在 <code>PROC REPORT</code> 的样式选项或 <code>PROC TEMPLATE</code> 的模板里设，<b>唯独字体混排这一条，靠样式选项做不到</b>。</p>
+
+<h3 id="rtf">RTF 是怎么控制字体的</h3>
+<p>RTF 是纯文本，用记事本就能打开。它以 <code>{\info …}</code> 为界分成文件头和文档区，字体定义在文件头的字体表里，由控制字 <code>\fonttbl</code> 引出。用 SAS 出一份普通报表，文件头长这样：</p>
+
+<pre class="code">{\fonttbl
+{\f1\froman\fprq2\fcharset134\cpg936 CSongGB18030C-Light;}
+{\f2\froman\fprq2\fcharset134\cpg936 Times;}
+}</pre>
+
+<p>每个字体一项，编号 <code>\f1</code>、<code>\f2</code> 就是后续正文引用它时用的代号。文档区里，文本前出现 <code>\f1\</code> 就表示“接下来的字用 1 号字体”。默认输出里几乎全是 <code>\f1\</code>，所以整篇都是一种字体。</p>
+
+<div class="flow">
+<p class="flow-title">同一个单元格里混排两种字体，靠的是“连着写两个控制字”</p>
+<svg viewBox="0 0 680 250" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ft-ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <rect x="30" y="14" width="260" height="86" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="160" y="38" text-anchor="middle" fill="#e6e6e6" font-size="12">文件头：字体表 \fonttbl</text>
+  <text x="160" y="62" text-anchor="middle" fill="#8a8a8a" font-size="11">\f1 = SimSun（宋体）</text>
+  <text x="160" y="82" text-anchor="middle" fill="#8a8a8a" font-size="11">\f2 = Times New Roman</text>
+
+  <line x1="290" y1="57" x2="330" y2="57" stroke="#8a8a8a" marker-end="url(#ft-ar)"/>
+
+  <rect x="332" y="14" width="318" height="86" rx="4" fill="#333333" stroke="#555555"/>
+  <text x="491" y="38" text-anchor="middle" fill="#e6e6e6" font-size="12">文档区：文本前写两个编号</text>
+  <text x="491" y="62" text-anchor="middle" fill="#e6e6e6" font-size="12">\f1\f2\ 这是标题 This is Title</text>
+  <text x="491" y="82" text-anchor="middle" fill="#8a8a8a" font-size="11">前一个管中文，后一个管西文</text>
+
+  <line x1="491" y1="100" x2="491" y2="124" stroke="#8a8a8a"/>
+  <line x1="250" y1="124" x2="491" y2="124" stroke="#8a8a8a"/>
+  <line x1="250" y1="124" x2="250" y2="132" stroke="#8a8a8a" marker-end="url(#ft-ar)"/>
+  <line x1="491" y1="124" x2="491" y2="132" stroke="#8a8a8a" marker-end="url(#ft-ar)"/>
+
+  <rect x="150" y="134" width="200" height="44" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="250" y="161" text-anchor="middle" fill="#ffffff" font-size="12">这是标题 → 宋体</text>
+
+  <rect x="370" y="134" width="240" height="44" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="490" y="161" text-anchor="middle" fill="#ffffff" font-size="12">This is Title → Times New Roman</text>
+
+  <text x="340" y="212" text-anchor="middle" fill="#8a8a8a" font-size="11">顺序写反了，中文会变成新罗马、西文变成宋体</text>
+  <text x="340" y="232" text-anchor="middle" fill="#8a8a8a" font-size="11">所以 \f1 必须是中文主字体，\f2 必须是西文字体</text>
+</svg>
+</div>
+
+<h3 id="code">实现：出报表 → 改文件 → 写回</h3>
+<p>先正常生成一份 RTF。示例用 <code>sashelp.class</code>，标题和脚注里各放一段中英文混合文字，方便后面看效果：</p>
+
+<pre class="code">ods rtf file="test.rtf";
+
+proc report data=sashelp.class nowd style(report)={just=left width=100%
+  pretext="这是标题部分 This is Title" posttext="这是脚注部分 This is Footnote"};
+run;
+
+ods rtf close;</pre>
+
+<p>然后读进来改。核心是两个动作：文件头里把两个字体项的名字换掉，文档区里把每个 <code>\f1\</code> 换成 <code>\f1\f2\</code>。</p>
+
+<pre class="code">data _temp_;
+  infile "test.rtf" length=length;
+  input rtf $varying32767. length;
+  retain header_part 1;
+  if header_part=1 then do;
+    if rtf=:"{\f1\" then rtf=substr(rtf,1,anyspace(rtf))||"SimSun;}";
+    else if rtf=:"{\f2\" then rtf=substr(rtf,1,anyspace(rtf))||"Times New Roman;}";
+    if find(rtf,"{\info","t") then header_part=0;
+  end;
+  else rtf=tranwrd(rtf,"\f1\","\f1\f2\");
+run;
+
+data _null_;
+  set _temp_;
+  file "test.rtf";
+  put rtf;
+run;</pre>
+
+<h3 id="explain">这段代码在干什么</h3>
+<ol class="notes">
+<li><b><code>infile … length=length</code> + <code>input rtf $varying32767. length</code></b>：把 RTF 当纯文本一行一行读进来。<code>length</code> 是这一行的实际长度，<code>$varying</code> 按这个长度截取，避免定长读入带一堆尾随空格。</li>
+<li><b><code>retain header_part 1</code></b>：一个开关，标记“现在还在文件头”。</li>
+<li><b><code>rtf =: "{\f1\"</code></b>：<code>=:</code> 是“以……开头”的比较，不是等于。所以只匹配字体表里那一行。</li>
+<li><b><code>substr(rtf,1,anyspace(rtf)) || "SimSun;}"</code></b>：<code>anyspace</code> 找第一个空格的位置，从行首截到空格为止，再接上新字体名和右花括号。相当于“保留前缀、换掉字体名”，<code>\fcharset134\cpg936</code> 这些控制字原样留着。</li>
+<li><b><code>find(rtf,"{\info","t")</code></b>：碰到 <code>{\info</code> 就把开关关掉，后面的行都算文档区。<code>"t"</code> 是让比较时忽略尾随空格。</li>
+<li><b><code>tranwrd(rtf,"\f1\","\f1\f2\")</code></b>：文档区里把字体控制从“一种”改成“两种”。这一步只作用于文档区，字体表那一行不会被重复替换。</li>
+<li><b>第二个数据步</b>：<code>file</code> + <code>put</code> 把改好的内容写回原文件。因为整份文件已经先读进 <code>_temp_</code>，写回同名文件不会互相干扰。</li>
+</ol>
+
+<h3 id="test">实测：改前改后对比</h3>
+<p>我在 SAS 9.4 上照这个流程跑了一遍，字体表的变化是：</p>
+
+<table class="kb-table">
+<col width="26%" />
+<col width="37%" />
+<col width="37%" />
+<thead>
+<tr><th>位置</th><th>改之前</th><th>改之后</th></tr>
+</thead>
+<tbody>
+<tr><td>字体表第 1 项</td><td><code>{\f1\</code>…<code>CSongGB18030C-Light;}</code></td><td><code>{\f1\</code>…<code>SimSun;}</code></td></tr>
+<tr><td>字体表第 2 项</td><td><code>{\f2\</code>…<code>Times;}</code></td><td><code>{\f2\</code>…<code>Times New Roman;}</code></td></tr>
+<tr><td>正文 <code>\f1\</code></td><td>106 处</td><td>105 处变成 <code>\f1\f2\</code>，剩 1 处在字体表里</td></tr>
+<tr><td>文件行数</td><td>279</td><td>279（没有丢行）</td></tr>
+</tbody>
+</table>
+
+<p>再拿 Word 打开改后的文件，逐字符读字体属性：</p>
+
+<table class="kb-table">
+<col width="30%" />
+<col width="35%" />
+<col width="35%" />
+<thead>
+<tr><th>字符</th><th>Font.Name（西文）</th><th>Font.NameFarEast（中文）</th></tr>
+</thead>
+<tbody>
+<tr><td>这 / 是 / 标 / 题…</td><td>宋体</td><td>宋体</td></tr>
+<tr><td>T / h / i / s…</td><td>Times New Roman</td><td>宋体</td></tr>
+</tbody>
+</table>
+
+<p>同一个单元格里，中文走宋体、西文走新罗马，达到了想要的效果。</p>
+
+<h3 id="pitfalls">几个要注意的地方</h3>
+<ul class="notes">
+<li><b>字体编号不是固定的。</b><code>\f1</code>、<code>\f2</code> 谁是谁，取决于 ODS 样式和模板。我这里的默认样式下 f1 是 CSongGB18030C-Light、f2 是 Times，和文章示例一致；换成自定义模板就得先打开 RTF 看字体表，别照抄编号。</li>
+<li><b>顺序不能反。</b>前一个控制字管双字节（中文），后一个管单字节（西文）。写成 <code>\f2\f1\</code>，中文就变成新罗马了。</li>
+<li><b>只改文档区。</b>靠 <code>header_part</code> 这个开关把文件头排除在外，否则字体表里的 <code>\f1\</code> 也会被替换，越改越乱。</li>
+<li><b>依赖“一行一个字体项、字体名前有空格”。</b><code>anyspace</code> 就是靠这个空格定位的。ODS 默认输出是这样，自定义模板要确认。</li>
+<li><b>这是后处理。</b>报表重跑一次就得再跑一次，建议把第二段包成宏，接在出报表之后自动执行。</li>
+<li><b>字体名写错不会报错。</b>Word 找不到就回退到默认字体，看代码发现不了，只能靠打开文件确认。</li>
+<li><b>只管字体，不管字号和行距。</b>小四、五号、单倍行距这些还在样式里设，别指望这段代码解决。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS骆豪, <a href="https://www.bilibili.com/opus/970959404094455809" target="_blank" rel="noopener"><i>同时输出宋体和新罗马字体</i></a>，哔哩哔哩，2024 年 8 月 29 日。<span class="src">监管要求原文、RTF 文件头与文档区的字体控制机制、手工调整示例。</span></li>
+<li>骆豪, <a href="https://mp.weixin.qq.com/s/2a_SKdVmK5707E4MMJdSlA" target="_blank" rel="noopener"><i>SAS干货 | 同时输出宋体和新罗马字体</i></a>，数科赛仕（微信公众号），2024 年 8 月 8 日。<span class="src">完整 SAS 程序（生成 RTF、逐行修改字体表与正文控制字、写回文件），B 站版本缺这部分代码。</span></li>
+<li>Biblioscape, <a href="https://www.biblioscape.com/rtf15_spec.htm" target="_blank" rel="noopener"><i>Rich Text Format (RTF) Version 1.5 Specification</i></a>。<span class="src">\fonttbl 字体表、\fN 字体控制字与多字体并用的规则。</span></li>
+<li>巫银良, 《SAS 技术内幕》，清华大学出版社，2018 年。<span class="src">第 161 页：用 DATA 步读写外部文本文件的方法。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

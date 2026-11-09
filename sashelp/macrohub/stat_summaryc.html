@@ -1,0 +1,436 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>stat_summaryc - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html" class="current">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / 统计分析</p>
+<h2>stat_summaryc</h2>
+<p class="subtitle">对分类变量计算频数、百分比及假设检验</p>
+<p class="dependency">依赖: <a href="var_exist.html">var_exist</a>, <a href="var_coexist.html">var_coexist</a>, <a href="ds_attr.html">ds_attr</a></p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>stat_summaryc</code></p>
+
+<h3 id="brief">简介</h3>
+<p>对分类分析变量按 <code>CLASS=</code> 分组计算频数与百分比，并转置为每个分析水平一行的宽表：分组水平转置为 <code>TRT&lt;ID&gt;</code> 列，列标签为分组水平标签并按需附加 <code>(N=#)</code>。可选 <code>CHISQ</code>、<code>FISHER</code>、<code>CMH</code>、<code>RC</code> 假设检验，检验统计量、P 值与检验方法写入 <code>_TESTV_</code>、<code>_TESTP_</code>、<code>_TESTM_</code>。宏不返回值，结果写入 <code>OUT=</code> 数据集。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%stat_summaryc(data=&lt;dataset&gt;, var=&lt;variables&gt;)</pre>
+<p>该宏为过程式宏，结果写入 <code>OUT=</code> 数据集，不返回值。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DATA=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>输入数据集名，仅支持数据集，且观测数必须大于 0。</td>
+</tr>
+<tr>
+<td>OUT=</td>
+<td>可选参数</td>
+<td>_DATA_</td>
+<td>输出数据集名。</td>
+</tr>
+<tr>
+<td>BY=</td>
+<td>可选参数</td>
+<td>无</td>
+<td>BY 分组变量，可指定多个变量；每个 BY 组分别计算。</td>
+</tr>
+<tr>
+<td>CLASS=</td>
+<td>可选参数</td>
+<td>无</td>
+<td>定义分组与比较的变量，仅支持一个变量；不指定时将所有观测作为一个总体分析。</td>
+</tr>
+<tr>
+<td>VAR=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>分析变量列表，多个变量以空格分隔，输出顺序与书写顺序一致。</td>
+</tr>
+<tr>
+<td>PERCENT=</td>
+<td>可选参数</td>
+<td>COL</td>
+<td>百分比计算基准，不区分大小写。<br/>
+COL：列百分比（组内）。<br/>
+ROW：行百分比（分析水平内）。<br/>
+TOTAL：占总体百分比。<br/>
+NONE：不输出百分比。</td>
+</tr>
+<tr>
+<td>TEST=</td>
+<td>可选参数</td>
+<td>NONE</td>
+<td>假设检验方法，不区分大小写。<br/>
+NONE：不检验。<br/>
+CHISQ：卡方检验，出现卡方警告时自动改用 Fisher 精确检验。<br/>
+FISHER：Fisher 精确检验。<br/>
+CMH：Cochran-Mantel-Haenszel 检验。<br/>
+RC：R*C 一般关联检验。</td>
+</tr>
+<tr>
+<td>TEST0FREQ=</td>
+<td>可选参数</td>
+<td>N</td>
+<td>假设检验是否纳入频数为 0 的水平，取 Y 或 N。</td>
+</tr>
+<tr>
+<td>ALPHA=</td>
+<td>可选参数</td>
+<td>0.05</td>
+<td>假设检验的显著性水平，取值 0 至 1。</td>
+</tr>
+<tr>
+<td>TOTCLASSID=</td>
+<td>可选参数</td>
+<td>0</td>
+<td>分配给合计组的列 ID。</td>
+</tr>
+<tr>
+<td>TOTCLASSLAB=</td>
+<td>可选参数</td>
+<td>Total</td>
+<td>合计组的列标签。</td>
+</tr>
+<tr>
+<td>TOTLEVELID=</td>
+<td>可选参数</td>
+<td>99</td>
+<td>分配给合计水平的水平 ID。</td>
+</tr>
+<tr>
+<td>TOTLEVELLAB=</td>
+<td>可选参数</td>
+<td>Total</td>
+<td>合计水平的显示文本。</td>
+</tr>
+<tr>
+<td>TOTLEVELSTAT=</td>
+<td>可选参数</td>
+<td>NNMISS</td>
+<td>合计水平显示的统计量形式。<br/>
+N：仅例数。<br/>
+NNMISS：例数与缺失数，显示为 N(NMISS)。<br/>
+NPERCENT：例数与百分比，显示为 N(PERCENT)。</td>
+</tr>
+<tr>
+<td>PCTDENOM=</td>
+<td>可选参数</td>
+<td>N</td>
+<td>百分比分母的取值方式。<br/>
+TOTAL：分母包含缺失值。<br/>
+N：分母仅包含非缺失观测。</td>
+</tr>
+<tr>
+<td>SHOWDENOM=</td>
+<td>可选参数</td>
+<td>Y</td>
+<td>是否在分组列标签后附加 <code>(N=#)</code> 文本，取 Y 或 N。</td>
+</tr>
+<tr>
+<td>DENOMDLM=</td>
+<td>可选参数</td>
+<td>@</td>
+<td>分组标签与 <code>(N=#)</code> 文本之间的分隔符。</td>
+</tr>
+<tr>
+<td>PCTFMT=</td>
+<td>可选参数</td>
+<td>8.1</td>
+<td>百分比的数值格式。</td>
+</tr>
+<tr>
+<td>DEBUG=</td>
+<td>可选参数</td>
+<td>0</td>
+<td>是否保留中间数据集。<br/>
+0：结束时删除中间数据集。<br/>
+1：保留中间数据集以便排查。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：生成分类变量频数表</h4>
+<pre class="code">data work.sumc1;
+  length trt $1 sex $1;
+  input trt $ sex $;
+  datalines;
+A M
+A M
+A M
+A F
+A F
+B M
+B F
+B F
+B F
+;
+run;
+
+%stat_summaryc(data=work.sumc1,out=work.sum1,class=trt,var=sex)
+
+proc print data=work.sum1(keep=_varnam_ _varlvl_ _statlab_ trt1 trt2 trt0);
+run;</pre>
+<p class="result-label">运行结果（WORK.SUM1）：</p>
+<table class="macro-table result-table">
+<col width="12%" />
+<col width="12%" />
+<col width="14%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<thead>
+<tr><th>_varnam_</th><th>_varlvl_</th><th>_statlab_</th><th>trt1</th><th>trt2</th><th>trt0</th></tr>
+</thead>
+<tbody>
+<tr><td>SEX</td><td>F</td><td>n(%)</td><td>2(40.0)</td><td>3(75.0)</td><td>5(55.6)</td></tr>
+<tr><td>SEX</td><td>M</td><td>n(%)</td><td>3(60.0)</td><td>1(25.0)</td><td>4(44.4)</td></tr>
+<tr><td>SEX</td><td>Total</td><td>n(miss)</td><td>5(0)</td><td>4(0)</td><td>9(0)</td></tr>
+</tbody>
+</table>
+<p>分组水平转置为 <code>trt1</code>（<code>A</code>）、<code>trt2</code>（<code>B</code>），合计水平为 <code>trt0</code>；<code>_statlab_</code> 为 <code>n(%)</code> 的分析水平行，合计水平行为 <code>n(miss)</code>。</p>
+
+<h4>示例 2：增加卡方检验</h4>
+<pre class="code">data work.sumc1;
+  length trt $1 sex $1;
+  input trt $ sex $;
+  datalines;
+A M
+A M
+A M
+A F
+A F
+B M
+B F
+B F
+B F
+;
+run;
+
+%stat_summaryc(data=work.sumc1,out=work.sum2,class=trt,var=sex,test=CHISQ)
+
+proc print data=work.sum2(keep=_varnam_ _varlvl_ _testv_ _testp_ _testm_);
+run;</pre>
+<p class="result-label">运行结果（WORK.SUM2）：</p>
+<table class="macro-table result-table">
+<col width="16%" />
+<col width="14%" />
+<col width="14%" />
+<col width="16%" />
+<col width="16%" />
+<thead>
+<tr><th>_varnam_</th><th>_varlvl_</th><th>_testv_</th><th>_testp_</th><th>_testm_</th></tr>
+</thead>
+<tbody>
+<tr><td>SEX</td><td>F</td><td>N</td><td>0.52381</td><td>Fisher</td></tr>
+<tr><td>SEX</td><td>M</td><td>.</td><td>.</td><td></td></tr>
+<tr><td>SEX</td><td>Total</td><td>.</td><td>.</td><td></td></tr>
+</tbody>
+</table>
+<p><code>TEST=CHISQ</code> 出现卡方警告时自动改用 Fisher 精确检验，<code>_testm_</code> 记录为 <code>Fisher</code>；检验结果只写在该分析变量的第一条观测上。</p>
+
+<h4>示例 3：使用行百分比</h4>
+<pre class="code">data work.sumc1;
+  length trt $1 sex $1;
+  input trt $ sex $;
+  datalines;
+A M
+A M
+A M
+A F
+A F
+B M
+B F
+B F
+B F
+;
+run;
+
+%stat_summaryc(data=work.sumc1,out=work.sum3,class=trt,var=sex,
+               percent=ROW,pctdenom=TOTAL)
+
+proc print data=work.sum3(keep=_varlvl_ _statlab_ trt1 trt2 trt0);
+run;</pre>
+<p class="result-label">运行结果（WORK.SUM3）：</p>
+<table class="macro-table result-table">
+<col width="14%" />
+<col width="16%" />
+<col width="18%" />
+<col width="18%" />
+<col width="18%" />
+<thead>
+<tr><th>_varlvl_</th><th>_statlab_</th><th>trt1</th><th>trt2</th><th>trt0</th></tr>
+</thead>
+<tbody>
+<tr><td>F</td><td>n(%)</td><td>2(40.0)</td><td>3(60.0)</td><td>5(55.6)</td></tr>
+<tr><td>M</td><td>n(%)</td><td>3(75.0)</td><td>1(25.0)</td><td>4(44.4)</td></tr>
+<tr><td>Total</td><td>n(miss)</td><td>5(0)</td><td>4(0)</td><td>9(0)</td></tr>
+</tbody>
+</table>
+<p><code>PERCENT=ROW</code> 以分析水平为基准计算百分比，例如 <code>F</code> 在 <code>A</code> 组中的行百分比为 2/5=40.0%；本例数据无缺失，<code>PCTDENOM=TOTAL</code> 不影响结果。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+
+<li><code>CLASS=</code> 仅支持一个变量；未指定或只有一个非缺失水平时，所有观测作为一个总体分析，且 <code>TEST=</code> 被强制设为 <code>NONE</code>。</li>
+<li><code>TEST=CHISQ</code> 出现卡方警告时自动改用 Fisher 精确检验。</li>
+<li><code>TOTCLASSID=</code> 与 <code>TOTLEVELID=</code> 取值不当时可能出错，不能与分组水平索引及合计水平索引冲突。</li>
+<li>当分析变量带自定义格式时，格式中定义但数据中未出现的水平也会纳入输出。</li>
+<li>输出每条观测对应一个 BY 组、分析变量与分析水平；分组水平转置为 <code>TRT&lt;ID&gt;</code> 列。</li>
+<li>检验统计量、P 值与检验方法写在各分析变量的第一条观测上。</li>
+
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<p>以下列出当前版本已知但未修复的问题、使用约束与冲突风险。</p>
+
+<h4>1. 已知但未修复的风险</h4>
+<ul class="notes">
+<li>当 <code>VAR=</code> 指定的分析变量在所有观测中均为缺失时，宏运行会报中间结果数据集不存在，输出只保留元数据列，缺少 <code>TRT*</code> 分组列与合计行，无法得到 <code>0(nmiss)</code> 形式的合计结果。使用前应确认分析变量存在非缺失值。</li>
+</ul>
+
+<h4>2. 对输入参数的强假设</h4>
+<ul class="notes">
+<li><code>CLASS=</code> 仅支持一个变量；未指定 <code>CLASS=</code> 或仅有一个非缺失水平时，所有观测作为一个总体分析，且 <code>TEST=</code> 被强制为 <code>NONE</code>。</li>
+<li><code>TOTCLASSID=</code> 与 <code>TOTLEVELID=</code> 不得与分组水平索引、分析水平索引重复；取值冲突时输出的 <code>TRT</code> 列名或水平排序会冲突，可能报错或结果被错误归并。</li>
+</ul>
+
+<h4>3. 临时变量与临时数据集冲突风险</h4>
+<ul class="notes">
+<li>宏会创建并覆盖固定名称的中间数据集（名称以 <code>STAT_SUMMARYC_</code> 开头），并在 <code>DEBUG=0</code> 时删除 WORK 中所有以 <code>STAT_SUMMARYC_</code> 开头的数据集；WORK 中该前缀的自有数据集会被覆盖或误删。</li>
+<li>未指定 <code>CLASS=</code> 时，宏用临时变量 <code>_CLASS_</code> 承担分组，并用 <code>_BYIDX_</code> 记录 BY 组编号。若输入数据集已含 <code>_CLASS_</code> 或 <code>_BYIDX_</code>，其原值会参与分组或编号计算，导致分组结果或 BY 组归属错乱。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/stat/stat_summaryc.sas" download>stat_summaryc.sas</a></p>
+<p class="download"><a href="../assets/macropackages/stat_summaryc.zip" download>stat_summaryc and its dependencies.zip</a></p>
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr>
+<th>日期</th>
+<th>修订人</th>
+<th>修订内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-11-07</td>
+<td>Luo Hao</td>
+<td>原始版本。</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

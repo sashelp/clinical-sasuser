@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>率与率比 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html" class="current">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / 统计分析</p>
+<h2>“每 1000 人年 3.2 例”这种率，模型怎么建、率比怎么估？</h2>
+<p class="subtitle">用 log 链接的 Poisson 或负二项模型，把暴露量的对数做成 offset 放进模型；率比就是 exp(参数)，用 LSMEANS 的 ILINK 和 EXP 直接能出。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>率不是比例——比例的分子包含在分母里，上限是 1；率的分子是事件数、分母是暴露量（人年、随访时间、保单数），取值可以大于 1。所以率不能直接当二分类结局建模。正确做法是把<b>暴露量的对数作为 offset</b> 放进 Poisson 或负二项模型，让模型去解释“单位暴露下的平均事件数”，再用 <code>LSMEANS / ILINK</code> 把结果反变换成率，用 <code>DIFF EXP</code> 得到率比。</p>
+</div>
+
+<h3 id="model">模型长什么样</h3>
+<p>记 μ 是事件数的均值，n 是暴露量，模型写成：</p>
+<div class="callout">
+<p>log(μ / n) = <b>x</b>′<b>β</b></p>
+</div>
+<p>挪一下就是 log(μ) = log(n) + <b>x</b>′<b>β</b>。右边多出来的 log(n) 就是 offset——它是个系数固定为 1 的项，不参与估计，只负责把“事件数”换算成“每单位暴露的事件数”。</p>
+<p>在 PROC GENMOD 里，用 <code>OFFSET=</code> 指定一个已经取过对数的变量：</p>
+
+<pre class="code">data insure;
+   input n c car$ age;
+   carnum=1;
+   if car="medium" then carnum=2;
+   if car="large"  then carnum=3;
+   ln = log(n);
+   datalines;
+500   42  small  1
+1200  37  medium 1
+100    1  large  1
+400  101  small  2
+500   73  medium 2
+300   14  large  2
+;
+run;
+
+proc genmod data=insure;
+   class car age;
+   model c = car age / dist=poisson link=log offset=ln;
+run;</pre>
+
+<p>这里 c 是索赔件数，n 是投保人数，ln 就是投保人数的对数。模型估的是“人均索赔率”，不是“索赔件数”。</p>
+
+<h3 id="rate">把率估出来</h3>
+<p>最省事的是 <code>LSMEANS</code>。默认输出的是 log 尺度上的最小二乘均值，加 <code>ILINK</code> 才会反变换成率，加 <code>CL</code> 给置信区间：</p>
+
+<pre class="code">proc genmod data=insure;
+   class car age;
+   model c = car age / dist=poisson link=log offset=ln;
+   lsmeans age / ilink cl;
+run;</pre>
+
+<p>输出里 <code>Mean</code> 那一列就是率：AGE=1 的人群是 0.03156，置信区间 (0.02395, 0.0416)。这是对车型各水平取平均之后的率。</p>
+
+<h3 id="cell">要具体人群的率，三条路</h3>
+<p><code>LSMEANS</code> 给的是边际平均。如果只想要某个组合的率（比如 AGE=1 且 CAR=SMALL），有三种写法，结果完全一致。</p>
+
+<h4>用 PROC PLM 打分</h4>
+<p>先在 GENMOD 里用 <code>STORE</code> 把模型存下来，再到 PLM 里 <code>SCORE</code>。<code>NOOFFSET</code> 是关键：它让打分时不算 offset，得到的就是<b>率</b>而不是<b>事件数</b>。再配 <code>ILINK</code> 反变换。</p>
+
+<pre class="code">proc genmod data=insure;
+   class car age;
+   model c = car age / dist=poisson link=log offset=ln;
+   store out=insmodel;
+run;
+
+proc plm source=insmodel;
+   score data=insure out=inspred
+         pred stderr lclm uclm / nooffset ilink;
+run;</pre>
+
+<p>AGE=1、CAR=SMALL 的率是 0.0716，置信区间 (0.0553, 0.0927)。</p>
+
+<h4>用 OUTPUT 语句自己算</h4>
+<p>这条路人稍微绕一点，但不需要 PLM。要注意 <code>P=</code> 给的是<b>计数</b>的预测值，<code>XBETA=</code> 给的是 log 计数的线性预测值（里面含 offset）。所以要先减掉 offset 得到 log 率，再取指数：</p>
+
+<pre class="code">proc genmod data=insure;
+   class car age;
+   model c = car age / dist=poisson link=log offset=ln;
+   output out=out p=pcount xbeta=xb stdxbeta=std;
+run;
+
+data predrates;
+   set out;
+   obsrate = c/n;
+   lograte = xb - ln;
+   prate   = exp(lograte);
+   lcl     = exp(lograte - probit(.975)*std);
+   ucl     = exp(lograte + probit(.975)*std);
+   keep n c car age prate lcl ucl;
+run;</pre>
+
+<p>因为 log 率和 log 计数只差一个常数，标准误是一样的，可以直接拿 <code>stdxbeta</code> 去构造区间。</p>
+
+<h4>用 ESTIMATE 语句</h4>
+<p>写法和前面 CONTRAST 那一篇的道理一样，指出这个人群对应哪几个参数：</p>
+
+<pre class="code">proc genmod data=insure;
+   class car age;
+   model c = car age / dist=poisson link=log offset=ln;
+   estimate "Rate: age=1, small" intercept 1 age 1 0 car 0 0 1;
+run;</pre>
+
+<p><code>L'Beta Estimate</code> 是 log 率（−2.6367），<code>Mean Estimate</code> 是率（0.0716）。缺点是每条 statement 只能算一个人群，人群一多就很啰嗦。</p>
+
+<h3 id="ratio">率比怎么估</h3>
+<p>率比就是两个率的比。在 log 尺度上它是差，所以 <code>LSMEANS</code> 加 <code>DIFF</code> 给差，再加 <code>EXP</code> 就把差变成了比：</p>
+
+<pre class="code">proc genmod data=insure;
+   class car age;
+   model c = car age / dist=poisson link=log offset=ln;
+   lsmeans age / ilink diff exp cl;
+run;</pre>
+
+<p>AGE=1 相对 AGE=2 的率比是 0.2672，置信区间 (0.2047, 0.3487)，检验 p&lt;0.0001。注意方向：差分表给的是“行水平减列水平”，谁减谁要看表头，别把比值报反。</p>
+
+<p>也可以用 <code>ESTIMATE</code> 直接对参数下手。<code>age 1 -1</code> 是 log 率比，加 <code>/ exp</code> 得到率比：</p>
+
+<pre class="code">proc genmod data=insure;
+   class car age;
+   model c = car age / dist=poisson link=log offset=ln;
+   estimate "Age Rate Ratio" age 1 -1 / exp;
+run;</pre>
+
+<h3 id="choose">想要什么，用哪条语句</h3>
+<table class="kb-table">
+<col width="34%" />
+<col width="30%" />
+<col width="36%" />
+<thead>
+<tr><th>想要的量</th><th>怎么写</th><th>注意</th></tr>
+</thead>
+<tbody>
+<tr><td>某个人群的率</td><td><code>LSMEANS / ILINK CL</code></td><td>给的是对其它因子取平均后的率</td></tr>
+<tr><td>特定组合的率</td><td><code>PROC PLM</code> 的 <code>SCORE / NOOFFSET ILINK</code></td><td>忘了 NOOFFSET 就变成估事件数</td></tr>
+<tr><td>两组的率比</td><td><code>LSMEANS / DIFF EXP CL</code></td><td>方向由水平顺序决定</td></tr>
+<tr><td>率的差（不是比）</td><td>另见 SAS Note 37344 的做法</td><td>差和比的解释不一样，别混</td></tr>
+<tr><td>过离散明显时</td><td><code>DIST=NEGBIN</code></td><td>Poisson 的方差假设是均值等于方差，实际数据经常不成立</td></tr>
+</tbody>
+</table>
+
+<h3 id="practice">写方案时的两个提醒</h3>
+<ul class="notes">
+<li><b>offset 必须是暴露量的对数，不是暴露量本身。</b>常见错误是直接写 <code>offset=n</code>，模型就变成了 log(μ) = n + xβ，完全不是率模型。</li>
+<li><b>随访时间不齐的时候，率比和 OR 不是一回事。</b>事件罕见时两者接近，事件一多就分开了。要报的是率比，就别拿 logistic 的 OR 顶上去。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS Support, <a href="https://sas.service-now.com/csm?id=kb_article_view&sys_kb_id=dc8f17f8973843d84c507e6c1253af55" target="_blank" rel="noopener"><i>Modeling rates and estimating rates and rate ratios (with confidence intervals)</i></a>（SAS 知识库文章，sas.service-now.com）。<span class="src">offset 的定义、保险索赔示例、率的三种估法、率比与置信区间。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/documentation/onlinedoc/stat/" target="_blank" rel="noopener"><i>SAS/STAT User's Guide</i></a>：PROC GENMOD 与 PROC PLM 章节。<span class="src">OFFSET=、STORE、SCORE 的 NOOFFSET 与 ILINK 选项。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

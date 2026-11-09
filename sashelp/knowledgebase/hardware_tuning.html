@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>硬件与系统分层调优 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html" class="current">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / 性能与调优</p>
+<h2>SAS 跑得慢，硬件和系统层面该从哪几层看？</h2>
+<p class="subtitle">按操作系统、文件系统、I/O 与存储、Grid、虚拟化与云、高可用这六层分开查，每一层 SAS 都有对应的调优文档。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>不要笼统地问“机器够不够快”，要问“慢在哪一层”。SAS 的官方调优资料就是按层组织的：操作系统一层、共享文件系统一层、I/O 与存储一层，再往上是 Grid、虚拟化、公有云，最后是高可用与容灾。先定位到层，再翻对应的文档，比盲目加内存有效得多。</p>
+</div>
+
+<h3 id="layers">分层看，每层都有对应文档</h3>
+<table class="kb-table">
+<col width="18%" />
+<col width="40%" />
+<col width="42%" />
+<thead>
+<tr><th>层次</th><th>这一层管什么</th><th>对应文档</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>总览</td>
+<td>硬件基础设施调优的整体思路，先看这一份理清顺序</td>
+<td>SAS KB0036669，General information about tuning your hardware infrastructure</td>
+</tr>
+<tr>
+<td>操作系统</td>
+<td>内核参数、文件句柄、内存与 swap、进程限制</td>
+<td>SAS KB0036628，Operating system tuning guidelines</td>
+</tr>
+<tr>
+<td>文件系统</td>
+<td>共享或集群文件系统的挂载与缓存设置</td>
+<td>SAS KB0040759，Shared/clustered file systems tuning guidelines</td>
+</tr>
+<tr>
+<td>I/O 与存储</td>
+<td>磁盘布局、条带化、吞吐能力</td>
+<td>SAS Note 53874，I/O subsystem and storage tuning guidelines</td>
+</tr>
+<tr>
+<td>Grid</td>
+<td>网格节点分配、作业调度、并发度</td>
+<td>SAS Note 53878，SAS Grid tuning guidelines</td>
+</tr>
+<tr>
+<td>虚拟化与云</td>
+<td>虚机资源争抢、云上存储与网络</td>
+<td>SAS Note 62240（虚拟化）、SAS Note 62239（公有云）</td>
+</tr>
+<tr>
+<td>高可用</td>
+<td>双活、切换、容灾演练</td>
+<td>SAS Note 62238，High-availability and disaster recovery guidelines</td>
+</tr>
+<tr>
+<td>监控</td>
+<td>怎么量、用什么工具量</td>
+<td>SAS KB0036667，Performance monitoring and troubleshooting</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="symptom">什么现象先怀疑哪一层</h3>
+<p>这张表是用来缩小范围的，不是诊断结论。但它能帮你少走几圈：</p>
+
+<table class="kb-table">
+<col width="38%" />
+<col width="26%" />
+<col width="36%" />
+<thead>
+<tr><th>现象</th><th>先怀疑</th><th>往下看什么</th></tr>
+</thead>
+<tbody>
+<tr><td>单个大步骤慢，CPU 不高，磁盘一直在忙</td><td>I/O 与存储</td><td>存储吞吐、条带、WORK 库位置</td></tr>
+<tr><td>单机跑得快，网格上反而慢</td><td>Grid 调度</td><td>节点分配、并发数、共享库访问</td></tr>
+<tr><td>虚机上性能波动大，白天晚上不一样</td><td>虚拟化</td><td>宿主机资源争抢、CPU 就绪时间</td></tr>
+<tr><td>云上比本地慢，尤其是读写中间数据集</td><td>公有云</td><td>存储类型、网络带宽、实例规格</td></tr>
+<tr><td>启动就报错，或者日志报资源不足</td><td>操作系统</td><td>句柄数、内存上限、ulimit</td></tr>
+<tr><td>偶发卡顿、任务莫名失败</td><td>高可用</td><td>节点切换、共享存储挂载</td></tr>
+</tbody>
+</table>
+
+<h3 id="howto">怎么用这些文档</h3>
+<ul class="notes">
+<li><b>先读总览那份，再读具体那层。</b>总览会说明各层之间的依赖关系，比如先调 OS 再调存储，顺序反了做了也没用。</li>
+<li><b>一次只改一个参数。</b>同时改三个参数，跑快了也不知道是哪个起的作用，跑慢了更没法回退。</li>
+<li><b>改之前先量一次基线。</b>没有基线的调优只能靠感觉，具体怎么量看“性能问题怎么查”那一篇。</li>
+<li><b>这些是基础设施层面的调优，和程序层面的优化是两回事。</b>先确认不是程序写法的问题（比如重复读大表、缺索引、数据集没压缩），再去动系统参数。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS Support, <a href="https://sas.service-now.com/csm?id=kb_article_view&sys_kb_id=877009d583ecaa94f68e9120feaad399" target="_blank" rel="noopener"><i>Tuning guidelines and best practices for your hardware infrastructure (systems, storage, virtualization, file systems, and operating systems)</i></a>（SAS 知识库文章，sas.service-now.com）。<span class="src">六层调优文档的索引与适用范围，适用 SAS 9.4，覆盖 AIX、HP-UX、Linux、Solaris。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/en/technical-papers.html" target="_blank" rel="noopener"><i>SAS 技术论文库</i></a>（含性能调优相关白皮书）。<span class="src">各层参数的取值建议。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

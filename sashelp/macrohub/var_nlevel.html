@@ -1,0 +1,225 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>var_nlevel - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html" class="current">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / 变量操作</p>
+<h2>var_nlevel</h2>
+<p class="subtitle">获取指定变量的水平数</p>
+<p class="dependency">依赖: <a href="var_exist.html">var_exist</a></p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>var_nlevel</code></p>
+
+<h3 id="brief">简介</h3>
+<p>返回指定变量在数据集中的不同取值个数。字符变量按去掉尾部空格后的值比较，仅尾部空格不同的取值视为同一水平；数值变量按 <code>GETVARN()</code> 返回的字符表示比较；格式不参与水平计数。<code>INCLUDEMISSING=N</code>（默认）时不计缺失值；为 <code>Y</code> 时字符缺失值计为 1 个水平，数值的普通缺失（<code>.</code>）与各特殊缺失（<code>.A</code> 至 <code>.Z</code>、<code>._</code>）分别计为不同水平。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%var_nlevel(data=&lt;dataset&gt;, var=&lt;variable&gt;)</pre>
+<p>该宏为函数式宏，返回值会直接替换到调用位置，因此必须放在 <code>%put</code>、<code>%let</code>、<code>%if</code> 等宏语句中使用，不能作为独立语句提交。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DATA=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>待统计的 SAS 数据集名，仅支持数据集，不支持视图。</td>
+</tr>
+<tr>
+<td>VAR=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>待统计水平数的变量名。</td>
+</tr>
+<tr>
+<td>INCLUDEMISSING=</td>
+<td>可选参数</td>
+<td>N</td>
+<td>是否将缺失值计入水平数，不区分大小写。<br/>
+N：不计缺失值。<br/>
+Y：计入缺失值；字符缺失计 1 个水平，数值的普通缺失与各特殊缺失分别计数。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：统计字符变量的水平数</h4>
+<pre class="code">%put NOTE: SEX 水平数 = %var_nlevel(data=sashelp.class,var=sex);</pre>
+<p class="result-label">运行结果：</p>
+<pre class="result">NOTE: SEX 水平数 = 2</pre>
+<p><code>Sex</code> 只有 <code>M</code>、<code>F</code> 两个取值，宏返回 2。</p>
+
+<h4>示例 2：包含缺失值时的计数</h4>
+<pre class="code">data work.miss;
+  length c1 $10;
+  c1='A';  n1=1;  output;
+  c1='A '; n1=1;  output;
+  c1='';   n1=.;  output;
+  c1='B';  n1=.A; output;
+  c1='C';  n1=2;  output;
+run;
+
+%put NOTE: C1 不含缺失 = %var_nlevel(data=work.miss,var=c1);
+%put NOTE: C1 含缺失   = %var_nlevel(data=work.miss,var=c1,includemissing=Y);
+%put NOTE: N1 不含缺失 = %var_nlevel(data=work.miss,var=n1);
+%put NOTE: N1 含缺失   = %var_nlevel(data=work.miss,var=n1,includemissing=Y);</pre>
+<p class="result-label">运行结果：</p>
+<pre class="result">NOTE: C1 不含缺失 = 3
+NOTE: C1 含缺失   = 4
+NOTE: N1 不含缺失 = 2
+NOTE: N1 含缺失   = 4</pre>
+<p><code>C1</code> 中 <code>'A'</code> 与 <code>'A '</code> 仅尾部空格不同，视为同一水平，因此不含缺失为 3 个水平（A、B、C），含缺失为 4 个。<code>N1</code> 中数值 1、2 与缺失 <code>.</code>、<code>.A</code> 分别计数，不含缺失为 2，含缺失为 4。</p>
+
+<h4>示例 3：统计数值变量的水平数</h4>
+<pre class="code">%put NOTE: AGE 水平数 = %var_nlevel(data=sashelp.class,var=age);</pre>
+<p class="result-label">运行结果：</p>
+<pre class="result">NOTE: AGE 水平数 = 6</pre>
+<p><code>sashelp.class</code> 中 <code>Age</code> 取值为 11 至 16，共 6 个不同水平；默认不计算缺失值。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+
+<li>返回变量的不同取值个数；字符变量仅尾部空格不同视为同一水平，格式不影响水平计数。</li>
+<li><code>INCLUDEMISSING=N</code> 不计缺失；<code>Y</code> 时字符缺失计 1 个水平，数值的普通缺失与各特殊缺失分别计数。</li>
+<li>逐观测读取数据，处理时间与观测数及水平数成正比；数值变量按 <code>GETVARN()</code> 的字符表示比较，超出显示精度的差异不会被区分。</li>
+<li><code>DATA=</code> 仅支持数据集，不支持视图。</li>
+<li>依赖宏 <code>%var_exist</code>。</li>
+
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<h4>1. 临时变量与临时数据集冲突风险</h4>
+<ul class="notes">
+<li>宏会按变量的不同取值数量创建 <code>_SEEN_1</code>、<code>_SEEN_2</code> … 全局宏变量，运行结束后既不清除也不复位。若会话中已有同名宏变量，其值会被覆盖；取值水平数越多，全局符号表中累积的宏变量越多。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/var/var_nlevel.sas" download>var_nlevel.sas</a></p>
+<p class="download"><a href="../assets/macropackages/var_nlevel.zip" download>var_nlevel and its dependencies.zip</a></p>
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr>
+<th>日期</th>
+<th>修订人</th>
+<th>修订内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-11-01</td>
+<td>Luo Hao</td>
+<td>原始版本。</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

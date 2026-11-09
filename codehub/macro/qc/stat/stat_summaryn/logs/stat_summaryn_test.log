@@ -1,0 +1,5216 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.17 秒
+      
+1          /*==============================================================================
+2           * stat_summaryn_test.sas - Positive (functional) acceptance tests
+3           *==============================================================================
+4           * Macro under test : %stat_summaryn
+5           * File under test   : dev/stat/stat_summaryn.sas
+6           * Dependencies      : %var_exist, %var_coexist, %ds_attr
+7           * Coverage          : output structure, default statistics, multiple VAR=,
+8           *                     STATIS= order and labels, format options, CI_ALPHA=,
+9           *                     SHOWDENOM=/DENOMDLM=/TOTCLASSID=/TOTCLASSLAB=, BY=,
+10          *                     numeric CLASS=, no CLASS=, TEST=PAR/NPAR/AUTO, geometric
+11          *                     statistics, RAWDECSOURCE=, custom CLASS= format,
+12          *                     library-qualified OUT=, single class level, all-missing
+13          *                     CLASS= and VAR=, single observation, DEBUG= cleanup
+14          *============================================================================*/
+15         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+16         %let _qcboot_=%sysfunc(getoption(sysin));
+17         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+18         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+19         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+20         %include "&_qcboot_.\_framework\qc_env.sas";
+85         %let _qcboot_=;
+86         /*----------------------------------------------------------------------------*/
+87         %include "&_QCFW_.";
+380        %include "&_QCDEV_VAR_.\var_exist.sas";
+431        %include "&_QCDEV_VAR_.\var_coexist.sas";
+497        %include "&_QCDEV_DS_.\ds_attr.sas";
+549        %include "&_QCDEV_STAT_.\stat_summaryn.sas";
+977        
+978        %qc_begin(prog=stat_summaryn_test, macro=stat_summaryn);
+#####QC_BEGIN prog=stat_summaryn_test macro=stat_summaryn
+979        
+980        /* helper: count the rows of a dataset that satisfy a condition */
+981        %macro _qc_rows(ds=, where=, expect=1, desc=);
+982          %local rc;
+983          proc sql noprint;
+984            select count(*) into :rc from &ds. where &where.;
+985          quit;
+986          %qc_check_eq(actual=&rc., expect=&expect., desc=&desc.);
+987        %mend _qc_rows;
+988        
+989        /* helper: read a column label through PROC CONTENTS OUT= */
+990        %macro _qc_lbl(ds=, var=, mac=);
+991          %global &mac.;
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+992          proc contents data=&ds. out=_qc_meta noprint;
+993          run;
+994          data _null_;
+995            set _qc_meta;
+996            if upcase(name)=upcase("&var.") then call symputx("&mac.", label);
+997          run;
+998        %mend _qc_lbl;
+999        
+1000       /* helper: get the column number of a variable, 0 when absent */
+1001       %macro _qc_nov(ds=, var=, mac=);
+1002         %global &mac.;
+1003         %local _did _rc;
+1004         %let _did=%sysfunc(open(&ds.));
+1005         %let &mac.=%sysfunc(varnum(&_did.,&var.));
+1006         %let _rc=%sysfunc(close(&_did.));
+1007       %mend _qc_nov;
+1008       
+1009       /*----------------------------------------------------------------------------
+1010        * Shared input data
+1011        *   trt A: 5 records, trt B: 6 records; total 11
+1012        *   age    A 10,12,14,16,18        B 20,22,24,26,28,30
+1013        *   height A 50,52,54,56,58        B 60,62,64,66,68,70
+1014        *   weight A 100,110,120,130,140   B 150,160,170,180,190,200
+1015        *--------------------------------------------------------------------------*/
+1016       data sn_base;
+1017         length trt $1 sex $1;
+1018         input trt $ sex $ age height weight;
+1019         datalines;
+
+NOTE: 数据集 WORK.SN_BASE 有 11 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1031       ;
+1032       run;
+1033       
+1034       /* BY= data: four by groups of two records each */
+1035       data sn_by2;
+1036         length grp $1 subj $1;
+1037         input grp $ subj $ x;
+1038         datalines;
+
+NOTE: 数据集 WORK.SN_BY2 有 8 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1047       ;
+1048       run;
+1049       
+1050       /* three class levels, four records each */
+1051       data sn_3;
+1052         length trt $1;
+1053         input trt $ x;
+1054         datalines;
+
+NOTE: 数据集 WORK.SN_3 有 12 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1067       ;
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+1068       run;
+1069       
+1070       /* numeric CLASS= : 1 has 1 2 3, 2 has 5 7 9 */
+1071       data sn_num;
+1072         input grpn x;
+1073         datalines;
+
+NOTE: 数据集 WORK.SN_NUM 有 6 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1080       ;
+1081       run;
+1082       
+1083       /* TEST=AUTO: Y is symmetric, X contains an extreme outlier */
+1084       data sn_auto;
+1085         length trt $1;
+1086         input trt $ y x;
+1087         datalines;
+
+NOTE: 数据集 WORK.SN_AUTO 有 10 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1098       ;
+1099       run;
+1100       
+1101       /* geometric statistics: four positive values plus one zero and one negative */
+1102       data sn_gm;
+1103         input x;
+1104         datalines;
+
+NOTE: 数据集 WORK.SN_GM 有 6 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1111       ;
+1112       run;
+1113       
+1114       /* decimal places differ between BY groups */
+1115       data sn_dec;
+1116         length grp $1;
+1117         input grp $ x;
+1118         datalines;
+
+NOTE: 数据集 WORK.SN_DEC 有 6 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1125       ;
+1126       run;
+1127       
+1128       /* custom CLASS= format with an unobserved level */
+1129       proc format;
+1130         value $sfmt 'F'='Female' 'M'='Male' 'U'='Unknown';
+NOTE: 输出格式 $SFMT 已输出。
+1131       run;
+
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: “PROCEDURE FORMAT”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+1132       data sn_fmt;
+1133         length trt $1 sex $1;
+1134         input trt $ sex $ age;
+1135         format sex $sfmt.;
+1136         datalines;
+
+NOTE: 数据集 WORK.SN_FMT 有 6 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1143       ;
+1144       run;
+1145       
+1146       /* CLASS= entirely missing */
+1147       data sn_misscls;
+1148         length trt $1;
+1149         input trt $ x;
+1150         datalines;
+
+NOTE: 数据集 WORK.SN_MISSCLS 有 4 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1155       ;
+1156       run;
+1157       
+1158       /* VAR= entirely missing */
+1159       data sn_missvar;
+1160         length trt $1;
+1161         input trt $ x;
+1162         datalines;
+
+NOTE: 数据集 WORK.SN_MISSVAR 有 4 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1167       ;
+1168       run;
+1169       
+1170       /* single observation */
+1171       data sn_single;
+1172         x=5;
+1173       run;
+
+NOTE: 数据集 WORK.SN_SINGLE 有 1 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1174       
+1175       /* single class level */
+1176       data sn_one;
+1177         length trt $1;
+1178         input trt $ x;
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+1179         datalines;
+
+NOTE: 数据集 WORK.SN_ONE 有 3 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1183       ;
+1184       run;
+1185       
+1186       /* one observation in each of two groups - no test is computable */
+1187       data sn_n1;
+1188         length trt $1;
+1189         input trt $ x;
+1190         datalines;
+
+NOTE: 数据集 WORK.SN_N1 有 2 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1193       ;
+1194       run;
+1195       
+1196       /* five ordered values for MED_Q1_Q3 */
+1197       data sn_med;
+1198         input x;
+1199         datalines;
+
+NOTE: 数据集 WORK.SN_MED 有 5 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1205       ;
+1206       run;
+1207       
+1208       /*----------------------------------------------------------------------------
+1209        * CASE 1 : default output - structure, values, labels, sort order, cleanup
+1210        *--------------------------------------------------------------------------*/
+1211       %qc_case(desc=1 default output structure values labels and cleanup);
+#####QC_CASE n=1 desc=1 default output structure values labels and cleanup
+1212       %stat_summaryn(data=sn_base, out=o1, class=trt, var=age);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+6                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+7                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O1 有 5 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1213       
+1214       %qc_expect_ds(ds=o1, desc=C1 output dataset exists);
+#####QC_PASS n=1 desc=C1 output dataset exists
+1215       %qc_expect_nobs(ds=o1, expect=5, desc=C1 one row per statistic);
+#####QC_PASS n=1 desc=C1 one row per statistic
+1216       %qc_expect_var(ds=o1, var=_varidx_, type=N, desc=C1 varidx numeric);
+#####QC_PASS n=1 desc=C1 varidx numeric
+1217       %qc_expect_var(ds=o1, var=_varnam_, type=C, desc=C1 varnam character);
+#####QC_PASS n=1 desc=C1 varnam character
+1218       %qc_expect_var(ds=o1, var=_varlab_, type=C, desc=C1 varlab character);
+#####QC_PASS n=1 desc=C1 varlab character
+1219       %qc_expect_var(ds=o1, var=_statidx_, type=N, desc=C1 statidx numeric);
+#####QC_PASS n=1 desc=C1 statidx numeric
+1220       %qc_expect_var(ds=o1, var=_statnam_, type=C, desc=C1 statnam character);
+#####QC_PASS n=1 desc=C1 statnam character
+1221       %qc_expect_var(ds=o1, var=_statlab_, type=C, desc=C1 statlab character);
+#####QC_PASS n=1 desc=C1 statlab character
+1222       %qc_expect_var(ds=o1, var=trt0, type=C, desc=C1 total column character);
+#####QC_PASS n=1 desc=C1 total column character
+1223       %qc_expect_var(ds=o1, var=trt1, type=C, desc=C1 class A column character);
+#####QC_PASS n=1 desc=C1 class A column character
+1224       %qc_expect_var(ds=o1, var=trt2, type=C, desc=C1 class B column character);
+#####QC_PASS n=1 desc=C1 class B column character
+1225       %qc_expect_len(ds=o1, var=trt1, expect=200, desc=C1 trt1 length 200);
+#####QC_PASS n=1 desc=C1 trt1 length 200
+1226       %qc_expect_len(ds=o1, var=_varnam_, expect=200, desc=C1 varnam length 200);
+#####QC_PASS n=1 desc=C1 varnam length 200
+1227       %qc_expect_len(ds=o1, var=_statlab_, expect=200, desc=C1 statlab length 200);
+#####QC_PASS n=1 desc=C1 statlab length 200
+1228       
+1229       %_qc_rows(ds=o1, where=%str(_varidx_=1 and _varnam_='AGE' and _varlab_='age'), expect=5, desc=C1 analysis
+1229     ! variable identity on every row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+8                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=C1 analysis variable identity on every row
+1230       %_qc_rows(ds=o1, where=%str(_statidx_=1 and _statnam_='N_NMISS' and _statlab_='n(miss)' and trt0='11(0)' and
+1230     ! trt1='5(0)' and trt2='6(0)'), expect=1, desc=C1 N and NMISS row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=C1 N and NMISS row
+1231       %_qc_rows(ds=o1, where=%str(_statidx_=2 and _statnam_='MEAN_STD' and _statlab_='Mean(SD)' and trt0='20.0(6.63)'
+1231     !  and trt1='14.0(3.16)' and trt2='25.0(3.74)'), expect=1, desc=C1 mean and SD row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=C1 mean and SD row
+1232       %_qc_rows(ds=o1, where=%str(_statidx_=3 and _statnam_='MEDIAN' and trt0='20.0' and trt1='14.0' and
+1232     ! trt2='25.0'), expect=1, desc=C1 median row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=C1 median row
+1233       %_qc_rows(ds=o1, where=%str(_statidx_=4 and _statnam_='Q1_Q3' and _statlab_='Q1,Q3' and trt0='14.0, 26.0' and
+1233     ! trt1='12.0, 16.0' and trt2='22.0, 28.0'), expect=1, desc=C1 quartile row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+#####QC_PASS n=1 desc=C1 quartile row
+1234       %_qc_rows(ds=o1, where=%str(_statidx_=5 and _statnam_='MIN_MAX' and _statlab_='Min,Max' and trt0='10, 30' and
+1234     ! trt1='10, 18' and trt2='20, 30'), expect=1, desc=C1 min and max row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=C1 min and max row
+1235       
+1236       %_qc_lbl(ds=o1, var=trt0, mac=_l1a);
+
+NOTE: 数据集 WORK._QC_META 有 9 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 9 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1237       %_qc_lbl(ds=o1, var=trt1, mac=_l1b);
+
+NOTE: 数据集 WORK._QC_META 有 9 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+9                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 9 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1238       %_qc_lbl(ds=o1, var=trt2, mac=_l1c);
+
+NOTE: 数据集 WORK._QC_META 有 9 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 9 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1239       %qc_check_eq(actual=&_l1a., expect=Total@(N=11), desc=C1 total label carries overall N);
+#####QC_PASS n=1 desc=C1 total label carries overall N
+1240       %qc_check_eq(actual=&_l1b., expect=A@(N=5), desc=C1 first class label carries N);
+#####QC_PASS n=1 desc=C1 first class label carries N
+1241       %qc_check_eq(actual=&_l1c., expect=B@(N=6), desc=C1 second class label carries N);
+#####QC_PASS n=1 desc=C1 second class label carries N
+1242       
+1243       %_qc_nov(ds=o1, var=_testv_, mac=_n1);
+1244       %qc_check_eq(actual=&_n1., expect=0, desc=C1 no test columns when TEST=NONE);
+#####QC_PASS n=1 desc=C1 no test columns when TEST=NONE
+1245       %qc_check_eq(actual=%sysfunc(exist(work.stat_summaryn_dsin)), expect=0, desc=C1 DEBUG=0 deletes intermediates);
+#####QC_PASS n=1 desc=C1 DEBUG=0 deletes intermediates
+1246       
+1247       /*----------------------------------------------------------------------------
+1248        * CASE 2 : multiple analysis variables
+1249        *--------------------------------------------------------------------------*/
+1250       %qc_case(desc=2 multiple analysis variables);
+#####QC_CASE n=2 desc=2 multiple analysis variables
+1251       %stat_summaryn(data=sn_base, out=o2, class=trt, var=age height);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 22 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 22 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 22 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+10                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 22 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 22 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 6 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 6 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 30 个观测和 58 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 30 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 30 个观测和 58 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 30 个观测
+11                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 10 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 10 个观测
+NOTE: 数据集 WORK.O2 有 10 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1252       %qc_expect_nobs(ds=o2, expect=10, desc=C2 five rows for each analysis variable);
+#####QC_PASS n=2 desc=C2 five rows for each analysis variable
+1253       %_qc_rows(ds=o2, where=%str(_varidx_=2 and _varnam_='HEIGHT' and _statidx_=1 and trt0='11(0)' and trt1='5(0)'
+1253     ! and trt2='6(0)'), expect=1, desc=C2 height N row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=2 desc=C2 height N row
+1254       %_qc_rows(ds=o2, where=%str(_varidx_=2 and _statidx_=2 and trt0='60.0(6.63)' and trt1='54.0(3.16)' and
+1254     ! trt2='65.0(3.74)'), expect=1, desc=C2 height mean and SD);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=2 desc=C2 height mean and SD
+1255       %_qc_rows(ds=o2, where=%str(_varidx_=2 and _statidx_=4 and trt0='54.0, 66.0' and trt1='52.0, 56.0' and
+1255     ! trt2='62.0, 68.0'), expect=1, desc=C2 height quartiles);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=2 desc=C2 height quartiles
+1256       %_qc_rows(ds=o2, where=%str(_varidx_=2 and _statidx_=5 and trt0='50, 70' and trt1='50, 58' and trt2='60, 70'),
+1256     ! expect=1, desc=C2 height min and max);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=2 desc=C2 height min and max
+1257       
+1258       /*----------------------------------------------------------------------------
+1259        * CASE 3 : custom STATIS= list - order, names, labels and values
+12                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+1260        *--------------------------------------------------------------------------*/
+1261       %qc_case(desc=3 custom statistic list order and labels);
+#####QC_CASE n=3 desc=3 custom statistic list order and labels
+1262       %stat_summaryn(data=sn_base, out=o3, class=trt, var=height,
+1263         statis=n nmiss sum stddev stderr var cv min max range);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+13                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 30 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 30 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 30 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 30 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 10 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 10 个观测
+NOTE: 数据集 WORK.O3 有 10 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1264       
+1265       %qc_expect_nobs(ds=o3, expect=10, desc=C3 one row per requested statistic);
+#####QC_PASS n=3 desc=C3 one row per requested statistic
+1266       %_qc_rows(ds=o3, where=%str(_statidx_=1 and _statnam_='N' and trt0='11' and trt1='5' and trt2='6'), expect=1,
+1266     ! desc=C3 N row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+14                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+#####QC_PASS n=3 desc=C3 N row
+1267       %_qc_rows(ds=o3, where=%str(_statidx_=2 and _statnam_='NMISS' and trt0='0' and trt1='0' and trt2='0'),
+1267     ! expect=1, desc=C3 NMISS row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=3 desc=C3 NMISS row
+1268       %_qc_rows(ds=o3, where=%str(_statidx_=3 and _statnam_='SUM' and trt0='660' and trt1='270' and trt2='390'),
+1268     ! expect=1, desc=C3 sum row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=3 desc=C3 sum row
+1269       %_qc_rows(ds=o3, where=%str(_statidx_=4 and _statnam_='STDDEV' and trt0='6.63' and trt1='3.16' and
+1269     ! trt2='3.74'), expect=1, desc=C3 standard deviation row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=3 desc=C3 standard deviation row
+1270       %_qc_rows(ds=o3, where=%str(_statidx_=5 and _statnam_='STDERR' and trt0='2.00' and trt1='1.41' and
+1270     ! trt2='1.53'), expect=1, desc=C3 standard error row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=3 desc=C3 standard error row
+1271       %_qc_rows(ds=o3, where=%str(_statidx_=6 and _statnam_='VAR' and trt0='44.00' and trt1='10.00' and
+1271     ! trt2='14.00'), expect=1, desc=C3 variance row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=3 desc=C3 variance row
+1272       %_qc_rows(ds=o3, where=%str(_statidx_=7 and _statnam_='CV' and trt0='11.06' and trt1='5.86' and trt2='5.76'),
+1272     ! expect=1, desc=C3 coefficient of variation row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=3 desc=C3 coefficient of variation row
+1273       %_qc_rows(ds=o3, where=%str(_statidx_=8 and _statnam_='MIN' and trt0='50' and trt1='50' and trt2='60'),
+1273     ! expect=1, desc=C3 min row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=3 desc=C3 min row
+1274       %_qc_rows(ds=o3, where=%str(_statidx_=9 and _statnam_='MAX' and trt0='70' and trt1='58' and trt2='70'),
+1274     ! expect=1, desc=C3 max row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=3 desc=C3 max row
+15                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+1275       %_qc_rows(ds=o3, where=%str(_statidx_=10 and _statnam_='RANGE' and trt0='20' and trt1='8' and trt2='10'),
+1275     ! expect=1, desc=C3 range row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=3 desc=C3 range row
+1276       
+1277       /*----------------------------------------------------------------------------
+1278        * CASE 4 : display formats - MAXDEC=, MINMAXFMT=, POSFMT=, SCAFMT=, CVFMT=
+1279        *--------------------------------------------------------------------------*/
+1280       %qc_case(desc=4 display format overrides);
+#####QC_CASE n=4 desc=4 display format overrides
+1281       %stat_summaryn(data=sn_base, out=o4, class=trt, var=age,
+1282         statis=n mean stddev median q1 q3 min max min_max sum cv,
+1283         maxdec=0, minmaxfmt=8.1, posfmt=8.1, scafmt=6.2, cvfmt=8.3);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+16                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 33 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 33 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 33 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 33 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 11 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 11 个观测
+NOTE: 数据集 WORK.O4 有 11 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+17                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      CPU 时间          0.00 秒
+      
+
+1284       %qc_expect_nobs(ds=o4, expect=11, desc=C4 one row per statistic);
+#####QC_PASS n=4 desc=C4 one row per statistic
+1285       %_qc_rows(ds=o4, where=%str(_statidx_=2 and trt0='20.0' and trt1='14.0' and trt2='25.0'), expect=1, desc=C4
+1285     ! POSFMT controls mean);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=4 desc=C4 POSFMT controls mean
+1286       %_qc_rows(ds=o4, where=%str(_statidx_=3 and trt0='6.63' and trt1='3.16' and trt2='3.74'), expect=1, desc=C4
+1286     ! SCAFMT controls standard deviation);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=4 desc=C4 SCAFMT controls standard deviation
+1287       %_qc_rows(ds=o4, where=%str(_statidx_=7 and trt0='10.0' and trt1='10.0' and trt2='20.0'), expect=1, desc=C4
+1287     ! MINMAXFMT controls min);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=4 desc=C4 MINMAXFMT controls min
+1288       %_qc_rows(ds=o4, where=%str(_statidx_=9 and trt0='10.0, 30.0' and trt1='10.0, 18.0' and trt2='20.0, 30.0'),
+1288     ! expect=1, desc=C4 MINMAXFMT controls Min and Max pair);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=4 desc=C4 MINMAXFMT controls Min and Max pair
+1289       %_qc_rows(ds=o4, where=%str(_statidx_=10 and trt0='220.0' and trt1='70.0' and trt2='150.0'), expect=1, desc=C4
+1289     ! MINMAXFMT controls sum);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=4 desc=C4 MINMAXFMT controls sum
+1290       %_qc_rows(ds=o4, where=%str(_statidx_=11 and trt0='33.166' and trt1='22.588' and trt2='14.967'), expect=1,
+1290     ! desc=C4 CVFMT controls CV);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=4 desc=C4 CVFMT controls CV
+1291       
+1292       /*----------------------------------------------------------------------------
+1293        * CASE 5 : CI_ALPHA= and confidence limit statistics
+1294        *--------------------------------------------------------------------------*/
+1295       %qc_case(desc=5 confidence limits with alpha 0.1);
+#####QC_CASE n=5 desc=5 confidence limits with alpha 0.1
+1296       %stat_summaryn(data=sn_base, out=o5, class=trt, var=age,
+1297         statis=clm lclm uclm mean median, ci_alpha=0.1, maxdec=2);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+18                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+19                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O5 有 5 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1298       %qc_expect_nobs(ds=o5, expect=5, desc=C5 one row per statistic);
+#####QC_PASS n=5 desc=C5 one row per statistic
+1299       %_qc_rows(ds=o5, where=%str(_statidx_=1 and _statnam_='CLM' and _statlab_='90% CI' and trt0='16.4, 23.6' and
+1299     ! trt1='11.0, 17.0' and trt2='21.9, 28.1'), expect=1, desc=C5 confidence interval pair);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=5 desc=C5 confidence interval pair
+1300       %_qc_rows(ds=o5, where=%str(_statidx_=2 and _statnam_='LCLM' and _statlab_='90% CI Lower' and trt0='16.4' and
+1300     ! trt1='11.0' and trt2='21.9'), expect=1, desc=C5 lower confidence limit);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=5 desc=C5 lower confidence limit
+1301       %_qc_rows(ds=o5, where=%str(_statidx_=3 and _statnam_='UCLM' and _statlab_='90% CI Upper' and trt0='23.6' and
+20                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+1301     ! trt1='17.0' and trt2='28.1'), expect=1, desc=C5 upper confidence limit);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=5 desc=C5 upper confidence limit
+1302       
+1303       /*----------------------------------------------------------------------------
+1304        * CASE 6 : SHOWDENOM=, DENOMDLM=, TOTCLASSID=, TOTCLASSLAB=
+1305        *--------------------------------------------------------------------------*/
+1306       %qc_case(desc=6 denominator text total id and total label options);
+#####QC_CASE n=6 desc=6 denominator text total id and total label options
+1307       %stat_summaryn(data=sn_base, out=o6, class=trt, var=age,
+1308         showdenom=n, denomdlm=~, totclassid=9, totclasslab=ALL);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+21                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O6 有 5 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+22                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+1309       %qc_expect_var(ds=o6, var=trt9, type=C, desc=C6 total column uses TOTCLASSID);
+#####QC_PASS n=6 desc=C6 total column uses TOTCLASSID
+1310       %_qc_nov(ds=o6, var=trt0, mac=_n6);
+1311       %qc_check_eq(actual=&_n6., expect=0, desc=C6 default total column absent);
+#####QC_PASS n=6 desc=C6 default total column absent
+1312       %_qc_rows(ds=o6, where=%str(_statidx_=1 and trt1='5(0)' and trt2='6(0)' and trt9='11(0)'), expect=1, desc=C6
+1312     ! values stay in class and total columns);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=6 desc=C6 values stay in class and total columns
+1313       %_qc_lbl(ds=o6, var=trt1, mac=_l6a);
+
+NOTE: 数据集 WORK._QC_META 有 9 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 9 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1314       %_qc_lbl(ds=o6, var=trt2, mac=_l6b);
+
+NOTE: 数据集 WORK._QC_META 有 9 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 9 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1315       %_qc_lbl(ds=o6, var=trt9, mac=_l6c);
+
+NOTE: 数据集 WORK._QC_META 有 9 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 9 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1316       %qc_check_eq(actual=&_l6a., expect=A, desc=C6 class label without denominator);
+#####QC_PASS n=6 desc=C6 class label without denominator
+1317       %qc_check_eq(actual=&_l6b., expect=B, desc=C6 second class label without denominator);
+#####QC_PASS n=6 desc=C6 second class label without denominator
+1318       %qc_check_eq(actual=&_l6c., expect=ALL, desc=C6 total label uses TOTCLASSLAB);
+#####QC_PASS n=6 desc=C6 total label uses TOTCLASSLAB
+1319       
+23                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+1320       /*----------------------------------------------------------------------------
+1321        * CASE 7 : BY= groups
+1322        *--------------------------------------------------------------------------*/
+1323       %qc_case(desc=7 by group analysis);
+#####QC_CASE n=7 desc=7 by group analysis
+1324       %stat_summaryn(data=sn_base, out=o7, by=sex, class=trt, var=age);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SORTED 有 11 个观测和 3 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SORTED. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 6 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 5 个观测和 22 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+24                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 5 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 5 行，23 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 5 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 25 个观测和 58 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 25 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 25 个观测和 58 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 25 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 10 个观测和 10 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 10 个观测
+NOTE: 数据集 WORK.O7 有 10 个观测和 10 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SORTED (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+25                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+1325       %qc_expect_nobs(ds=o7, expect=10, desc=C7 five rows for each by group);
+#####QC_PASS n=7 desc=C7 five rows for each by group
+1326       %_qc_rows(ds=o7, where=%str(sex='F' and _statidx_=1 and trt0='9(0)' and trt1='5(0)' and trt2='4(0)'), expect=1,
+1326     !  desc=C7 female group counts);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=7 desc=C7 female group counts
+1327       %_qc_rows(ds=o7, where=%str(sex='F' and _statidx_=2 and trt0='18.0(5.48)' and trt1='14.0(3.16)' and
+1327     ! trt2='23.0(2.58)'), expect=1, desc=C7 female group mean and SD);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=7 desc=C7 female group mean and SD
+1328       %_qc_rows(ds=o7, where=%str(sex='M' and _statidx_=1 and trt0='2(0)' and trt1='' and trt2='2(0)'), expect=1,
+1328     ! desc=C7 absent class level stays blank);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=7 desc=C7 absent class level stays blank
+1329       %_qc_rows(ds=o7, where=%str(sex='M' and _statidx_=2 and trt0='29.0(1.41)' and trt2='29.0(1.41)'), expect=1,
+1329     ! desc=C7 male group mean and SD);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=7 desc=C7 male group mean and SD
+1330       
+1331       /*----------------------------------------------------------------------------
+1332        * CASE 8 : multiple BY= variables
+1333        *--------------------------------------------------------------------------*/
+1334       %qc_case(desc=8 multiple by variables);
+#####QC_CASE n=8 desc=8 multiple by variables
+1335       %stat_summaryn(data=sn_by2, out=o8, by=grp subj, var=x);
+
+WARNING: DROP、KEEP 或 RENAME 列表中的变量 _CLASS_ 从未被引用。
+NOTE: 从数据集 WORK.SN_BY2. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SORTED 有 8 个观测和 3 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SORTED. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 8 个观测和 7 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 8 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+26                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 8 个观测和 23 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 8 行，24 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 40 个观测和 59 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 40 个观测和 59 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 20 个观测和 10 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+27                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 20 个观测
+NOTE: 数据集 WORK.O8 有 20 个观测和 10 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SORTED (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1336       %qc_expect_nobs(ds=o8, expect=20, desc=C8 five rows for each by combination);
+#####QC_PASS n=8 desc=C8 five rows for each by combination
+1337       %_qc_rows(ds=o8, where=%str(grp='A' and subj='P' and _statidx_=2 and trt0='1.5(0.71)'), expect=1, desc=C8 group
+1337     !  A P statistics);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=8 desc=C8 group A P statistics
+1338       %_qc_rows(ds=o8, where=%str(grp='A' and subj='Q' and _statidx_=2 and trt0='3.5(0.71)'), expect=1, desc=C8 group
+1338     !  A Q statistics);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=8 desc=C8 group A Q statistics
+1339       %_qc_rows(ds=o8, where=%str(grp='B' and subj='P' and _statidx_=2 and trt0='5.5(0.71)'), expect=1, desc=C8 group
+1339     !  B P statistics);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=8 desc=C8 group B P statistics
+1340       %_qc_rows(ds=o8, where=%str(grp='B' and subj='Q' and _statidx_=2 and trt0='7.5(0.71)'), expect=1, desc=C8 group
+1340     !  B Q statistics);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=8 desc=C8 group B Q statistics
+1341       
+1342       /*----------------------------------------------------------------------------
+1343        * CASE 9 : numeric CLASS=
+1344        *--------------------------------------------------------------------------*/
+28                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+1345       %qc_case(desc=9 numeric class variable);
+#####QC_CASE n=9 desc=9 numeric class variable
+1346       %stat_summaryn(data=sn_num, out=o9, class=grpn, var=x);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_NUM. 读取了 6 个观测
+      WHERE MISSING(grpn)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_NUM. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 6 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 6 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+29                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O9 有 5 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1347       %qc_expect_nobs(ds=o9, expect=5, desc=C9 one row per statistic);
+#####QC_PASS n=9 desc=C9 one row per statistic
+1348       %_qc_rows(ds=o9, where=%str(_statidx_=1 and trt0='6(0)' and trt1='3(0)' and trt2='3(0)'), expect=1, desc=C9
+1348     ! counts by numeric class);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=9 desc=C9 counts by numeric class
+1349       %_qc_rows(ds=o9, where=%str(_statidx_=2 and trt0='4.5(3.08)' and trt1='2.0(1.00)' and trt2='7.0(2.00)'),
+30                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+1349     ! expect=1, desc=C9 means by numeric class);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+#####QC_PASS n=9 desc=C9 means by numeric class
+1350       %_qc_lbl(ds=o9, var=trt1, mac=_l9);
+
+NOTE: 数据集 WORK._QC_META 有 9 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 9 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1351       %qc_check_eq(actual=&_l9., expect=1@(N=3), desc=C9 numeric class label);
+#####QC_PASS n=9 desc=C9 numeric class label
+1352       
+1353       /*----------------------------------------------------------------------------
+1354        * CASE 10 : no CLASS= - overall group
+1355        *--------------------------------------------------------------------------*/
+1356       %qc_case(desc=10 no class overall analysis);
+#####QC_CASE n=10 desc=10 no class overall analysis
+1357       %stat_summaryn(data=sn_base, out=o10, var=age);
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+31                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 2 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 2 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 10 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 10 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 10 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 10 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 8 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O10 有 5 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+32                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1358       %qc_expect_nobs(ds=o10, expect=5, desc=C10 one row per statistic);
+#####QC_PASS n=10 desc=C10 one row per statistic
+1359       %_qc_rows(ds=o10, where=%str(_statidx_=1 and trt0='11(0)' and trt1='11(0)'), expect=1, desc=C10 overall counts
+1359     ! in both columns);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=10 desc=C10 overall counts in both columns
+1360       %_qc_rows(ds=o10, where=%str(_statidx_=2 and trt0='20.0(6.63)' and trt1='20.0(6.63)'), expect=1, desc=C10
+1360     ! overall mean and SD);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=10 desc=C10 overall mean and SD
+1361       %_qc_rows(ds=o10, where=%str(trt0 ne trt1), expect=0, desc=C10 total and overall columns agree);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=10 desc=C10 total and overall columns agree
+1362       %_qc_lbl(ds=o10, var=trt1, mac=_l10);
+
+NOTE: 数据集 WORK._QC_META 有 8 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 8 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1363       %qc_check_eq(actual=&_l10., expect=Overall@(N=11), desc=C10 overall column label);
+#####QC_PASS n=10 desc=C10 overall column label
+1364       
+1365       /*----------------------------------------------------------------------------
+1366        * CASE 11 : TEST=PAR with two groups - pooled t test
+1367        *--------------------------------------------------------------------------*/
+1368       %qc_case(desc=11 parametric test for two groups);
+#####QC_CASE n=11 desc=11 parametric test for two groups
+1369       %stat_summaryn(data=sn_base, out=o11, class=trt, var=age, test=par);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+33                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 2 个观测
+      WHERE _type_ not = 0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB1 有 1 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_PRETEST 有 11 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: WHERE 子句已扩充。
+
+34                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_T2 有 1 个观测和 8 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_T1 有 2 个观测和 8 个变量。
+NOTE: “PROCEDURE TTEST”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_T1. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_T2. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_T3 有 1 个观测和 13 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_NPAR 有 1 个观测和 18 个变量。
+NOTE: “PROCEDURE NPAR1WAY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 1 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_T3. 读取了 1 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_NPAR. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB3 有 3 个观测和 44 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB3. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 82 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 82 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+35                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 12 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O11 有 5 个观测和 12 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_PRETEST (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_NPAR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_T1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_T2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_T3 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1370       %qc_expect_var(ds=o11, var=_testv_, type=N, desc=C11 test statistic column exists);
+#####QC_PASS n=11 desc=C11 test statistic column exists
+1371       %qc_expect_var(ds=o11, var=_testp_, type=N, desc=C11 p value column exists);
+#####QC_PASS n=11 desc=C11 p value column exists
+1372       %qc_expect_var(ds=o11, var=_testm_, type=C, desc=C11 test method column exists);
+#####QC_PASS n=11 desc=C11 test method column exists
+1373       %_qc_rows(ds=o11, where=%str(_statidx_=1 and _testm_='t test' and _testp_<0.001 and _testv_<0), expect=1,
+1373     ! desc=C11 t test reported on first row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=11 desc=C11 t test reported on first row
+1374       %_qc_rows(ds=o11, where=%str(_statidx_>1 and _testm_=''), expect=4, desc=C11 test columns cleared on later
+1374     ! rows);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=11 desc=C11 test columns cleared on later rows
+1375       
+1376       /*----------------------------------------------------------------------------
+1377        * CASE 12 : TEST=PAR with three groups - ANOVA
+1378        *--------------------------------------------------------------------------*/
+1379       %qc_case(desc=12 parametric test for three groups);
+#####QC_CASE n=12 desc=12 parametric test for three groups
+1380       %stat_summaryn(data=sn_3, out=o12, class=trt, var=x, test=par);
+36                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_3. 读取了 12 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_3. 读取了 12 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 12 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 12 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 12 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 12 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 12 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 4 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+      WHERE _type_ not = 0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB1 有 1 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+37                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 12 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_PRETEST 有 12 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: WHERE 子句已扩充。
+
+NOTE: 没有从数据集 WORK.STAT_SUMMARYN_PRETEST 中选择观测。
+NOTE: “PROCEDURE TTEST”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_NPAR 有 1 个观测和 10 个变量。
+NOTE: “PROCEDURE NPAR1WAY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 4 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 4 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.03 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 4 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 1 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_NPAR. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB3 有 4 个观测和 33 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB3. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 20 个观测和 76 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 20 个观测和 76 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 20 个观测
+38                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 13 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O12 有 5 个观测和 13 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_PRETEST (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_NPAR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1381       %qc_expect_nobs(ds=o12, expect=5, desc=C12 one row per statistic);
+#####QC_PASS n=12 desc=C12 one row per statistic
+1382       %qc_expect_var(ds=o12, var=trt3, type=C, desc=C12 third class column exists);
+#####QC_PASS n=12 desc=C12 third class column exists
+1383       %_qc_rows(ds=o12, where=%str(_statidx_=1 and _testm_='ANOVA' and _testp_<0.001 and _testv_>30), expect=1,
+1383     ! desc=C12 ANOVA reported on first row);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=12 desc=C12 ANOVA reported on first row
+1384       %_qc_rows(ds=o12, where=%str(_statidx_>1 and _testp_=.), expect=4, desc=C12 p value cleared on later rows);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=12 desc=C12 p value cleared on later rows
+1385       
+1386       /*----------------------------------------------------------------------------
+1387        * CASE 13 : TEST=NPAR with two groups - Wilcoxon
+1388        *--------------------------------------------------------------------------*/
+1389       %qc_case(desc=13 nonparametric test for two groups);
+#####QC_CASE n=13 desc=13 nonparametric test for two groups
+1390       %stat_summaryn(data=sn_base, out=o13, class=trt, var=age, test=npar);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+39                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 2 个观测
+      WHERE _type_ not = 0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB1 有 1 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_PRETEST 有 11 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+40                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+NOTE: WHERE 子句已扩充。
+
+NOTE: 没有从数据集 WORK.STAT_SUMMARYN_PRETEST 中选择观测。
+NOTE: “PROCEDURE TTEST”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_NPAR 有 1 个观测和 18 个变量。
+NOTE: “PROCEDURE NPAR1WAY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 1 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_NPAR. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB3 有 3 个观测和 41 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB3. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 82 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 82 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 12 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+41                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O13 有 5 个观测和 12 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_PRETEST (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_NPAR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1391       %_qc_rows(ds=o13, where=%str(_statidx_=1 and _testm_='Wilcoxon' and _testp_<0.01), expect=1, desc=C13 Wilcoxon
+1391     ! test reported);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=13 desc=C13 Wilcoxon test reported
+1392       %_qc_rows(ds=o13, where=%str(_statidx_>1 and _testm_=''), expect=4, desc=C13 test columns cleared on later
+1392     ! rows);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=13 desc=C13 test columns cleared on later rows
+1393       
+1394       /*----------------------------------------------------------------------------
+1395        * CASE 14 : TEST=NPAR with three groups - Kruskal-Wallis
+1396        *--------------------------------------------------------------------------*/
+1397       %qc_case(desc=14 nonparametric test for three groups);
+#####QC_CASE n=14 desc=14 nonparametric test for three groups
+1398       %stat_summaryn(data=sn_3, out=o14, class=trt, var=x, test=npar);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_3. 读取了 12 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_3. 读取了 12 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 12 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+42                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 12 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 12 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 12 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 12 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 4 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+      WHERE _type_ not = 0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB1 有 1 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 12 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_PRETEST 有 12 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: WHERE 子句已扩充。
+
+NOTE: 没有从数据集 WORK.STAT_SUMMARYN_PRETEST 中选择观测。
+NOTE: “PROCEDURE TTEST”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+43                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_NPAR 有 1 个观测和 10 个变量。
+NOTE: “PROCEDURE NPAR1WAY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 4 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 4 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 4 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 1 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_NPAR. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB3 有 4 个观测和 33 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB3. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 20 个观测和 76 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 20 个观测和 76 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 13 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O14 有 5 个观测和 13 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+44                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_PRETEST (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_NPAR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1399       %_qc_rows(ds=o14, where=%str(_statidx_=1 and _testm_='Kruskal-Wallis' and _testp_<0.01), expect=1, desc=C14
+1399     ! Kruskal-Wallis test reported);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=14 desc=C14 Kruskal-Wallis test reported
+1400       
+1401       /*----------------------------------------------------------------------------
+1402        * CASE 15 : TEST=AUTO - per variable normality decision
+1403        *--------------------------------------------------------------------------*/
+1404       %qc_case(desc=15 automatic test selection);
+#####QC_CASE n=15 desc=15 automatic test selection
+1405       %stat_summaryn(data=sn_auto, out=o15, class=trt, var=y x, test=auto);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_AUTO. 读取了 10 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_AUTO. 读取了 10 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 20 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 20 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+45                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 6 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_NORM 有 4 个观测和 4 个变量。
+NOTE: “PROCEDURE UNIVARIATE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 4 个观测
+      WHERE _type_ not = 0;
+NOTE: 从数据集 WORK.STAT_SUMMARYN_NORM. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB1 有 2 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 20 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_PRETEST 有 20 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: WHERE 子句已扩充。
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_T2 有 1 个观测和 8 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_T1 有 2 个观测和 8 个变量。
+NOTE: “PROCEDURE TTEST”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_T1. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_T2. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_T3 有 1 个观测和 13 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+46                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_NPAR 有 2 个观测和 18 个变量。
+NOTE: “PROCEDURE NPAR1WAY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 6 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 6 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_T3. 读取了 1 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_NPAR. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB3 有 6 个观测和 44 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB3. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 30 个观测和 83 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 30 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 30 个观测和 83 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 30 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 10 个观测和 12 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 10 个观测
+NOTE: 数据集 WORK.O15 有 10 个观测和 12 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+47                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_NORM (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_PRETEST (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_NPAR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_T1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_T2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_T3 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1406       %_qc_rows(ds=o15, where=%str(_varidx_=1 and _statidx_=1 and _testm_='t test'), expect=1, desc=C15 symmetric
+1406     ! variable uses t test);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+#####QC_PASS n=15 desc=C15 symmetric variable uses t test
+1407       %_qc_rows(ds=o15, where=%str(_varidx_=2 and _statidx_=1 and _testm_='Wilcoxon'), expect=1, desc=C15 skewed
+1407     ! variable uses Wilcoxon);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=15 desc=C15 skewed variable uses Wilcoxon
+1408       %_qc_rows(ds=o15, where=%str(_statidx_=1 and _testp_^=.), expect=2, desc=C15 both variables carry a p value);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=15 desc=C15 both variables carry a p value
+1409       
+1410       /*----------------------------------------------------------------------------
+1411        * CASE 16 : geometric statistics - non-positive values excluded
+1412        *--------------------------------------------------------------------------*/
+1413       %qc_case(desc=16 geometric statistics);
+#####QC_CASE n=16 desc=16 geometric statistics
+1414       %stat_summaryn(data=sn_gm, out=o16, var=x,
+1415         statis=gm gm_lclm gm_uclm gm_clm gm_std gm_stddev gm_cv n nmiss);
+
+NOTE: 从数据集 WORK.SN_GM. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 6 个观测和 6 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 6 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+48                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 2 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_GM 有 2 个观测和 10 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 2 行，27 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 18 个观测和 74 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 18 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 18 个观测和 74 个变量。
+49                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 18 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 9 个观测和 8 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 9 个观测
+NOTE: 数据集 WORK.O16 有 9 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_GM (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1416       %qc_expect_nobs(ds=o16, expect=9, desc=C16 one row per statistic);
+#####QC_PASS n=16 desc=C16 one row per statistic
+1417       %_qc_rows(ds=o16, where=%str(_statidx_=1 and _statnam_='GM' and trt0='2.8'), expect=1, desc=C16 geometric mean
+1417     ! uses positive values only);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=16 desc=C16 geometric mean uses positive values only
+1418       %_qc_rows(ds=o16, where=%str(_statidx_=2 and _statnam_='GM_LCLM' and trt0='0.7'), expect=1, desc=C16 geometric
+1418     ! lower confidence limit);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=16 desc=C16 geometric lower confidence limit
+1419       %_qc_rows(ds=o16, where=%str(_statidx_=3 and _statnam_='GM_UCLM' and trt0='11.7'), expect=1, desc=C16 geometric
+1419     !  upper confidence limit);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=16 desc=C16 geometric upper confidence limit
+1420       %_qc_rows(ds=o16, where=%str(_statidx_=4 and _statnam_='GM_CLM' and _statlab_='GM 95% CI' and trt0='0.7,
+1420     ! 11.7'), expect=1, desc=C16 geometric confidence interval pair);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+50                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=16 desc=C16 geometric confidence interval pair
+1421       %_qc_rows(ds=o16, where=%str(_statidx_=5 and _statnam_='GM_STD' and trt0='2.8(2.45)'), expect=1, desc=C16
+1421     ! geometric mean and CV pair);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=16 desc=C16 geometric mean and CV pair
+1422       %_qc_rows(ds=o16, where=%str(_statidx_=6 and _statnam_='GM_STDDEV' and trt0='2.45'), expect=1, desc=C16
+1422     ! geometric standard deviation);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=16 desc=C16 geometric standard deviation
+1423       %_qc_rows(ds=o16, where=%str(_statidx_=7 and _statnam_='GM_CV' and trt0='110.78'), expect=1, desc=C16 geometric
+1423     !  coefficient of variation);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=16 desc=C16 geometric coefficient of variation
+1424       %_qc_rows(ds=o16, where=%str(_statidx_=8 and _statnam_='N' and trt0='6'), expect=1, desc=C16 N counts
+1424     ! non-missing values);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=16 desc=C16 N counts non-missing values
+1425       %_qc_rows(ds=o16, where=%str(_statidx_=9 and _statnam_='NMISS' and trt0='0'), expect=1, desc=C16 NMISS ignores
+1425     ! non-positive values);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=16 desc=C16 NMISS ignores non-positive values
+1426       
+1427       /*----------------------------------------------------------------------------
+1428        * CASE 17 : RAWDECSOURCE=OVERALL and BY
+1429        *--------------------------------------------------------------------------*/
+1430       %qc_case(desc=17 raw decimal source overall and by group);
+#####QC_CASE n=17 desc=17 raw decimal source overall and by group
+1431       %stat_summaryn(data=sn_dec, out=o17a, by=grp, var=x, rawdecsource=overall);
+
+WARNING: DROP、KEEP 或 RENAME 列表中的变量 _CLASS_ 从未被引用。
+NOTE: 从数据集 WORK.SN_DEC. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SORTED 有 6 个观测和 2 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SORTED. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 6 个观测和 6 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+51                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 6 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 4 个观测和 22 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 4 行，23 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 20 个观测和 58 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 20 个观测
+52                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 20 个观测和 58 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 10 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 10 个观测
+NOTE: 数据集 WORK.O17A 有 10 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SORTED (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1432       %stat_summaryn(data=sn_dec, out=o17b, by=grp, var=x, rawdecsource=by);
+
+WARNING: DROP、KEEP 或 RENAME 列表中的变量 _CLASS_ 从未被引用。
+NOTE: 从数据集 WORK.SN_DEC. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SORTED 有 6 个观测和 2 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SORTED. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 6 个观测和 6 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 6 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+53                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 2 个观测和 5 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 4 个观测和 22 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 4 行，23 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 20 个观测和 58 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 20 个观测和 58 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 10 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+54                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 10 个观测
+NOTE: 数据集 WORK.O17B 有 10 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SORTED (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1433       %_qc_rows(ds=o17a, where=%str(grp='A' and _statidx_=2 and trt0='2.000(1.0000)'), expect=1, desc=C17 overall
+1433     ! source uses widest decimals for group A);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=17 desc=C17 overall source uses widest decimals for group A
+1434       %_qc_rows(ds=o17a, where=%str(grp='B' and _statidx_=2 and trt0='2.250(1.0000)'), expect=1, desc=C17 overall
+1434     ! source uses widest decimals for group B);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=17 desc=C17 overall source uses widest decimals for group B
+1435       %_qc_rows(ds=o17b, where=%str(grp='A' and _statidx_=2 and trt0='2.0(1.00)'), expect=1, desc=C17 by source uses
+1435     ! group A decimals);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=17 desc=C17 by source uses group A decimals
+1436       %_qc_rows(ds=o17b, where=%str(grp='B' and _statidx_=2 and trt0='2.250(1.0000)'), expect=1, desc=C17 by source
+1436     ! uses group B decimals);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=17 desc=C17 by source uses group B decimals
+1437       
+1438       /*----------------------------------------------------------------------------
+1439        * CASE 18 : custom format on CLASS= - unobserved level reported
+1440        *--------------------------------------------------------------------------*/
+1441       %qc_case(desc=18 custom class format levels);
+#####QC_CASE n=18 desc=18 custom class format levels
+1442       %stat_summaryn(data=sn_fmt, out=o18, class=sex, var=age);
+NOTE: WHERE 子句已扩充。
+
+55                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 从数据集 WORK.SN_FMT. 读取了 6 个观测
+      WHERE MISSING(sex)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_FMT. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 6 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 6 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 4 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 4 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 4 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+56                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 20 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 20 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 10 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O18 有 5 个观测和 10 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1443       %qc_expect_nobs(ds=o18, expect=5, desc=C18 one row per statistic);
+#####QC_PASS n=18 desc=C18 one row per statistic
+1444       %qc_expect_var(ds=o18, var=trt3, type=C, desc=C18 unobserved level column created);
+#####QC_PASS n=18 desc=C18 unobserved level column created
+1445       %_qc_rows(ds=o18, where=%str(_statidx_=1 and trt0='6(0)' and trt1='3(0)' and trt2='3(0)' and trt3='0(0)'),
+1445     ! expect=1, desc=C18 counts for all format levels);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=18 desc=C18 counts for all format levels
+1446       %_qc_rows(ds=o18, where=%str(_statidx_=2 and trt1='12.7(3.06)' and trt2='17.3(3.06)' and trt3='N/A(N/A)'),
+1446     ! expect=1, desc=C18 unobserved level shows N/A);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+57                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      
+
+#####QC_PASS n=18 desc=C18 unobserved level shows N/A
+1447       %_qc_lbl(ds=o18, var=trt3, mac=_l18);
+
+NOTE: 数据集 WORK._QC_META 有 10 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 10 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1448       %qc_check_eq(actual=&_l18., expect=Unknown@(N=0), desc=C18 formatted label used for column);
+#####QC_PASS n=18 desc=C18 formatted label used for column
+1449       
+1450       /*----------------------------------------------------------------------------
+1451        * CASE 19 : library qualified OUT=
+1452        *--------------------------------------------------------------------------*/
+1453       %qc_case(desc=19 library qualified output dataset);
+#####QC_CASE n=19 desc=19 library qualified output dataset
+1454       libname qcstat "&_QCRES_.";
+NOTE: 已成功分配逻辑库引用名“QCSTAT”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_results
+1455       %stat_summaryn(data=sn_base, out=qcstat.stat_summaryn_o19, class=trt, var=age);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+58                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 QCSTAT.STAT_SUMMARYN_O19 有 5 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+59                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1456       %qc_expect_ds(ds=qcstat.stat_summaryn_o19, desc=C19 output created in permanent library);
+#####QC_PASS n=19 desc=C19 output created in permanent library
+1457       %qc_expect_nobs(ds=qcstat.stat_summaryn_o19, expect=5, desc=C19 permanent output rows);
+#####QC_PASS n=19 desc=C19 permanent output rows
+1458       %_qc_rows(ds=qcstat.stat_summaryn_o19, where=%str(_statidx_=2 and trt0='20.0(6.63)' and trt1='14.0(3.16)'),
+1458     ! expect=1, desc=C19 permanent output values);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+#####QC_PASS n=19 desc=C19 permanent output values
+1459       libname qcstat clear;
+NOTE: 已取消对逻辑库引用名 QCSTAT 的分配。
+1460       
+1461       /*----------------------------------------------------------------------------
+1462        * CASE 20 : single class level forces TEST= to NONE
+1463        *--------------------------------------------------------------------------*/
+1464       %qc_case(desc=20 single class level forces test to none);
+#####QC_CASE n=20 desc=20 single class level forces test to none
+1465       %stat_summaryn(data=sn_one, out=o20, class=trt, var=x, test=par);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_ONE. 读取了 3 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 1 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+WARNING: Only one overall group is analysed, thus TEST= option will be forced to NONE
+
+NOTE: 从数据集 WORK.SN_ONE. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 3 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 3 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+60                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 2 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 2 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 10 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 10 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 10 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 10 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 8 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+61                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O20 有 5 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1466       %qc_expect_nobs(ds=o20, expect=5, desc=C20 output rows);
+#####QC_PASS n=20 desc=C20 output rows
+1467       %_qc_nov(ds=o20, var=_testv_, mac=_n20);
+1468       %qc_check_eq(actual=&_n20., expect=0, desc=C20 test columns dropped);
+#####QC_PASS n=20 desc=C20 test columns dropped
+1469       %_qc_rows(ds=o20, where=%str(_statidx_=2 and trt0='2.0(1.00)' and trt1='2.0(1.00)'), expect=1, desc=C20 overall
+1469     !  statistics retained);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=20 desc=C20 overall statistics retained
+1470       
+1471       /*----------------------------------------------------------------------------
+1472        * CASE 21 : CLASS= entirely missing - overall analysis
+1473        *--------------------------------------------------------------------------*/
+1474       %qc_case(desc=21 class variable entirely missing);
+#####QC_CASE n=21 desc=21 class variable entirely missing
+1475       %stat_summaryn(data=sn_misscls, out=o21, class=trt, var=x);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 没有从数据集 WORK.SN_MISSCLS 中选择观测。
+NOTE: 从数据集 WORK.SN_MISSCLS. 读取了 0 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 0 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_MISSCLS. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 4 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+62                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 4 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 2 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 2 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 10 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 10 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 10 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+63                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 10 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 8 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O21 有 5 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1476       %qc_expect_nobs(ds=o21, expect=5, desc=C21 overall analysis rows);
+#####QC_PASS n=21 desc=C21 overall analysis rows
+1477       %_qc_rows(ds=o21, where=%str(_statidx_=1 and trt0='4(0)' and trt1='4(0)'), expect=1, desc=C21 all records
+1477     ! counted once);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=21 desc=C21 all records counted once
+1478       %_qc_rows(ds=o21, where=%str(_statidx_=2 and trt1='2.5(1.29)'), expect=1, desc=C21 overall mean and SD);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=21 desc=C21 overall mean and SD
+1479       %_qc_lbl(ds=o21, var=trt1, mac=_l21);
+
+NOTE: 数据集 WORK._QC_META 有 8 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 8 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1480       %qc_check_eq(actual=&_l21., expect=Overall@(N=4), desc=C21 overall column label);
+#####QC_PASS n=21 desc=C21 overall column label
+64                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+1481       
+1482       /*----------------------------------------------------------------------------
+1483        * CASE 22 : VAR= entirely missing
+1484        *--------------------------------------------------------------------------*/
+1485       %qc_case(desc=22 analysis variable entirely missing);
+#####QC_CASE n=22 desc=22 analysis variable entirely missing
+1486       %stat_summaryn(data=sn_missvar, out=o22, class=trt, var=x);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_MISSVAR. 读取了 4 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_MISSVAR. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 4 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 4 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+65                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.03 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O22 有 5 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1487       %qc_expect_nobs(ds=o22, expect=5, desc=C22 one row per statistic);
+#####QC_PASS n=22 desc=C22 one row per statistic
+1488       %_qc_rows(ds=o22, where=%str(_statidx_=1 and trt0='0(4)' and trt1='0(2)' and trt2='0(2)'), expect=1, desc=C22 N
+1488     !  and NMISS for all-missing variable);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+66                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      
+
+#####QC_PASS n=22 desc=C22 N and NMISS for all-missing variable
+1489       %_qc_rows(ds=o22, where=%str(_statidx_=2 and trt0='N/A(N/A)' and trt1='N/A(N/A)' and trt2='N/A(N/A)'),
+1489     ! expect=1, desc=C22 mean and SD shown as N/A);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=22 desc=C22 mean and SD shown as N/A
+1490       %_qc_rows(ds=o22, where=%str(_statidx_=5 and trt0='N/A, N/A'), expect=1, desc=C22 min and max shown as N/A);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=22 desc=C22 min and max shown as N/A
+1491       
+1492       /*----------------------------------------------------------------------------
+1493        * CASE 23 : single observation
+1494        *--------------------------------------------------------------------------*/
+1495       %qc_case(desc=23 single observation input);
+#####QC_CASE n=23 desc=23 single observation input
+1496       %stat_summaryn(data=sn_single, out=o23, var=x);
+
+NOTE: 从数据集 WORK.SN_SINGLE. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 1 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 1 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.06 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 2 个观测和 21 个变量。
+67                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 2 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 10 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 10 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 10 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 10 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 8 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O23 有 5 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+68                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+1497       %qc_expect_nobs(ds=o23, expect=5, desc=C23 one row per statistic);
+#####QC_PASS n=23 desc=C23 one row per statistic
+1498       %_qc_rows(ds=o23, where=%str(_statidx_=1 and trt0='1(0)' and trt1='1(0)'), expect=1, desc=C23 single record
+1498     ! counted);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=23 desc=C23 single record counted
+1499       %_qc_rows(ds=o23, where=%str(_statidx_=2 and trt0='5.0(N/A)'), expect=1, desc=C23 missing standard deviation
+1499     ! shown as N/A);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+#####QC_PASS n=23 desc=C23 missing standard deviation shown as N/A
+1500       %_qc_rows(ds=o23, where=%str(_statidx_=4 and trt0='5.0, 5.0'), expect=1, desc=C23 single record quartiles);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=23 desc=C23 single record quartiles
+1501       %_qc_rows(ds=o23, where=%str(_statidx_=5 and trt0='5, 5'), expect=1, desc=C23 single record min and max);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=23 desc=C23 single record min and max
+1502       
+1503       /*----------------------------------------------------------------------------
+1504        * CASE 24 : DEBUG=1 keeps intermediates, later DEBUG=0 removes them
+1505        *--------------------------------------------------------------------------*/
+1506       %qc_case(desc=24 debug keeps and releases intermediate datasets);
+#####QC_CASE n=24 desc=24 debug keeps and releases intermediate datasets
+1507       %stat_summaryn(data=sn_base, out=o24, class=trt, var=age, debug=1);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+69                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+70                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O24 有 5 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1508       %qc_check_eq(actual=%sysfunc(exist(work.stat_summaryn_dsin)), expect=1, desc=C24 dsin intermediate kept);
+#####QC_PASS n=24 desc=C24 dsin intermediate kept
+1509       %qc_check_eq(actual=%sysfunc(exist(work.stat_summaryn_summary)), expect=1, desc=C24 summary intermediate kept);
+#####QC_PASS n=24 desc=C24 summary intermediate kept
+1510       %qc_check_eq(actual=%sysfunc(exist(work.stat_summaryn_final)), expect=1, desc=C24 final intermediate kept);
+#####QC_PASS n=24 desc=C24 final intermediate kept
+1511       %stat_summaryn(data=sn_base, out=o24b, class=trt, var=age);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_BASE. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 11 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+71                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 11 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O24B 有 5 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+72                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1512       %qc_check_eq(actual=%sysfunc(exist(work.stat_summaryn_dsin)), expect=0, desc=C24 later DEBUG=0 removes dsin);
+#####QC_PASS n=24 desc=C24 later DEBUG=0 removes dsin
+1513       %qc_check_eq(actual=%sysfunc(exist(work.stat_summaryn_final)), expect=0, desc=C24 later DEBUG=0 removes final);
+#####QC_PASS n=24 desc=C24 later DEBUG=0 removes final
+1514       
+1515       /*----------------------------------------------------------------------------
+1516        * CASE 25 : MED_Q1_Q3 composite statistic
+1517        *--------------------------------------------------------------------------*/
+1518       %qc_case(desc=25 median with quartiles composite);
+#####QC_CASE n=25 desc=25 median with quartiles composite
+1519       %stat_summaryn(data=sn_med, out=o25, var=x, statis=med_q1_q3 median q1 q3);
+
+NOTE: 从数据集 WORK.SN_MED. 读取了 5 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 5 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 5 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 5 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 5 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 5 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 2 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+73                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 2 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.04 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 8 个观测和 57 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 8 个观测和 57 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 4 个观测和 8 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 4 个观测
+NOTE: 数据集 WORK.O25 有 4 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1520       %qc_expect_nobs(ds=o25, expect=4, desc=C25 one row per statistic);
+#####QC_PASS n=25 desc=C25 one row per statistic
+1521       %_qc_rows(ds=o25, where=%str(_statidx_=1 and _statnam_='MED_Q1_Q3' and _statlab_='Median(Q1,Q3)' and
+1521     ! trt0='3.0(2.0, 4.0)'), expect=1, desc=C25 median and quartile pair);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+74                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+#####QC_PASS n=25 desc=C25 median and quartile pair
+1522       %_qc_rows(ds=o25, where=%str(_statidx_=2 and trt0='3.0'), expect=1, desc=C25 median value);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=25 desc=C25 median value
+1523       %_qc_rows(ds=o25, where=%str(_statidx_=3 and trt0='2.0'), expect=1, desc=C25 first quartile);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=25 desc=C25 first quartile
+1524       %_qc_rows(ds=o25, where=%str(_statidx_=4 and trt0='4.0'), expect=1, desc=C25 third quartile);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=25 desc=C25 third quartile
+1525       
+1526       /*----------------------------------------------------------------------------
+1527        * CASE 26 : TEST=PAR with one observation per group - no test is computable
+1528        *--------------------------------------------------------------------------*/
+1529       %qc_case(desc=26 one observation per group has no test);
+#####QC_CASE n=26 desc=26 one observation per group has no test
+1530       %stat_summaryn(data=sn_n1, out=o26, class=trt, var=x, test=par);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 从数据集 WORK.SN_N1. 读取了 2 个观测
+      WHERE MISSING(trt)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SN_N1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 2 个观测和 5 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 2 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+75                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 3 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 2 个观测
+      WHERE _type_ not = 0;
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB1 有 1 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_PRETEST 有 2 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: WHERE 子句已扩充。
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_T2 有 1 个观测和 8 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_T1 有 2 个观测和 8 个变量。
+NOTE: “PROCEDURE TTEST”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_T1. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_T2. 读取了 1 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_T3 有 1 个观测和 13 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: No analysis because the total number of observations must be greater than the number of CLASS levels.
+NOTE: 上述消息针对以下 BY 组: 
+      _byidx_=1 _varidx_=1
+NOTE: 数据集 WORK.STAT_SUMMARYN_TEST_NPAR 有 0 个观测和 10 个变量。
+NOTE: “PROCEDURE NPAR1WAY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+76                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 3 行，22 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.03 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 3 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB1. 读取了 1 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_T3. 读取了 1 个观测
+NOTE: 从数据集 WORK.STAT_SUMMARYN_TEST_NPAR. 读取了 0 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_COMB3 有 3 个观测和 36 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB3. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 76 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 15 个观测和 76 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 15 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 5 个观测和 12 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 5 个观测
+NOTE: 数据集 WORK.O26 有 5 个观测和 12 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+77                                                      SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_PRETEST (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_NPAR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_T1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_T2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_TEST_T3 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1531       %qc_expect_nobs(ds=o26, expect=5, desc=C26 output rows);
+#####QC_PASS n=26 desc=C26 output rows
+1532       %_qc_rows(ds=o26, where=%str(_statidx_=1 and _testm_='N/A'), expect=1, desc=C26 method shown as N/A);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=26 desc=C26 method shown as N/A
+1533       %_qc_rows(ds=o26, where=%str(_statidx_=1 and missing(_testp_)), expect=1, desc=C26 p value is missing);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=26 desc=C26 p value is missing
+1534       %_qc_rows(ds=o26, where=%str(_statidx_>1 and _testm_=''), expect=4, desc=C26 test columns cleared on later
+1534     ! rows);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=26 desc=C26 test columns cleared on later rows
+1535       
+1536       %qc_end;
+#####QC_RESULT prog=stat_summaryn_test macro=stat_summaryn STATUS=PASS ncase=26 npass=144 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          4.21 秒
+      CPU 时间          3.12 秒
+      

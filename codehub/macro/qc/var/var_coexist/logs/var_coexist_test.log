@@ -1,0 +1,318 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.12 秒
+      
+1          /*==============================================================================
+2           * var_coexist_test.sas - Positive (functional) acceptance tests
+3           *==============================================================================
+4           * Macro under test : %var_coexist
+5           * File under test   : dev/var/var_coexist.sas
+6           * Coverage          : BOOLEAN / POSITION result types, all-exist / some-missing,
+7           *                     variable order independent, case insensitivity, single var,
+8           *                     library-qualified data, DATA= with (keep=) options,
+9           *                     usage as part of a logical condition, TYPE=ALL/C/N type
+10          *                     verification in both result types.
+11          * Run               : qc/run_all.ps1 (or standalone batch)
+12          *============================================================================*/
+13         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+14         %let _qcboot_=%sysfunc(getoption(sysin));
+15         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+16         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+17         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+18         %include "&_qcboot_.\_framework\qc_env.sas";
+83         %let _qcboot_=;
+84         /*----------------------------------------------------------------------------*/
+85         %include "&_QCFW_.";
+378        %include "&_QCDEV_VAR_.\var_coexist.sas";
+444        
+445        %qc_begin(prog=var_coexist_test, macro=var_coexist);
+#####QC_BEGIN prog=var_coexist_test macro=var_coexist
+446        
+447        /*----------------------------------------------------------------------------
+448         * CASE 1 : BOOLEAN, all variables exist -> 1
+449         *--------------------------------------------------------------------------*/
+450        %qc_case(desc=1 BOOLEAN all variables exist returns 1);
+#####QC_CASE n=1 desc=1 BOOLEAN all variables exist returns 1
+451        data vc1;
+452          x=1; y=2; z=3; w=4;
+453        run;
+
+NOTE: 数据集 WORK.VC1 有 1 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+454        %qc_check_eq(actual=%var_coexist(data=vc1,var=x y z w), expect=1,
+455          desc=C1 all exist BOOLEAN=1);
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+#####QC_PASS n=1 desc=C1 all exist BOOLEAN=1
+456        %qc_check_eq(actual=%var_coexist(data=vc1,var=x y z w,resulttype=boolean), expect=1,
+457          desc=C1 explicit BOOLEAN=1);
+#####QC_PASS n=1 desc=C1 explicit BOOLEAN=1
+458        
+459        /*----------------------------------------------------------------------------
+460         * CASE 2 : BOOLEAN, some variable missing -> 0
+461         *--------------------------------------------------------------------------*/
+462        %qc_case(desc=2 BOOLEAN any missing returns 0);
+#####QC_CASE n=2 desc=2 BOOLEAN any missing returns 0
+463        %qc_check_eq(actual=%var_coexist(data=vc1,var=x z missing), expect=0,
+464          desc=C2 one missing BOOLEAN=0);
+#####QC_PASS n=2 desc=C2 one missing BOOLEAN=0
+465        %qc_check_eq(actual=%var_coexist(data=vc1,var=nope x), expect=0,
+466          desc=C2 first missing BOOLEAN=0);
+#####QC_PASS n=2 desc=C2 first missing BOOLEAN=0
+467        
+468        /*----------------------------------------------------------------------------
+469         * CASE 3 : POSITION, all exist -> 1
+470         *--------------------------------------------------------------------------*/
+471        %qc_case(desc=3 POSITION all exist returns 1);
+#####QC_CASE n=3 desc=3 POSITION all exist returns 1
+472        %qc_check_eq(actual=%var_coexist(data=vc1,var=x y z w,resulttype=position), expect=1,
+473          desc=C3 all exist POSITION=1);
+#####QC_PASS n=3 desc=C3 all exist POSITION=1
+474        
+475        /*----------------------------------------------------------------------------
+476         * CASE 4 : POSITION, missing variable at ith place -> -i
+477         *--------------------------------------------------------------------------*/
+478        %qc_case(desc=4 POSITION returns -i for first missing at position i);
+#####QC_CASE n=4 desc=4 POSITION returns -i for first missing at position i
+479        %let _r=%var_coexist(data=vc1,var=nope x y z,resulttype=position);
+480        %qc_check_eq(actual=&_r., expect=-1,
+481          desc=C4 1st var missing -> -1);
+#####QC_PASS n=4 desc=C4 1st var missing -> -1
+482        %let _r=%var_coexist(data=vc1,var=x nope y z,resulttype=position);
+483        %qc_check_eq(actual=&_r., expect=-2,
+484          desc=C4 2nd var missing -> -2);
+#####QC_PASS n=4 desc=C4 2nd var missing -> -2
+485        %let _r=%var_coexist(data=vc1,var=x y nope z,resulttype=position);
+486        %qc_check_eq(actual=&_r., expect=-3,
+487          desc=C4 3rd var missing -> -3);
+#####QC_PASS n=4 desc=C4 3rd var missing -> -3
+488        %let _r=%var_coexist(data=vc1,var=x y z nope,resulttype=position);
+489        %qc_check_eq(actual=&_r., expect=-4,
+490          desc=C4 4th var missing -> -4);
+#####QC_PASS n=4 desc=C4 4th var missing -> -4
+491        /*----------------------------------------------------------------------------
+492         * CASE 5 : variable ORDER should not matter
+493         *--------------------------------------------------------------------------*/
+494        %qc_case(desc=5 order independent);
+#####QC_CASE n=5 desc=5 order independent
+495        %qc_check_eq(actual=%var_coexist(data=vc1,var=z w x y,resulttype=position), expect=1,
+496          desc=C5 shuffled order POSITION=1);
+#####QC_PASS n=5 desc=C5 shuffled order POSITION=1
+497        
+498        /*----------------------------------------------------------------------------
+499         * CASE 6 : variable name CASE insensitivity
+500         *--------------------------------------------------------------------------*/
+501        %qc_case(desc=6 variable names case insensitive);
+#####QC_CASE n=6 desc=6 variable names case insensitive
+502        %qc_check_eq(actual=%var_coexist(data=vc1,var=X Y Z W), expect=1,
+503          desc=C6 uppercase names BOOLEAN=1);
+#####QC_PASS n=6 desc=C6 uppercase names BOOLEAN=1
+504        
+505        /*----------------------------------------------------------------------------
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+506         * CASE 7 : single variable
+507         *--------------------------------------------------------------------------*/
+508        %qc_case(desc=7 single variable);
+#####QC_CASE n=7 desc=7 single variable
+509        %qc_check_eq(actual=%var_coexist(data=vc1,var=x), expect=1,
+510          desc=C7 single exist BOOLEAN=1);
+#####QC_PASS n=7 desc=C7 single exist BOOLEAN=1
+511        %qc_check_eq(actual=%var_coexist(data=vc1,var=solo), expect=0,
+512          desc=C7 single missing BOOLEAN=0);
+#####QC_PASS n=7 desc=C7 single missing BOOLEAN=0
+513        
+514        /*----------------------------------------------------------------------------
+515         * CASE 8 : library-qualified dataset
+516         *--------------------------------------------------------------------------*/
+517        %qc_case(desc=8 library-qualified dataset);
+#####QC_CASE n=8 desc=8 library-qualified dataset
+518        libname qcwork "&_QCRES_.";
+NOTE: 已成功分配逻辑库引用名“QCWORK”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_results
+519        data qcwork.vc8;
+520          a=1; b=2;
+521        run;
+
+NOTE: 数据集 QCWORK.VC8 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+522        %qc_check_eq(actual=%var_coexist(data=qcwork.vc8,var=a b), expect=1,
+523          desc=C8 libname dataset all exist);
+#####QC_PASS n=8 desc=C8 libname dataset all exist
+524        %qc_check_eq(actual=%var_coexist(data=qcwork.vc8,var=b c), expect=0,
+525          desc=C8 libname dataset missing one);
+#####QC_PASS n=8 desc=C8 libname dataset missing one
+526        
+527        /*----------------------------------------------------------------------------
+528         * CASE 9 : DATA= with dataset options e.g. (keep=)  -> first token before '('
+529         *--------------------------------------------------------------------------*/
+530        %qc_case(desc=9 dataset with member-options syntax);
+#####QC_CASE n=9 desc=9 dataset with member-options syntax
+531        %qc_check_eq(actual=%var_coexist(data=vc1(keep=x y),var=x y), expect=1,
+532          desc=C9 keep option subset all exist);
+#####QC_PASS n=9 desc=C9 keep option subset all exist
+533        %qc_check_eq(actual=%var_coexist(data=vc1(keep=x),var=x z), expect=0,
+534          desc=C9 keep option subset missing z);
+#####QC_PASS n=9 desc=C9 keep option subset missing z
+535        
+536        /*----------------------------------------------------------------------------
+537         * CASE 10 : RESULTTYPE value-case insensitivity
+538         *--------------------------------------------------------------------------*/
+539        %qc_case(desc=10 resulttype case-insensitive);
+#####QC_CASE n=10 desc=10 resulttype case-insensitive
+540        %qc_check_eq(actual=%var_coexist(data=vc1,var=x y,resulttype=BOOLean), expect=1,
+541          desc=C10 mixed-case BOOLEAN);
+#####QC_PASS n=10 desc=C10 mixed-case BOOLEAN
+542        %qc_check_eq(actual=%var_coexist(data=vc1,var=x y,resulttype=position), expect=1,
+543          desc=C10 lowercase position all exist);
+#####QC_PASS n=10 desc=C10 lowercase position all exist
+544        %let _r=%var_coexist(data=vc1,var=nope x,resulttype=POSITION);
+545        %qc_check_eq(actual=&_r., expect=-1,
+546          desc=C10 uppercase position missing);
+#####QC_PASS n=10 desc=C10 uppercase position missing
+547        
+548        /*----------------------------------------------------------------------------
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+549         * CASE 11 : usable inside a macro %if %then %else (standard usage)
+550         *           (open-code %IF is not supported by SAS, so wrap in a macro)
+551         *--------------------------------------------------------------------------*/
+552        %qc_case(desc=11 usable in conditional IF inside a macro);
+#####QC_CASE n=11 desc=11 usable in conditional IF inside a macro
+553        %macro _qc_use_coexist(ds=,var=,expect_branch=);
+554          %if %var_coexist(data=&ds.,var=&var.) %then %do;
+555            %let branch=THEN;
+556          %end;
+557          %else %do;
+558            %let branch=ELSE;
+559          %end;
+560          %qc_check_eq(actual=&branch., expect=&expect_branch., desc=C11 branch chosen);
+561        %mend _qc_use_coexist;
+562        
+563        %_qc_use_coexist(ds=vc1,var=x y z w,expect_branch=THEN);
+#####QC_PASS n=11 desc=C11 branch chosen
+564        %_qc_use_coexist(ds=vc1,var=x zzz,expect_branch=ELSE);
+#####QC_PASS n=11 desc=C11 branch chosen
+565        
+566        /* also usable with %let capture */
+567        %let _r = %var_coexist(data=vc1,var=x y z w);
+568        %qc_check(cond=&_r.=1, desc=C11 captured return value 1);
+#####QC_PASS n=11 desc=C11 captured return value 1
+569        
+570        /*----------------------------------------------------------------------------
+571         * CASE 12 : TYPE=ALL explicit
+572         *--------------------------------------------------------------------------*/
+573        %qc_case(desc=12 TYPE ALL explicit);
+#####QC_CASE n=12 desc=12 TYPE ALL explicit
+574        %qc_check_eq(actual=%var_coexist(data=vc1,var=x y z w,type=ALL), expect=1,
+575          desc=C12 TYPE ALL all exist);
+#####QC_PASS n=12 desc=C12 TYPE ALL all exist
+576        %qc_check_eq(actual=%var_coexist(data=vc1,var=x nope,type=ALL), expect=0,
+577          desc=C12 TYPE ALL missing var);
+#####QC_PASS n=12 desc=C12 TYPE ALL missing var
+578        
+579        /*----------------------------------------------------------------------------
+580         * CASE 13 : TYPE=C, all listed variables must be character
+581         *--------------------------------------------------------------------------*/
+582        %qc_case(desc=13 TYPE C);
+#####QC_CASE n=13 desc=13 TYPE C
+583        data vc13;
+584          length c1 $5;
+585          c1='a'; n1=1;
+586        run;
+
+NOTE: 数据集 WORK.VC13 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+587        %qc_check_eq(actual=%var_coexist(data=vc13,var=c1,type=C), expect=1,
+588          desc=C13 char var matches C);
+#####QC_PASS n=13 desc=C13 char var matches C
+589        %qc_check_eq(actual=%var_coexist(data=vc13,var=n1,type=C), expect=0,
+590          desc=C13 num var fails C);
+#####QC_PASS n=13 desc=C13 num var fails C
+591        %qc_check_eq(actual=%var_coexist(data=vc13,var=c1 n1,type=C), expect=0,
+592          desc=C13 mixed vars fail C);
+#####QC_PASS n=13 desc=C13 mixed vars fail C
+593        %qc_check_eq(actual=%var_coexist(data=vc13,var=c1 nope,type=C), expect=0,
+594          desc=C13 char plus missing fails C);
+#####QC_PASS n=13 desc=C13 char plus missing fails C
+595        %qc_check_eq(actual=%var_coexist(data=vc13,var=C1,type=c), expect=1,
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+596          desc=C13 lowercase type c);
+#####QC_PASS n=13 desc=C13 lowercase type c
+597        
+598        /*----------------------------------------------------------------------------
+599         * CASE 14 : TYPE=N, all listed variables must be numeric
+600         *--------------------------------------------------------------------------*/
+601        %qc_case(desc=14 TYPE N);
+#####QC_CASE n=14 desc=14 TYPE N
+602        %qc_check_eq(actual=%var_coexist(data=vc13,var=n1,type=N), expect=1,
+603          desc=C14 num var matches N);
+#####QC_PASS n=14 desc=C14 num var matches N
+604        %qc_check_eq(actual=%var_coexist(data=vc13,var=c1,type=N), expect=0,
+605          desc=C14 char var fails N);
+#####QC_PASS n=14 desc=C14 char var fails N
+606        %qc_check_eq(actual=%var_coexist(data=vc1,var=x y z w,type=N), expect=1,
+607          desc=C14 all numeric match N);
+#####QC_PASS n=14 desc=C14 all numeric match N
+608        %qc_check_eq(actual=%var_coexist(data=vc1,var=x y z w,type=n), expect=1,
+609          desc=C14 lowercase type n);
+#####QC_PASS n=14 desc=C14 lowercase type n
+610        
+611        /*----------------------------------------------------------------------------
+612         * CASE 15 : POSITION reports -i for the first type mismatch
+613         *--------------------------------------------------------------------------*/
+614        %qc_case(desc=15 POSITION type mismatch);
+#####QC_CASE n=15 desc=15 POSITION type mismatch
+615        %let _r=%var_coexist(data=vc13,var=c1 n1,resulttype=POSITION,type=N);
+616        %qc_check_eq(actual=&_r., expect=-1, desc=C15 1st var wrong type -> -1);
+#####QC_PASS n=15 desc=C15 1st var wrong type -> -1
+617        %let _r=%var_coexist(data=vc13,var=n1 c1,resulttype=POSITION,type=N);
+618        %qc_check_eq(actual=&_r., expect=-2, desc=C15 2nd var wrong type -> -2);
+#####QC_PASS n=15 desc=C15 2nd var wrong type -> -2
+619        %let _r=%var_coexist(data=vc13,var=n1 c1,resulttype=POSITION,type=C);
+620        %qc_check_eq(actual=&_r., expect=-1, desc=C15 1st var wrong type for C -> -1);
+#####QC_PASS n=15 desc=C15 1st var wrong type for C -> -1
+621        
+622        %qc_end;
+#####QC_RESULT prog=var_coexist_test macro=var_coexist STATUS=PASS ncase=15 npass=37 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.19 秒
+      CPU 时间          0.17 秒
+      

@@ -1,0 +1,442 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>sdtm_lobxfl - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html" class="current">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / CDISC 标准</p>
+<h2>sdtm_lobxfl</h2>
+<p class="subtitle">为 SDTM 数据集生成基线标志变量（BLFL）</p>
+<p class="dependency">依赖: <a href="var_exist.html">var_exist</a>、<a href="var_coexist.html">var_coexist</a>、<a href="var_attr.html">var_attr</a></p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>sdtm_lobxfl</code></p>
+
+<h3 id="brief">简介</h3>
+<p>在指定的 SDTM 数据集中，按受试者与 <code>BY=</code> 分组筛选合格记录：结果变量非缺失，且记录日期不晚于首次研究药物给药日期。组内按记录日期排序，将最新的一条合格记录标记为 <code>BLFL='Y'</code>，其余记录保持空白。宏不返回值，结果写入 <code>OUT=</code> 数据集；<code>OUT=</code> 默认与 <code>DATA=</code> 相同，即直接更新输入数据集。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%sdtm_lobxfl(data=&lt;dataset&gt;, var=&lt;variable&gt;, dtc=&lt;variable&gt;, blfl=&lt;variable&gt;)</pre>
+<p>该宏为过程式宏，结果写入 <code>OUT=</code> 数据集，不返回值。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DATA=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>输入数据集名。</td>
+</tr>
+<tr>
+<td>VAR=</td>
+<td>必需参数</td>
+<td>&amp;DOMAIN.ORRES</td>
+<td>用于判断记录是否非缺失的变量。字符型排除空白、<code>NA</code>、<code>ND</code> 与 <code>UK</code>；数值型排除普通缺失与特殊缺失值。</td>
+</tr>
+<tr>
+<td>DTC=</td>
+<td>必需参数</td>
+<td>&amp;DOMAIN.DTC</td>
+<td>记录日期时间变量，须为字符型 ISO8601 格式。</td>
+</tr>
+<tr>
+<td>BLFL=</td>
+<td>必需参数</td>
+<td>&amp;DOMAIN.LOBXFL</td>
+<td>要创建的基线标志变量名。</td>
+</tr>
+<tr>
+<td>DOMAIN=</td>
+<td>可选参数</td>
+<td>无</td>
+<td>域名称，用于推导 <code>VAR=</code>、<code>DTC=</code>、<code>BY=</code> 与 <code>BLFL=</code> 的默认值，例如 <code>DOMAIN=LB</code> 对应 <code>LBORRES</code>、<code>LBDTC</code>、<code>LBTESTCD</code>、<code>LBLOBXFL</code>。</td>
+</tr>
+<tr>
+<td>OUT=</td>
+<td>可选参数</td>
+<td>&amp;DATA.</td>
+<td>输出数据集名，默认与 <code>DATA=</code> 相同。</td>
+</tr>
+<tr>
+<td>BY=</td>
+<td>可选参数</td>
+<td>&amp;DOMAIN.TESTCD</td>
+<td>受试者内的分组变量，可指定多个变量，例如 <code>LBTESTCD</code>；每个 BY 组生成一个基线标志。留空时每个受试者只生成一个基线标志。</td>
+</tr>
+<tr>
+<td>SUBJECT=</td>
+<td>可选参数</td>
+<td>USUBJID</td>
+<td>受试者标识变量，只接受一个变量。</td>
+</tr>
+<tr>
+<td>RFDTC=</td>
+<td>可选参数</td>
+<td>SDTM.DM.RFXSTDTC</td>
+<td>首次研究药物给药的参考日期时间，支持三种形式：<br/>
+<code>LIB.DATASET.VARIABLE</code>：已存在数据集的变量。<br/>
+<code>DATASET.VARIABLE</code>：WORK 数据集的变量。<br/>
+<code>VARIABLE</code>：输入数据集自身的变量。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：按检验项目生成基线标志</h4>
+<pre class="code">data work.dm;
+  length USUBJID $8 RFXSTDTC $20;
+  USUBJID='S01'; RFXSTDTC='2024-01-10'; output;
+  USUBJID='S02'; RFXSTDTC='2024-01-10'; output;
+run;
+
+data work.lb;
+  length USUBJID $8 LBTESTCD $8 LBDTC $20 LBORRES $8;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBORRES='10'; output;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-09'; LBORRES='20'; output;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-12'; LBORRES='30'; output;
+  USUBJID='S01'; LBTESTCD='AST'; LBDTC='2024-01-08'; LBORRES='5';  output;
+  USUBJID='S02'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBORRES='NA'; output;
+  USUBJID='S02'; LBTESTCD='ALT'; LBDTC='2024-01-08'; LBORRES='40'; output;
+run;
+
+%sdtm_lobxfl(data=work.lb,out=work.lb_fl,var=LBORRES,dtc=LBDTC,by=LBTESTCD,
+              blfl=LOBXFL,subject=USUBJID,rfdtc=work.dm.rfxstdtc);
+
+proc sort data=work.lb_fl; by USUBJID LBTESTCD LBDTC; run;
+proc print data=work.lb_fl noobs;
+  var USUBJID LBTESTCD LBDTC LBORRES LOBXFL;
+run;</pre>
+<p class="result-label">运行结果（WORK.LB_FL）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="10%" />
+<col width="10%" />
+<col width="18%" />
+<col width="10%" />
+<col width="8%" />
+<thead>
+<tr><th>观测</th><th>USUBJID</th><th>LBTESTCD</th><th>LBDTC</th><th>LBORRES</th><th>LOBXFL</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>S01</td><td>ALT</td><td>2024-01-05</td><td>10</td><td></td></tr>
+<tr><td>2</td><td>S01</td><td>ALT</td><td>2024-01-09</td><td>20</td><td>Y</td></tr>
+<tr><td>3</td><td>S01</td><td>ALT</td><td>2024-01-12</td><td>30</td><td></td></tr>
+<tr><td>4</td><td>S01</td><td>AST</td><td>2024-01-08</td><td>5</td><td>Y</td></tr>
+<tr><td>5</td><td>S02</td><td>ALT</td><td>2024-01-05</td><td>NA</td><td></td></tr>
+<tr><td>6</td><td>S02</td><td>ALT</td><td>2024-01-08</td><td>40</td><td>Y</td></tr>
+</tbody>
+</table>
+<p><code>RFDTC=</code> 取 <code>WORK.DM.RFXSTDTC</code>，两名受试者的首次给药日期均为 <code>2024-01-10</code>。<code>S01</code> 的 <code>ALT</code> 记录中，<code>2024-01-12</code> 晚于参考日期，不参与标记，因此最新合格记录 <code>2024-01-09</code> 被标记；<code>AST</code> 组只有一条记录，直接标记。<code>S02</code> 的 <code>NA</code> 为无效结果，被排除后由 <code>2024-01-08</code> 获得标记。</p>
+
+<h4>示例 2：BY= 留空时每个受试者只生成一个基线标志</h4>
+<pre class="code">data work.dm;
+  length USUBJID $8 RFXSTDTC $20;
+  USUBJID='S01'; RFXSTDTC='2024-01-10'; output;
+run;
+
+data work.lb2;
+  length USUBJID $8 LBTESTCD $8 LBDTC $20 LBORRES $8;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBORRES='10'; output;
+  USUBJID='S01'; LBTESTCD='AST'; LBDTC='2024-01-08'; LBORRES='5';  output;
+  USUBJID='S01'; LBTESTCD='BIL'; LBDTC='2024-01-06'; LBORRES='3';  output;
+run;
+
+%sdtm_lobxfl(data=work.lb2,out=work.lb2_fl,var=LBORRES,dtc=LBDTC,by=,
+              blfl=LOBXFL,subject=USUBJID,rfdtc=work.dm.rfxstdtc);
+
+proc sort data=work.lb2_fl; by USUBJID LBTESTCD LBDTC; run;
+proc print data=work.lb2_fl noobs;
+  var USUBJID LBTESTCD LBDTC LBORRES LOBXFL;
+run;</pre>
+<p class="result-label">运行结果（WORK.LB2_FL）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="10%" />
+<col width="10%" />
+<col width="18%" />
+<col width="10%" />
+<col width="8%" />
+<thead>
+<tr><th>观测</th><th>USUBJID</th><th>LBTESTCD</th><th>LBDTC</th><th>LBORRES</th><th>LOBXFL</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>S01</td><td>ALT</td><td>2024-01-05</td><td>10</td><td></td></tr>
+<tr><td>2</td><td>S01</td><td>AST</td><td>2024-01-08</td><td>5</td><td>Y</td></tr>
+<tr><td>3</td><td>S01</td><td>BIL</td><td>2024-01-06</td><td>3</td><td></td></tr>
+</tbody>
+</table>
+<p><code>BY=</code> 留空后分组键只有 <code>USUBJID</code>，该受试者的全部记录参与排序，最新合格记录为 <code>2024-01-08</code> 的 <code>AST</code>，其余记录不标记。</p>
+
+<h4>示例 3：RFDTC= 使用输入数据集自身的变量</h4>
+<pre class="code">data work.lb3;
+  length USUBJID $8 LBTESTCD $8 LBDTC $20 LBORRES $8 REFDTC $20;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBORRES='10'; REFDTC='2024-01-06'; output;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-09'; LBORRES='20'; REFDTC='2024-01-06'; output;
+run;
+
+%sdtm_lobxfl(data=work.lb3,out=work.lb3_fl,var=LBORRES,dtc=LBDTC,by=LBTESTCD,
+              blfl=LOBXFL,subject=USUBJID,rfdtc=REFDTC);
+
+proc sort data=work.lb3_fl; by USUBJID LBTESTCD LBDTC; run;
+proc print data=work.lb3_fl noobs;
+  var USUBJID LBTESTCD LBDTC LBORRES REFDTC LOBXFL;
+run;</pre>
+<p class="result-label">运行结果（WORK.LB3_FL）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="10%" />
+<col width="10%" />
+<col width="18%" />
+<col width="10%" />
+<col width="14%" />
+<col width="8%" />
+<thead>
+<tr><th>观测</th><th>USUBJID</th><th>LBTESTCD</th><th>LBDTC</th><th>LBORRES</th><th>REFDTC</th><th>LOBXFL</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>S01</td><td>ALT</td><td>2024-01-05</td><td>10</td><td>2024-01-06</td><td>Y</td></tr>
+<tr><td>2</td><td>S01</td><td>ALT</td><td>2024-01-09</td><td>20</td><td>2024-01-06</td><td></td></tr>
+</tbody>
+</table>
+<p><code>RFDTC=REFDTC</code> 只给出一段名称，宏将其解释为输入数据集 <code>WORK.LB3</code> 的变量，逐条读取参考日期。<code>2024-01-09</code> 晚于 <code>2024-01-06</code>，因此由 <code>2024-01-05</code> 获得标记。</p>
+
+<h4>示例 4：使用 DOMAIN= 推导缺省参数</h4>
+<pre class="code">data work.dm;
+  length USUBJID $8 RFXSTDTC $20;
+  USUBJID='S01'; RFXSTDTC='2024-01-10'; output;
+run;
+
+data work.lb4;
+  length USUBJID $8 LBTESTCD $8 LBDTC $20 LBORRES $8;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBORRES='10'; output;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-09'; LBORRES='20'; output;
+  USUBJID='S01'; LBTESTCD='AST'; LBDTC='2024-01-08'; LBORRES='5';  output;
+run;
+
+%sdtm_lobxfl(data=work.lb4,domain=LB,rfdtc=work.dm.rfxstdtc);
+
+proc sort data=work.lb4; by USUBJID LBTESTCD LBDTC; run;
+proc print data=work.lb4 noobs;
+  var USUBJID LBTESTCD LBDTC LBORRES LBlobxfl;
+run;</pre>
+<p class="result-label">运行结果（WORK.LB4）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="10%" />
+<col width="10%" />
+<col width="18%" />
+<col width="10%" />
+<col width="10%" />
+<thead>
+<tr><th>观测</th><th>USUBJID</th><th>LBTESTCD</th><th>LBDTC</th><th>LBORRES</th><th>LBlobxfl</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>S01</td><td>ALT</td><td>2024-01-05</td><td>10</td><td></td></tr>
+<tr><td>2</td><td>S01</td><td>ALT</td><td>2024-01-09</td><td>20</td><td>Y</td></tr>
+<tr><td>3</td><td>S01</td><td>AST</td><td>2024-01-08</td><td>5</td><td>Y</td></tr>
+</tbody>
+</table>
+<p>只指定 <code>DOMAIN=LB</code> 时，宏推导出 <code>VAR=LBORRES</code>、<code>DTC=LBDTC</code>、<code>BY=LBTESTCD</code>、<code>BLFL=LBlobxfl</code>；由于未指定 <code>OUT=</code>，结果直接写回 <code>WORK.LB4</code>，增加一列 <code>LBlobxfl</code>。</p>
+
+<h4>示例 5：数值型结果变量与特殊缺失值</h4>
+<pre class="code">data work.dm;
+  length USUBJID $8 RFXSTDTC $20;
+  USUBJID='S01'; RFXSTDTC='2024-01-10'; output;
+run;
+
+data work.lb5;
+  length USUBJID $8 LBTESTCD $8 LBDTC $20;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBSTRESN=10;  output;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-07'; LBSTRESN=0;   output;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-09'; LBSTRESN=.;   output;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-10'; LBSTRESN=.A;  output;
+  USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-11'; LBSTRESN=99;  output;
+run;
+
+%sdtm_lobxfl(data=work.lb5,out=work.lb5_fl,var=LBSTRESN,dtc=LBDTC,by=LBTESTCD,
+              blfl=LOBXFL,subject=USUBJID,rfdtc=work.dm.rfxstdtc);
+
+proc sort data=work.lb5_fl; by USUBJID LBTESTCD LBDTC; run;
+proc print data=work.lb5_fl noobs;
+  var USUBJID LBTESTCD LBDTC LBSTRESN LOBXFL;
+run;</pre>
+<p class="result-label">运行结果（WORK.LB5_FL）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="10%" />
+<col width="10%" />
+<col width="18%" />
+<col width="12%" />
+<col width="8%" />
+<thead>
+<tr><th>观测</th><th>USUBJID</th><th>LBTESTCD</th><th>LBDTC</th><th>LBSTRESN</th><th>LOBXFL</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>S01</td><td>ALT</td><td>2024-01-05</td><td>10</td><td></td></tr>
+<tr><td>2</td><td>S01</td><td>ALT</td><td>2024-01-07</td><td>0</td><td>Y</td></tr>
+<tr><td>3</td><td>S01</td><td>ALT</td><td>2024-01-09</td><td>.</td><td></td></tr>
+<tr><td>4</td><td>S01</td><td>ALT</td><td>2024-01-10</td><td>A</td><td></td></tr>
+<tr><td>5</td><td>S01</td><td>ALT</td><td>2024-01-11</td><td>99</td><td></td></tr>
+</tbody>
+</table>
+<p><code>VAR=LBSTRESN</code> 为数值型，<code>.</code> 与特殊缺失 <code>.A</code> 均被排除；<code>0</code> 是有效值，可以成为候选记录。<code>2024-01-11</code> 数值为 99，但晚于参考日期，不参与标记，因此最新合格记录 <code>2024-01-07</code> 被标记。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+
+<li>参与标记的记录须同时满足：<code>VAR=</code> 非缺失，<code>DTC=</code> 非缺失且不晚于 <code>RFDTC=</code>。</li>
+<li>字符型 <code>VAR=</code> 排除空白、<code>NA</code>、<code>ND</code> 与 <code>UK</code>；数值型 <code>VAR=</code> 排除普通缺失与特殊缺失值。</li>
+<li><code>DTC=</code> 与 <code>RFDTC=</code> 按字符串截断比较，ISO8601 部分日期按公共前缀比较，仅日期值可与日期时间值的日期部分比较。</li>
+<li>多个合格记录的 <code>DTC=</code> 并列最新时，按 <code>SUBJECT=</code>、<code>BY=</code> 及输入顺序排序后取最后一条标记。</li>
+<li><code>BY=</code> 未指定时每个受试者只标记一条；指定多个 <code>BY=</code> 变量时每个 BY 组标记一条。</li>
+<li><code>SUBJECT=</code> 只接受一个变量。</li>
+<li><code>RFDTC=</code> 支持 <code>LIB.DATASET.VARIABLE</code>、<code>DATASET.VARIABLE</code>、<code>VARIABLE</code> 三种形式。</li>
+<li>输出按 <code>SUBJECT=</code> 与 <code>BY=</code> 排序，工作变量 <code>_RFDTC_</code> 保留。</li>
+
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<p>以下列出当前版本的使用约束与冲突风险。</p>
+
+<h4>1. 对输入参数的强假设</h4>
+<ul class="notes">
+<li><code>RFDTC=</code> 指向其他数据集时，该数据集须包含 <code>DATA=</code> 中每个受试者。缺少某个受试者时，该受试者的参考日期为空，其全部记录都不会获得基线标志，且宏不输出提示。</li>
+<li><code>DTC=</code> 与 <code>RFDTC=</code> 仅按日期部分比较。给药当天给药后的记录同样满足“不晚于首次给药日期”，可能被选为基线记录；是否可接受取决于数据的日期粒度，需要时应在调用前处理。</li>
+<li>同一 BY 组内多条合格记录的 <code>DTC=</code> 相同时，只标记排序中的最后一条。输入记录顺序变化会改变被标记的基线记录。</li>
+</ul>
+
+<h4>2. 临时变量与临时数据集冲突风险</h4>
+<ul class="notes">
+<li>宏会创建并覆盖固定名称的中间数据集 <code>WORK.SDTM_LOBXFL1</code> 与 <code>WORK.SDTM_LOBXFL2</code>，并在宏运行结束时删除；WORK 中已有的同名数据集会被覆盖并删除，原数据丢失。</li>
+<li>宏会创建临时变量 <code>_DTC_</code> 与 <code>_RFDTC_</code>。若输入数据集已有同名变量，原值会被覆盖，且 <code>_DTC_</code> 在输出时被删除、<code>_RFDTC_</code> 保留以方便溯源。当 <code>RFDTC=</code> 指向其他数据集时，输入中与参考日期变量同名的列也会从输出中删除。</li>
+<li>若输入数据集已含 <code>BLFL=</code> 指定的变量，其原值会先被清空再按本宏逻辑重算，原有基线标志不会保留。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/cdisc/sdtm_lobxfl.sas" download>sdtm_lobxfl.sas</a></p>
+<p class="download"><a href="../assets/macropackages/sdtm_lobxfl.zip" download>sdtm_lobxfl and its dependencies.zip</a></p>
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr>
+<th>日期</th>
+<th>修订人</th>
+<th>修订内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-11-07</td>
+<td>Luo Hao</td>
+<td>原始版本。</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>population flags - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html" class="current">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / ADaM</p>
+<h2>population flags 应该放在哪，如何递交？</h2>
+<p class="subtitle">放 ADaM 的 ADSL（subject 级），别放 SDTM 或 SUPPDM；人工判定的结果做成随包递交的支持性源数据集（比如 ADPRE）。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>人群标志（safety、ITT、FAS、PP、completers、randomized……）是<b>分析决策的产物</b>，不是采集到的事实，所以它的位置是 <b>ADaM 的 ADSL</b>，不该进 SDTM 的任何域（<b>SUPPDM 也不行</b>）。这一点从 SDTMIG v3.3 起就是硬要求，不是“建议”了。</p>
+</div>
+
+<h3 id="concept">先分清两件不相干的事</h3>
+<table class="kb-table">
+<col width="22%" />
+<col width="30%" />
+<col width="48%" />
+<thead>
+<tr><th>维度</th><th>本场景答案</th><th>说明</th></tr>
+</thead>
+<tbody>
+<tr><td>取值来源</td><td>人工判定，非程序衍生</td><td>影响 define.xml 的 Origin/Method 怎么写、QC 怎么做、文档要哪些</td></tr>
+<tr><td>变量放在哪</td><td>ADaM 的 ADSL</td><td>由变量语义决定：它说的是“这个受试者属于哪个分析人群”，是分析属性</td></tr>
+<tr><td>是不是 SDTM 意义上的“采集数据”</td><td>不是</td><td>SDTM 的 collected 指试验中对受试者的观察/干预/事件；统计分析的决定不是采集</td></tr>
+</tbody>
+</table>
+<p>所以记住两点：<b>“人工给的”不等于“能放 SDTM”</b>；<b>“ADSL 里的标志”不等于“必须能由 SDTM 算法推出来”</b>。ADaM 允许非算法来源，但必须文档化、能追溯。</p>
+
+<h3 id="version">版本是怎么演变的（这个很关键）</h3>
+<table class="kb-table">
+<col width="22%" />
+<col width="78%" />
+<thead>
+<tr><th>版本</th><th>对人群标志的态度</th></tr>
+</thead>
+<tbody>
+<tr><td>SDTMIG ≤ 3.2</td><td>允许作为 SUPPDM 的补充限定符；附录列了标准 QNAM：COMPLT、FULLSET、ITT、PPROT、SAFETY</td></tr>
+<tr><td>SDTMIG 3.3</td><td>DM 的 assumptions 改成“人群标志的补充限定符不应使用”，上面那些 QNAM 从附录撤掉</td></tr>
+<tr><td>SDTMIG 3.4</td><td>进一步明确：COMPLT、FULLSET、ITT、PPROT、SAFETY 这类人群标志不该出现在 SDTM 数据里</td></tr>
+</tbody>
+</table>
+<p>原因不只是“放错地方”，而是<b>循环溯源</b>：如果 SDTM 里有个 SAFFL，ADSL 里也有个 SAFFL，审评员就没法判断是标志驱动了分析，还是分析反推了标志。SDTM 的本职是忠实记录采集事实，人群归属是 SAP 做的决定。</p>
+
+<h3 id="flow">数据是怎么流的</h3>
+<div class="flow">
+<p class="flow-title">人群标志从头到尾不碰 SDTM</p>
+<svg viewBox="0 0 680 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <rect x="40" y="24" width="260" height="60" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="170" y="50" text-anchor="middle" fill="#e6e6e6" font-size="13">SDTM 采集事实</text>
+  <text x="170" y="70" text-anchor="middle" fill="#8a8a8a" font-size="11">DM · DS · EX · LB · VS …</text>
+
+  <rect x="380" y="24" width="260" height="60" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="510" y="50" text-anchor="middle" fill="#e6e6e6" font-size="13">人工判定清单</text>
+  <text x="510" y="70" text-anchor="middle" fill="#8a8a8a" font-size="11">Excel（原始文件不递交）</text>
+
+  <line x1="510" y1="84" x2="510" y2="148" stroke="#8a8a8a" marker-end="url(#ar3)"/>
+  <text x="524" y="120" fill="#8a8a8a" font-size="11">冻结 / 受控导入</text>
+
+  <rect x="380" y="150" width="260" height="60" rx="4" fill="#0070C0" stroke="#005a9e"/>
+  <text x="510" y="176" text-anchor="middle" fill="#ffffff" font-size="13">ADPRE 支持性源数据集</text>
+  <text x="510" y="196" text-anchor="middle" fill="#d8ecff" font-size="11">ADAM OTHER · subject 级</text>
+
+  <line x1="170" y1="84" x2="260" y2="258" stroke="#8a8a8a" marker-end="url(#ar3)"/>
+  <text x="150" y="180" fill="#8a8a8a" font-size="11">受试者骨架 + 可推导标志</text>
+
+  <line x1="510" y1="210" x2="430" y2="258" stroke="#8a8a8a" marker-end="url(#ar3)"/>
+  <text x="560" y="240" fill="#8a8a8a" font-size="11">merge 左连接</text>
+
+  <rect x="210" y="260" width="260" height="60" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="340" y="286" text-anchor="middle" fill="#ffffff" font-size="13">ADSL</text>
+  <text x="340" y="306" text-anchor="middle" fill="#e8f5e0" font-size="11">SAFFL · ITTFL · PPROTFL</text>
+
+  <line x1="340" y1="320" x2="340" y2="346" stroke="#8a8a8a" marker-end="url(#ar3)"/>
+  <text x="354" y="336" fill="#8a8a8a" font-size="11">合并标志</text>
+
+  <rect x="210" y="348" width="260" height="44" rx="4" fill="#333333" stroke="#555555"/>
+  <text x="340" y="375" text-anchor="middle" fill="#e6e6e6" font-size="13">下游 ADaM / TLF</text>
+</svg>
+</div>
+
+<h3 id="adam">在 ADaM 里怎么写才对</h3>
+<ul class="notes">
+<li><b>位置</b>：ADSL，一人一条，subject 级。</li>
+<li><b>命名</b>：字符型以 <code>FL</code> 结尾，数值型以 <code>FN</code> 结尾（比如 <code>SAFFL</code>/<code>SAFFN</code>）。</li>
+<li><b>取值</b>：subject 级的字符标志只允许 <code>Y</code>/<code>N</code>，<b>不许空</b>；数值型用 <code>1</code>/<code>0</code>。</li>
+<li><b>数量</b>：用于分析的数据集至少得有一个人群对应的标志；SAP 里定义的每个人群都要有标志。</li>
+<li><b>层级</b>：如果是在参数级或记录级做子集，才用 <code>--PFL</code>/<code>--RFL</code>（这两类允许空值，只标 <code>Y</code>）。</li>
+<li><b>追溯</b>：标志的推导规则写进 ADRG / define.xml，能追回 SDTM 的 DS（随机化、筛选失败）、EX（是否给药）、LB/VS（是否有基线）这些记录。</li>
+</ul>
+
+<h3 id="legacy">遗留场景：项目还在用旧版 IG</h3>
+<p>这是遗留场景，不是推荐做法。写法是 SUPPDM，subject 级的补充限定符：</p>
+<ul class="notes">
+<li><code>RDOMAIN = "DM"</code>，<code>IDVAR = "USUBJID"</code>，<code>IDVARVAL</code> 留空（DM 一人一条）。</li>
+<li><code>QNAM</code> 用 8 字符以内的名字（<code>SAFFL</code>、<code>ITTFL</code>、<code>PPROTFL</code>）。</li>
+<li><code>QLABEL</code> 不超过 40 字符；<code>QVAL = "Y"</code>/<code>"N"</code>。</li>
+<li><code>QORIG = "DERIVED"</code>，<code>QEVAL = "SPONSOR"</code>。</li>
+</ul>
+<div class="callout">
+<p>就算这么写了，也要在 cSDRG 里说明“这些标志在 ADSL 里也有、以 ADaM 为准”，不然容易被质疑两边不一致。</p>
+</div>
+
+<h3 id="wrong">四种常见的错误放法</h3>
+<ul class="notes">
+<li><b>在 DM 里加新变量</b>：DM 结构固定，不允许新增非标准变量——这是 SDTM 的硬规则。</li>
+<li><b>用 DS 记录人群归属</b>：DS 只放 disposition event 和 protocol milestone（随机化、筛选失败属于 milestone），人群归属不是处置事件。</li>
+<li><b>在 LB/VS/AE 的每条记录上都重复一个 SAFFL</b>：冗余、不规范，还容易同一个受试者取值不一致；ADaM 用 merge 就能解决。</li>
+<li><b>放进 RELREC 或自定义域</b>：绕一圈还是没解决“分析变量不该出现在 SDTM”这个根本问题。</li>
+</ul>
+
+<h3 id="process">人工判定清单怎么处理</h3>
+<p>当标志不是程序按规则算出来的，而是统计师在数据审核会上定的、用 Excel 给你，<b>那就应该在 ADSL 制作阶段把这个外部文件导进来</b>，再据此赋值。这完全符合标准。一步一步这么做：</p>
+<ol class="notes">
+<li><b>文件规范</b>：跟统计师约定固定模板——STUDYID、USUBJID、各人群标志（Y/N）、判定日期、判定人、依据/备注；文件级带版本号、生效日期、批准签字。</li>
+<li><b>受控导入</b>：原始 Excel 存进只读原始区，记下 MD5 和时间戳；程序只读不改，禁止手工改数。</li>
+<li><b>技术校验</b>：键唯一；USUBJID 跟 DM 完全对得上；取值只含 Y/N 且无空；覆盖率完整；跟 SDTM 做一致性交叉核对（比如 SAFFL=Y 应该有 EX 暴露记录）。对不上的只出清单回统计师确认，不许用程序结果覆盖人工判定。</li>
+<li><b>合并赋值</b>：拿 ADSL 骨架（DM 受试者全集）当主表，按 STUDYID + USUBJID 左连接；生成字符 SAFFL/ITTFL/PPROTFL，需要的话再加数值 SAFFN；没覆盖到的受试者默认怎么填（通常 N）要事先说好，因为 subject 级标志不允许空。</li>
+<li><b>元数据追溯</b>：define.xml 里，纯人工给定的用 <code>Assigned</code>，Comment 写明来源文件名、版本、日期、判定会议和合并键；如果还叠加了程序规则，就用 <code>Derived</code> 写清 Method。ADRG 里说明这个外部文件的角色、版本控制和 QC。</li>
+<li><b>下游传播</b>：其他 ADaM 数据集只从 ADSL 合并，别再各自去读 Excel，避免版本漂移。</li>
+<li><b>版本与变更</b>：清单版本跟 SAP、数据截止、锁库状态绑定；出新版先做影响评估，再重跑 ADSL 和全部下游；保留历史版本和变更日志；交付包内所有产物同一版本。</li>
+<li><b>归档</b>：原始清单、导入日志、QC 记录、会议纪要引用一起归档，让文件、数据集、元数据这三层都能追。</li>
+</ol>
+
+<h3 id="routes">“程序可复现”的三条路</h3>
+<table class="kb-table">
+<col width="20%" />
+<col width="48%" />
+<col width="32%" />
+<thead>
+<tr><th>路线</th><th>做法</th><th>定位</th></tr>
+</thead>
+<tbody>
+<tr><td>A（首选）</td><td>把判定规则算法化，人工会议只确认规则和例外（SAFFL 由 EX 推导、ITTFL 由 DS 随机化推导、PPS 由方案偏离规则推导）</td><td>ADSL = SDTM + 随包程序就能复现</td></tr>
+<tr><td>B（须人工判定时）</td><td>把判定结果写成 ADaM 中间数据集随包交（比如 ADPRE），逐受试者记录每条判定标准和理由，用 SRCDOM/SRCSEQ 指回 SDTM 记录</td><td>把分析判定在 ADaM 层结构化</td></tr>
+<tr><td>C（坚持不交文件）</td><td>只能做到“内部能复现 + 审评能解释”，不能声称满足“审评方自己衍生出一致 ADSL”，得在 pre-NDA 沟通时达成一致</td><td>需 define.xml/ADRG 写清来源，声明留存备查</td></tr>
+</tbody>
+</table>
+<p>不管走哪条路，复现的工程措施都得做：<b>输入冻结</b>——导入后马上固化成受控的 CSV/SAS 数据集，记下版本、MD5、行数；<b>确定性导入加断言</b>——列类型显式指定，键唯一、取值合法、覆盖完整，任何一条断言失败就中止；<b>程序自包含</b>——相对路径、别调外部宏、单个 driver 端到端跑通；<b>QC 证据</b>——独立双编程或独立重算，再 <code>proc compare</code> 全量比对；<b>版本绑定</b>——清单版本跟 SAP/锁库绑定，出新版就触发全链路重跑。</p>
+
+<h3 id="req-vs-practice">标准要求和行业做法分开看</h3>
+<table class="kb-table">
+<col width="26%" />
+<col width="38%" />
+<col width="36%" />
+<thead>
+<tr><th>事项</th><th>标准 / 监管要求</th><th>行业常见做法（非强制）</th></tr>
+</thead>
+<tbody>
+<tr><td>标志位置</td><td>ADSL；必要时 BDS/OCCDS 的 *PFL/*RFL</td><td>在 ADSL 程序里统一读外部清单</td></tr>
+<tr><td>不进 SDTM/SUPPDM</td><td>SDTMIG v3.3 起明确</td><td>在 mapping spec 和 SOP 里写明禁止</td></tr>
+<tr><td>命名与取值</td><td>FL/FN 结尾；Y/N；subject 级非空；至少一个人群标志</td><td>同时输出字符和数值两套</td></tr>
+<tr><td>元数据</td><td>ADSL 及其元数据必须交；来源与推导能追溯</td><td>Assigned/Derived + 文件名、版本、MD5 写进 define 和 ADRG</td></tr>
+<tr><td>外部清单本身</td><td>不要求作为数据集随申报交</td><td>作为支持性文档归档，必要时提供审评</td></tr>
+<tr><td>一致性核对</td><td>没强制规定具体规则</td><td>SAFFL↔EX、ITTFL↔随机化等交叉 QC</td></tr>
+</tbody>
+</table>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/sdtmig/sdtmig-v3-4" target="_blank" rel="noopener"><i>SDTMIG v3.3 / v3.4</i></a>。<span class="src">DM 的 assumptions：人群标志补充限定符不应使用；COMPLT/FULLSET/ITT/PPROT/SAFETY 不属于 SDTM 数据。</span></li>
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/adam" target="_blank" rel="noopener"><i>ADaMIG v1.x</i></a>。<span class="src">ADSL 定位、FL/FN 命名与取值约定、--PFL/--RFL 的层级。</span></li>
+<li><a href="https://www.cde.org.cn/main/news/viewInfoCommon/f649995d3a9ade8dcd67f6a2ced36f0b" target="_blank" rel="noopener">《药物临床试验数据递交指导原则（试行）》</a>，CDE，2020 年 7 月。<span class="src">“所有衍生变量均应能通过原始数据库及其它支持性数据文件生成”。</span></li>
+<li>PharmaSUG 2025, <a href="https://pharmasug.org/proceedings/2025/DS/PharmaSUG-2025-DS-063.pdf" target="_blank" rel="noopener"><i>The Winding Road to ADSL</i></a>（Paper DS-063）.<span class="src">19 条排除标准拆成 BDS 中间数据集再合成 ADSL 的参考做法。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

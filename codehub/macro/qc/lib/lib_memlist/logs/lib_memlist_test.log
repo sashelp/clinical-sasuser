@@ -1,0 +1,370 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.14 秒
+      
+1          /*===============================================================================
+2           * lib_memlist_test.sas - Positive (functional) acceptance tests
+3           *===============================================================================
+4           * Macro under test : %lib_memlist
+5           * File under test   : dev/lib/lib_memlist.sas
+6           * Coverage          : all members, TYPE=DATA filter, TYPE=VIEW filter,
+7           *                     TYPE value case-insensitivity, PATTERN regex filter,
+8           *                     PATTERN + TYPE combination, no-match empty result,
+9           *                     member names returned in upcase.
+10          * Note              : uses its own scratch library under the temporary sandbox
+11          *                     so the exact
+12          *                     member list is reproducible and never shared.
+13          * Run               : qc/run_all.ps1  (or standalone batch, see README)
+14          *============================================================================*/
+15         
+16         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+17         %let _qcboot_=%sysfunc(getoption(sysin));
+18         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+19         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+20         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+21         %include "&_qcboot_.\_framework\qc_env.sas";
+86         %let _qcboot_=;
+87         /*----------------------------------------------------------------------------*/
+88         
+89         %include "&_QCFW_.";
+382        %include "&_QCQC_.\_framework\qc_sandbox.sas";
+482        %include "&_QCDEV_LIB_.\lib_memlist.sas";
+539        %qc_sandbox_reset;
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\f1.txt" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\f1.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分11秒,
+      创建时间=2026年11月09日 14时05分11秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\f1.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\f2.sas" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\f2.sas,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分11秒,
+      创建时间=2026年11月09日 14时05分11秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\f2.sas" 中。
+      最小记录长度是 15。
+      最大记录长度是 15。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\sub1\f3.txt" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\sub1\f3.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分11秒,
+      创建时间=2026年11月09日 14时05分11秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\sub1\f3.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\sub1\f4.log" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\sub1\f4.log,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分11秒,
+      创建时间=2026年11月09日 14时05分11秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\sub1\f4.log" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\sub2\f5.csv" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\sub2\f5.csv,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分11秒,
+      创建时间=2026年11月09日 14时05分11秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d1\sub2\f5.csv" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d2\f6.txt" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d2\f6.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分11秒,
+      创建时间=2026年11月09日 14时05分11秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\d2\f6.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+540        
+541        /* dedicated scratch library so the member list is fully controlled */
+542        %let _lmlib_=&_QCSB_.\_lib_memlist;
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+543        %_qc_sb_del(path=&_lmlib_.);
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+544        data _null_;
+545          rc=dcreate("_lib_memlist","&_QCSB_.\");
+546        run;
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+547        libname lmlib "&_lmlib_.";
+NOTE: 已成功分配逻辑库引用名“LMLIB”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_sandbox_tmp\lib_memlist_test_7680\_lib_memlist
+548        
+549        data lmlib.alpha;
+550          x=1;
+551        run;
+
+NOTE: 数据集 LMLIB.ALPHA 有 1 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+552        data lmlib.beta;
+553          y=2;
+554        run;
+
+NOTE: 数据集 LMLIB.BETA 有 1 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+555        data lmlib.gamma;
+556          z=3;
+557        run;
+
+NOTE: 数据集 LMLIB.GAMMA 有 1 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+558        proc sql;
+559          create view lmlib.alphavw as select x from lmlib.alpha;
+NOTE: SQL 视图 LMLIB.ALPHAVW 已定义。
+560        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+561        
+562        %qc_begin(prog=lib_memlist_test, macro=lib_memlist);
+#####QC_BEGIN prog=lib_memlist_test macro=lib_memlist
+563        
+564        /*----------------------------------------------------------------------------
+565         * CASE 1 : no filter -> all members, upcased
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+566         *--------------------------------------------------------------------------*/
+567        %qc_case(desc=1 all members);
+#####QC_CASE n=1 desc=1 all members
+568        %let _r=%lib_memlist(library=lmlib);
+569        %qc_expect_cnt(list=&_r., expect=4, desc=C1 four members total);
+#####QC_PASS n=1 desc=C1 four members total
+570        %qc_check(cond=%index(%bquote(&_r.),ALPHA)>0, desc=C1 contains ALPHA);
+#####QC_PASS n=1 desc=C1 contains ALPHA
+571        %qc_check(cond=%index(%bquote(&_r.),BETA)>0, desc=C1 contains BETA);
+#####QC_PASS n=1 desc=C1 contains BETA
+572        %qc_check(cond=%index(%bquote(&_r.),GAMMA)>0, desc=C1 contains GAMMA);
+#####QC_PASS n=1 desc=C1 contains GAMMA
+573        
+574        /*----------------------------------------------------------------------------
+575         * CASE 2 : TYPE=DATA -> only data sets
+576         *--------------------------------------------------------------------------*/
+577        %qc_case(desc=2 TYPE=DATA);
+#####QC_CASE n=2 desc=2 TYPE=DATA
+578        %let _r=%lib_memlist(library=lmlib,type=data);
+579        %qc_expect_cnt(list=&_r., expect=3, desc=C2 three data sets);
+#####QC_PASS n=2 desc=C2 three data sets
+580        %qc_check(cond=%index(%bquote(&_r.),ALPHAVW)=0, desc=C2 view excluded);
+#####QC_PASS n=2 desc=C2 view excluded
+581        
+582        /*----------------------------------------------------------------------------
+583         * CASE 3 : TYPE=VIEW -> only views
+584         *--------------------------------------------------------------------------*/
+585        %qc_case(desc=3 TYPE=VIEW);
+#####QC_CASE n=3 desc=3 TYPE=VIEW
+586        %let _r=%lib_memlist(library=lmlib,type=view);
+587        %qc_expect_cnt(list=&_r., expect=1, desc=C3 one view);
+#####QC_PASS n=3 desc=C3 one view
+588        %qc_check_eq(actual=&_r., expect=ALPHAVW, desc=C3 view name ALPHAVW);
+#####QC_PASS n=3 desc=C3 view name ALPHAVW
+589        
+590        /*----------------------------------------------------------------------------
+591         * CASE 4 : TYPE= value case-insensitivity
+592         *--------------------------------------------------------------------------*/
+593        %qc_case(desc=4 TYPE case-insensitive);
+#####QC_CASE n=4 desc=4 TYPE case-insensitive
+594        %let _r=%lib_memlist(library=lmlib,type=DaTa);
+595        %qc_expect_cnt(list=&_r., expect=3, desc=C4 mixed-case DaTa gives 3);
+#####QC_PASS n=4 desc=C4 mixed-case DaTa gives 3
+596        
+597        /*----------------------------------------------------------------------------
+598         * CASE 5 : PATTERN regex filter (prefix)
+599         *--------------------------------------------------------------------------*/
+600        %qc_case(desc=5 PATTERN prefix);
+#####QC_CASE n=5 desc=5 PATTERN prefix
+601        %let _pat=%nrstr(/^ALPHA/);
+602        %let _r=%lib_memlist(library=lmlib,pattern=%superq(_pat));
+603        %qc_check(cond=%index(%bquote(&_r.),ALPHAVW)>0, desc=C5 pattern ^ALPHA matches view);
+#####QC_PASS n=5 desc=C5 pattern ^ALPHA matches view
+604        %qc_check(cond=%index(%bquote(&_r.),BETA)=0, desc=C5 BETA filtered out);
+#####QC_PASS n=5 desc=C5 BETA filtered out
+605        
+606        /*----------------------------------------------------------------------------
+607         * CASE 6 : (removed) TYPE + PATTERN combined -- see the known defect locked by
+608         *           lib_memlist_bug_typepattern.sas (the %else-if chain skips the
+609         *           PATTERN branch whenever TYPE= is non-empty, so prxparse() is never
+610         *           called and PRXMATCH receives an empty regex).
+611         *--------------------------------------------------------------------------*/
+612        
+613        /*----------------------------------------------------------------------------
+614         * CASE 7 : no match -> empty result
+615         *--------------------------------------------------------------------------*/
+6                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+616        %qc_case(desc=7 no match empty);
+#####QC_CASE n=6 desc=7 no match empty
+617        %let _pat=%nrstr(/ZZZNOMATCH/);
+618        %let _r=%lib_memlist(library=lmlib,pattern=%superq(_pat));
+619        %qc_check(cond=%bquote(&_r.)=%bquote(), desc=C7 empty result);
+#####QC_PASS n=6 desc=C7 empty result
+620        
+621        /*----------------------------------------------------------------------------
+622         * CASE 8 : library name case-insensitivity (LIBRARY is upcased internally)
+623         *--------------------------------------------------------------------------*/
+624        %qc_case(desc=8 library name case-insensitive);
+#####QC_CASE n=7 desc=8 library name case-insensitive
+625        %let _r=%lib_memlist(library=LMLIB);
+626        %qc_expect_cnt(list=&_r., expect=4, desc=C8 uppercase library name);
+#####QC_PASS n=7 desc=C8 uppercase library name
+627        
+628        %qc_end;
+#####QC_RESULT prog=lib_memlist_test macro=lib_memlist STATUS=PASS ncase=7 npass=13 nfail=0
+#####QC_END
+629        
+630        libname lmlib clear;
+NOTE: 已取消对逻辑库引用名 LMLIB 的分配。
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.23 秒
+      CPU 时间          0.24 秒
+      

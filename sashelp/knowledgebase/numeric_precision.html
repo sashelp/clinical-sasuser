@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>浮点数精度 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html" class="current">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SAS 编程</p>
+<h2>为什么十个 0.1 加起来不等于 1？数值精度要选到哪一档？</h2>
+<p class="subtitle">因为二进制存不下 0.1 这种数，只能存一个非常接近的近似值；比较浮点数别用等号，要给容差，从外部数据库读数时还要留意 15 位这道坎。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>计算机用有限的二进制位去表示无限的实数，绝大多数小数只能存成近似值。所以有两个习惯必须养成：<b>判断两个浮点数是否相等，用容差而不是等号</b>；<b>需要精确的十进制值（金额、剂量、检验值），存成字符或者定点数，不要靠浮点</b>。至于精度选到哪一档，取决于你的数据本身有几位有效数字，以及下游系统能接住几位。</p>
+</div>
+
+<h3 id="factors">哪些环节会让结果不一样</h3>
+<p>同一段程序，换台机器、换个版本跑出来末位不同，是很常见的事。能造成差异的地方有这么几处：</p>
+<ul class="notes">
+<li>硬件本身的限制，比如浮点运算单元的位宽</li>
+<li>操作系统的差异</li>
+<li>软件不同，或者同一个软件的不同版本</li>
+<li>不同的数据库管理系统</li>
+<li>用有限的数集去表示无限的实数——这一条是所有问题的根</li>
+<li>数字怎么存，存多长</li>
+<li>上面这些环节之间的转换怎么做</li>
+</ul>
+
+<h3 id="exact">有的数存得准，有的存不准</h3>
+<p>10.25 用二进制写得下，所以是精确的：</p>
+<pre class="code">data x;
+   x=10.25;
+   put x hex16.;
+run;</pre>
+<p>输出 <code>4024800000000000</code>，一个干净的结尾。</p>
+
+<p>10.1 就不行，写出来是一串 3：</p>
+<pre class="code">data x;
+   x=10.1;
+   put x hex16.;
+run;</pre>
+<p>输出 <code>4024333333333333</code>。这个值已经很接近 10.1，但不等于 10.1。后面所有的“怪现象”，源头都在这里。</p>
+
+<h3 id="rounding">同一段程序，换个平台末位就变了</h3>
+<p>把存不准的数拿去做加减，误差会被放大。下面这段先算出 10.1，再加上 100000 又减回去：</p>
+<pre class="code">data x;
+   x=10.1;
+   put x hex16.;
+   y=100000;
+   newx=(x+y)-y;
+   put newx hex16.;
+run;</pre>
+<p>在 Windows 和 Linux 上，<code>newx</code> 是 <code>4024333333333333</code>，和原来的 10.1 一样；在 Solaris x64 上，它是 <code>4024333333334000</code>，末位变了。这不是 SAS 的问题，是硬件浮点宽度不同带来的，也没有办法彻底消除。</p>
+
+<h3 id="display">显示精度也会骗人</h3>
+<p>同一个数，格式不同，打印出来能差一位：</p>
+<pre class="code">data;
+   x=input('C047DFFFFFFFFFFF', hex16.);
+   put x= 8.1 x= 8.3 x= 8.5 x= hex16.;
+run;</pre>
+<p>在 Windows 或 Linux 上得到 <code>x=-47.8</code>，在 Solaris x64 上得到 <code>x=-47.7</code>，而用 8.3、8.5 打印时两边都是 <code>-47.750</code>。低精度格式（这里是 8.1）会先做一次舍入，平台之间舍入方向不一致，结果就差出来了。要避开这个问题，把格式放宽一位，用 8.2。</p>
+
+<h3 id="equal">用等号筛记录，会漏数据</h3>
+<p>这是实际工作中最容易踩的一脚。下面这批数据里有两条 x，一条是精确的 5.2，另一条是算出来“差不多 5.2”：</p>
+<pre class="code">data z(keep=x);
+   x=5.2;
+   output;
+   y=1000;
+   x=(x+y)-y;
+   output;
+run;</pre>
+<p>打印出来两行都是 <code>5.2</code>，肉眼看不出区别。可是用等号去筛：</p>
+<pre class="code">data z1;
+   set z(where=(x=5.2));
+run;</pre>
+<p>在 Windows 上读到 2 条，在 MVS 上只读到 1 条。因为等号比较的是二进制值，那条“差不多 5.2”的记录在 MVS 上确实不等于 5.2。</p>
+<p>正确的写法是给一个容差：</p>
+<pre class="code">data z1;
+   set z(where=(compfuzz(x,5.2,1e-10)=0));
+run;</pre>
+<p><code>COMPFUZZ</code> 返回 0 表示在容差范围内相等，这次两边都能读到 2 条。这个函数从 SAS 9.2 开始提供。</p>
+
+<h3 id="practice">实际怎么处理</h3>
+<table class="kb-table">
+<col width="30%" />
+<col width="70%" />
+<thead>
+<tr><th>场景</th><th>做法</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>判断两个浮点数相等</td>
+<td>用 <code>COMPFUZZ</code>；9.2 以前没有这个函数，自己写一个容差比较的宏</td>
+</tr>
+<tr>
+<td>用等号做子集、做 merge 的 key</td>
+<td>先把参与比较的数值 <code>round</code> 到业务需要的小数位，或者改成字符再比</td>
+</tr>
+<tr>
+<td>金额、剂量、检验值要精确</td>
+<td>用 <code>round(x, 0.01)</code> 定下来再比较或输出，不要指望原始浮点值</td>
+</tr>
+<tr>
+<td>从 Oracle 之类的外部库读数</td>
+<td>数据库里的 NUMBER 能精确到 38 位，SAS 只到 15 位左右，超出的部分会丢；建库时选 <code>BINARY_DOUBLE</code>（15 位）比 <code>NUMBER</code> 更匹配</td>
+</tr>
+<tr>
+<td>只是搬运不需要计算的大数</td>
+<td>用 <code>DBSASTYPE=</code> 把列按字符读进来，原样保留位数</td>
+</tr>
+</tbody>
+</table>
+
+<p>9.2 以前的版本可以套一个容差比较的宏，思路就是算相对误差：</p>
+<pre class="code">%macro eqfuzz(var1, var2, fuzz=1e-12);
+   abs((&amp;var1 - &amp;var2) / &amp;var1) &lt; &amp;fuzz
+%mend;
+
+data _null_;
+   x=0;
+   y=1;
+   do i=1 to 10;
+      x+0.1;
+   end;
+   if x=y then put 'x exactly equal to y';
+   else if %eqfuzz(x,y) then put 'x close to y';
+   else put 'x nowhere close to y';
+run;</pre>
+<p>这段跑完打印的是 <code>x close to y</code>——十个 0.1 加出来不是 1，但在容差范围内算相等。</p>
+
+<p>搬运大数的时候，把列按字符读进来就不会掉精度：</p>
+<pre class="code">libname ora oracle user=scott password=tiger path=path;
+
+data sasdata;
+   set ora.catalina2( dbsastype= ( c1='char(20)') );
+run;</pre>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS Support, <a href="https://sas.service-now.com/csm?id=kb_article_view&sys_kb_id=b9aeb00693261e18c978f8566aba10b2" target="_blank" rel="noopener"><i>Choosing your degree of numeric precision</i></a>（SAS 知识库文章，sas.service-now.com）。<span class="src">表示、舍入、显示、选择性抽取四类问题及全部示例代码；COMPFUZZ 与 %EQFUZZ 的用法；DBSASTYPE= 保留精度。</span></li>
+<li>Goldberg, D. (1991), <a href="https://dl.acm.org/doi/10.1145/103162.103163" target="_blank" rel="noopener">“What Every Computer Scientist Should Know About Floating-Point Arithmetic”</a>, <i>Computing Surveys</i> 23(1): 5–48。<span class="src">浮点表示与舍入误差的原理。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/documentation/onlinedoc/access/index.html" target="_blank" rel="noopener"><i>SAS/ACCESS for Relational Databases: Reference</i></a>。<span class="src">DBSASTYPE= 数据集合选项。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

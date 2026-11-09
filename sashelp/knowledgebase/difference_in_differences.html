@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>双重差分 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html" class="current">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / 统计分析</p>
+<h2>干预前后两组比较，“差中之差”怎么估？交互项系数就是它吗？</h2>
+<p class="subtitle">普通线性模型里，交互项系数就是差中之差；换成 logistic 这类链接，交互项只是 log odds 尺度的差中之差，均值层面要另外算。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>差别在于链接函数。模型是恒等链接（REG、GLM、GENMOD 的默认设置）时，交互项系数<b>就是</b>均值之差之差，参数估计表里直接能看到，也可以用 <code>ESTIMATE</code> 或 <code>LSMESTIMATE</code> 写 <code>1 -1 -1 1</code> 复现。模型是 logit、log 这类非线性链接时，交互项估的是<b>链接函数变换后</b>的差中之差，想回到均值（概率）层面，必须对四个格子分别反变换再相减，这已经不是线性组合，要用 NLMeans、NLEST 或 Margins 宏。</p>
+</div>
+
+<h3 id="what">先把“差中之差”写清楚</h3>
+<p>两个二分类变量 A 和 B，各有 1 和 0 两个水平，带交互项的模型是：</p>
+<div class="callout">
+<p>μ<sub>AB</sub> = λ + α<sub>A</sub> + β<sub>B</sub> + γ<sub>AB</sub></p>
+</div>
+<p>“A 的效应在 B=1 时”减去“A 的效应在 B=0 时”，展开之后 λ、α、β 全部抵消：</p>
+<div class="callout">
+<p>(μ<sub>11</sub> − μ<sub>01</sub>) − (μ<sub>10</sub> − μ<sub>00</sub>) = γ</p>
+</div>
+<p>这就是差中之差。所以在这种模型里，你不用额外算什么，交互项本身就是答案。</p>
+
+<h3 id="identity">恒等链接：交互项直接用</h3>
+<pre class="code">data a;
+   sd=3;
+   do a=1,0;
+   do b=1,0;
+      input mean @@;
+      do rep=1 to 10;
+         y=rannor(23425)*sd+mean;
+         output;
+      end;
+   end; end;
+   datalines;
+50 70 40 40
+;
+run;
+
+proc genmod;
+   class a b / ref=first;
+   model y = a b a*b;
+   estimate "Diff in Diff" a*b 1 -1 -1 1;
+   lsmeans a*b;
+   lsmestimate a*b "Diff in Diff" 1 -1 -1 1;
+run;</pre>
+
+<p>三个地方给的是同一个数：交互项参数、<code>ESTIMATE</code>、<code>LSMESTIMATE</code>，都是 −21，p&lt;0.0001。四个格子的均值由 <code>LSMEANS</code> 给出，代回去也对得上：−21 ≈ (50−40) − (69−38)。要区间就在 <code>LSMEANS</code> 和 <code>LSMESTIMATE</code> 后面加 <code>CL</code>，得到 (−24.3, −17.7)。</p>
+
+<p>系数 <code>1 -1 -1 1</code> 的排列顺序是 <code>LSMEANS</code> 输出里四个格子的顺序：A1B1、A1B0、A0B1、A0B0。顺序换了，正负号就变了，报结论时最好写清楚是“谁减谁”。</p>
+
+<h3 id="prepost">前后测的纵向数据：先把数据结构改对</h3>
+<p>实际研究通常是同一个受试者干预前测一次、干预后测一次。这时每个人有两条记录，用 GEE 处理同一个人内部的相关系：</p>
+
+<pre class="code">data a;
+   keep exposed id post y;
+   set a;
+   Post=1; y=y_post; output;
+   Post=0; y=y_pre;  output;
+run;
+
+proc genmod;
+   class id exposed post / ref=first;
+   model y = exposed post exposed*post;
+   repeated subject=id(exposed);
+   estimate "DID Post(E-U)-Pre(E-U)" exposed*post 1 -1 -1 1;
+   lsmeans exposed*post;
+   lsmestimate exposed*post "DID Post(E-U)-Pre(E-U)" 1 -1 -1 1;
+run;</pre>
+
+<p>注意 <code>SUBJECT=id(exposed)</code> 这个写法。因为两个组里受试者编号都是从 1 开始，如果只写 <code>id</code>，暴露组的 1 号和对照组的 1 号会被当成同一个人，相关性就算错了。嵌套写进组里，才是真正的人。</p>
+
+<h3 id="nonlinear">非恒等链接：交互项不再等于均值之差</h3>
+<p>换成 logistic 模型：</p>
+<div class="callout">
+<p>LogOdds<sub>AB</sub> = λ + α<sub>A</sub> + β<sub>B</sub> + γ<sub>AB</sub></p>
+</div>
+<p>交互项仍然是一个差中之差，但它是 <b>log odds 的</b>差中之差。要在概率层面做同样的比较，得把四个 log odds 分别用 <code>LOGISTIC</code> 函数变回概率，再相减：</p>
+<div class="callout">
+<p>[logistic(λ+α+β+γ) − logistic(λ+β)] − [logistic(λ+α) − logistic(λ)]</p>
+</div>
+<p>这已经不是一个线性组合了，所以 <code>ESTIMATE</code> 和 <code>LSMESTIMATE</code> 算不出来。</p>
+<p>用 <code>LSMEANS / ILINK</code> 能拿到四个格子的概率，但 <code>ILINK</code> 只作用于整条估计，一旦请求差（<code>DIFF</code>）或对比，反变换就不再适用。这就是为什么必须换工具。</p>
+
+<h3 id="tools">三个能算均值层面 DID 的工具</h3>
+<p>同一个例子，logistic 模型下 log odds 的差中之差是 −1.1113，换成概率层面是 −0.26，置信区间 (−0.4497, −0.07028)，p = 0.0072。三种写法结果完全一样：</p>
+
+<h4>NLMeans 宏</h4>
+<p>需要两样东西：<code>STORE</code> 存下的模型，和 <code>LSMEANS / E</code> 经 <code>ODS OUTPUT</code> 存下的系数表。然后自己造一个对比数据集，变量名必须是 <code>SET</code> 和 <code>K1…Kn</code>：</p>
+
+<pre class="code">data difdif;
+   input k1-k4;
+   set=1;
+   datalines;
+1 -1 -1 1
+;
+run;
+
+%NLMeans(instore=log, coef=coeffs, link=logit, contrasts=difdif,
+         title=Difference in Difference of Means)</pre>
+
+<h4>NLEST 宏</h4>
+<p>直接把函数式写进 <code>f=</code>。参数名是 <code>B_p1</code>、<code>B_p2</code> 这样按参数估计表的顺序编号，截距是 <code>B_p1</code>：</p>
+
+<pre class="code">%nlest(instore=log,
+       label=Diff in Diff Means,
+       f=( logistic(b_p1+b_p2+b_p4+b_p6) - logistic(b_p1+b_p4) ) -
+         ( logistic(b_p1+b_p2)           - logistic(b_p1) ),
+       title=Difference in Difference of Means)</pre>
+
+<h4>Margins 宏</h4>
+<p>Margins 自己拟合模型，算出预测边际，再按你给的对比矩阵相减。对比矩阵写成数据集，必须有 <code>LABEL</code> 和 <code>F</code> 两个变量：</p>
+
+<pre class="code">data c;
+   length label f $32767;
+   infile datalines delimiter='|';
+   input label f;
+   datalines;
+A1-A0 | 0 -1 0 1, -1 0 1 0
+Diff in Diff of Means | 1 -1 -1 1
+;
+run;
+
+%Margins(data     = a,
+         response = y,
+         roptions = event='1',
+         class    = a b,
+         classgref= first,
+         model    = a|b,
+         dist     = binomial,
+         margins  = a b,
+         contrasts= c,
+         options  = cl)</pre>
+
+<p>Margins 的输出更全：它同时给联合卡方检验和每一行的估计。上面这个例子里，B=1 时 A 的差是 0.07（p=0.3210，不显著），B=0 时是 0.33（p&lt;0.0001，显著），两自由度联合检验也显著，最后差中之差 −0.26（p=0.0072）。</p>
+
+<div class="flow">
+<p class="flow-title">先看链接函数，再决定用哪条路</p>
+<svg viewBox="0 0 680 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="did-ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <rect x="180" y="10" width="320" height="44" rx="4" fill="#0070C0" stroke="#005a9e"/>
+  <text x="340" y="37" text-anchor="middle" fill="#ffffff" font-size="14">要估均值层面的差中之差</text>
+
+  <line x1="340" y1="54" x2="340" y2="82" stroke="#8a8a8a" marker-end="url(#did-ar)"/>
+
+  <rect x="120" y="82" width="440" height="50" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="112" text-anchor="middle" fill="#e6e6e6" font-size="14">模型用的是恒等链接（线性模型）吗？</text>
+
+  <line x1="120" y1="107" x2="90" y2="107" stroke="#8a8a8a" marker-end="url(#did-ar)"/>
+  <text x="105" y="99" text-anchor="middle" fill="#70AD47" font-size="12">是</text>
+
+  <rect x="8" y="82" width="80" height="50" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="48" y="103" text-anchor="middle" fill="#ffffff" font-size="12">交互项</text>
+  <text x="48" y="120" text-anchor="middle" fill="#e8f5e0" font-size="11">就是答案</text>
+
+  <line x1="340" y1="132" x2="340" y2="162" stroke="#8a8a8a" marker-end="url(#did-ar)"/>
+  <text x="354" y="152" fill="#8a8a8a" font-size="12">否</text>
+
+  <rect x="140" y="162" width="400" height="50" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="184" text-anchor="middle" fill="#e6e6e6" font-size="13">四个格子分别反变换，再相减</text>
+  <text x="340" y="202" text-anchor="middle" fill="#8a8a8a" font-size="11">ESTIMATE / LSMESTIMATE 到此为止，算不了</text>
+
+  <line x1="340" y1="212" x2="340" y2="230" stroke="#8a8a8a"/>
+  <line x1="120" y1="230" x2="560" y2="230" stroke="#8a8a8a"/>
+  <line x1="120" y1="230" x2="120" y2="240" stroke="#8a8a8a" marker-end="url(#did-ar)"/>
+  <line x1="340" y1="230" x2="340" y2="240" stroke="#8a8a8a" marker-end="url(#did-ar)"/>
+  <line x1="560" y1="230" x2="560" y2="240" stroke="#8a8a8a" marker-end="url(#did-ar)"/>
+
+  <rect x="20" y="242" width="200" height="96" rx="4" fill="#333333" stroke="#555555"/>
+  <text x="120" y="265" text-anchor="middle" fill="#e6e6e6" font-size="13">NLMeans 宏</text>
+  <text x="120" y="285" text-anchor="middle" fill="#cccccc" font-size="11">STORE + LSMEANS/E</text>
+  <text x="120" y="303" text-anchor="middle" fill="#cccccc" font-size="11">写 SET、K1…Kn 对比集</text>
+  <text x="120" y="322" text-anchor="middle" fill="#8a8a8a" font-size="11">最常用</text>
+
+  <rect x="240" y="242" width="200" height="96" rx="4" fill="#333333" stroke="#555555"/>
+  <text x="340" y="265" text-anchor="middle" fill="#e6e6e6" font-size="13">NLEST 宏</text>
+  <text x="340" y="285" text-anchor="middle" fill="#cccccc" font-size="11">在 f= 里直接写函数式</text>
+  <text x="340" y="303" text-anchor="middle" fill="#cccccc" font-size="11">要记参数编号 B_p1…</text>
+  <text x="340" y="322" text-anchor="middle" fill="#8a8a8a" font-size="11">灵活但容易写错</text>
+
+  <rect x="460" y="242" width="200" height="96" rx="4" fill="#333333" stroke="#555555"/>
+  <text x="560" y="265" text-anchor="middle" fill="#e6e6e6" font-size="13">Margins 宏</text>
+  <text x="560" y="285" text-anchor="middle" fill="#cccccc" font-size="11">自己拟合，给预测边际</text>
+  <text x="560" y="303" text-anchor="middle" fill="#cccccc" font-size="11">对比写成数据集</text>
+  <text x="560" y="322" text-anchor="middle" fill="#8a8a8a" font-size="11">协变量处理最省事</text>
+
+  <line x1="340" y1="352" x2="340" y2="372" stroke="#8a8a8a" marker-end="url(#did-ar)"/>
+  <text x="340" y="392" text-anchor="middle" fill="#8a8a8a" font-size="11">三条路结果一致，按团队习惯选一条</text>
+</svg>
+</div>
+
+<h3 id="covariate">有协变量的时候</h3>
+<ul class="notes">
+<li><b>LS-means 的口径</b>：连续协变量取均值，分类协变量按水平均衡加权，得到的是一个“标准人”上的差中之差。</li>
+<li><b>想在其它取值上算</b>：<code>LSMEANS</code> 加 <code>AT C=2.5</code>；想按实际比例加权加 <code>OM</code>，比例不符就用 <code>OM=数据集</code> 指定一张比例表。</li>
+<li><b>想在各层分别算</b>：模型里把协变量和 A、B 及它们的交互都放进去，写成 <code>c|a|b</code>，<code>LSMEANS</code> 变成 <code>c*a*b</code>，对比数据集按层写几行 <code>1 -1 -1 1</code> 就行。</li>
+<li><b>用 Margins 就不用管这些</b>：预测边际是对观测到的协变量取值求平均，不是固定成均值，模型里带上协变量即可，也不需要 AT、OM。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS Support, <a href="https://sas.service-now.com/csm?id=kb_article_view&sys_kb_id=e9867c6e1b3fb250c325a643b24bcbe6" target="_blank" rel="noopener"><i>Estimating the difference in differences of means</i></a>（SAS 知识库文章，sas.service-now.com）。<span class="src">恒等链接下的交互项推导、纵向数据的 GEE 写法、logistic 模型下三种宏观方法、协变量与 AT/OM 选项。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/documentation/onlinedoc/stat/" target="_blank" rel="noopener"><i>SAS/STAT User's Guide</i></a>：PROC GENMOD 章节。<span class="src">REPEATED 语句的 SUBJECT= 嵌套效应、GEE 估计。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

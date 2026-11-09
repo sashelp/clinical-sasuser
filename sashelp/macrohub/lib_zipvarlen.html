@@ -1,0 +1,351 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>lib_zipvarlen - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html" class="current">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / 逻辑库操作</p>
+<h2>lib_zipvarlen</h2>
+<p class="subtitle">将逻辑库中数据集字符变量的长度压缩至最优长度</p>
+<p class="dependency">依赖: <a href="ds_zipvarlen.html">ds_zipvarlen</a></p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>lib_zipvarlen</code></p>
+
+<h3 id="brief">简介</h3>
+<p>批量调整指定逻辑库内所有数据集的字符变量长度，使同名变量在不同数据集之间保持一致，并压缩至实际使用的最优长度。宏不返回值，直接修改逻辑库中的数据集；该修改不可逆。<code>SUPP_POLICY=</code> 控制以 <code>SUPP</code> 开头的数据集是否参与跨数据集的最大长度计算。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%lib_zipvarlen(library=&lt;library&gt;)</pre>
+<p>该宏为过程式宏，直接修改逻辑库中的数据集，不返回值。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LIBRARY=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>待修改的逻辑库引用名。</td>
+</tr>
+<tr>
+<td>DELFMT=</td>
+<td>可选参数</td>
+<td>Y</td>
+<td>是否删除字符变量的现有格式并改为 <code>$n.</code>，n 为压缩后的长度。<br/>
+Y：删除并设置新格式。<br/>
+N：保留现有格式。</td>
+</tr>
+<tr>
+<td>DELINFMT=</td>
+<td>可选参数</td>
+<td>Y</td>
+<td>是否删除字符变量的现有输入格式并改为 <code>$n.</code>，n 为压缩后的长度。<br/>
+Y：删除并设置新输入格式。<br/>
+N：保留现有输入格式。</td>
+</tr>
+<tr>
+<td>SUPP_POLICY=</td>
+<td>可选参数</td>
+<td>FDA</td>
+<td>以 <code>SUPP</code> 开头的数据集的长度策略。<br/>
+FDA：这些数据集不参与跨数据集最大长度计算，每个数据集按自身数据压缩（符合 FDA 提交要求）。<br/>
+CDE：所有数据集（包括 SUPP 数据集）参与跨数据集最大长度计算，同名变量取全库最大值。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：压缩逻辑库中所有数据集的字符变量</h4>
+<pre class="code">options dlcreatedir;
+libname libzv1 "%sysfunc(pathname(work))\libzv1";
+
+data libzv1.zv1; length a $20; a='abc';      run;
+data libzv1.zv2; length a $20; a='abcdefgh'; run;
+
+%lib_zipvarlen(library=libzv1)
+
+proc sql;
+  select memname, name, length, format
+  from dictionary.columns
+  where libname='LIBZV1' and memname in ('ZV1','ZV2')
+  order by memname;
+quit;</pre>
+<p class="result-label">运行结果：</p>
+<table class="macro-table result-table">
+<col width="22%" />
+<col width="18%" />
+<col width="14%" />
+<col width="18%" />
+<thead>
+<tr><th>数据集</th><th>变量</th><th>长度</th><th>格式</th></tr>
+</thead>
+<tbody>
+<tr><td>ZV1</td><td>a</td><td>8</td><td>$8.</td></tr>
+<tr><td>ZV2</td><td>a</td><td>8</td><td>$8.</td></tr>
+</tbody>
+</table>
+<p>两个数据集中变量 <code>a</code> 的最大使用长度分别为 3 与 8，跨数据集统一后取最大值 8，因此长度均为 8，格式改为 <code>$8.</code>。</p>
+
+<h4>示例 2：CDE 策略下统一全库最大长度</h4>
+<pre class="code">options dlcreatedir;
+libname libcde "%sysfunc(pathname(work))\libcde";
+
+data libcde.cde1;     length a $10; a='abc';                run;
+data libcde.suppcde1; length a $99; a='supplemental value'; run;
+
+%lib_zipvarlen(library=libcde,supp_policy=CDE)
+
+proc sql;
+  select memname, name, length, format
+  from dictionary.columns
+  where libname='LIBCDE' and memname in ('CDE1','SUPPCDE1')
+  order by memname;
+quit;</pre>
+<p class="result-label">运行结果：</p>
+<table class="macro-table result-table">
+<col width="22%" />
+<col width="18%" />
+<col width="14%" />
+<col width="18%" />
+<thead>
+<tr><th>数据集</th><th>变量</th><th>长度</th><th>格式</th></tr>
+</thead>
+<tbody>
+<tr><td>CDE1</td><td>a</td><td>18</td><td>$18.</td></tr>
+<tr><td>SUPPCDE1</td><td>a</td><td>18</td><td>$18.</td></tr>
+</tbody>
+</table>
+<p><code>SUPP_POLICY=CDE</code> 时，SUPP 数据集也参与全库最大长度计算。两个数据集的变量 <code>a</code> 实际最长值分别为 3 与 18，统一后均为 18。</p>
+
+<h4>示例 3：FDA 策略下 SUPP 不参与全库计算</h4>
+<pre class="code">options dlcreatedir;
+libname libfda "%sysfunc(pathname(work))\libfda";
+
+data libfda.fda1;     length a $10; a='abc';                run;
+data libfda.suppfda1; length a $99; a='supplemental value'; run;
+
+%lib_zipvarlen(library=libfda,supp_policy=FDA)
+
+proc sql;
+  select memname, name, length, format
+  from dictionary.columns
+  where libname='LIBFDA' and memname in ('FDA1','SUPPFDA1')
+  order by memname;
+quit;</pre>
+<p class="result-label">运行结果：</p>
+<table class="macro-table result-table">
+<col width="22%" />
+<col width="18%" />
+<col width="14%" />
+<col width="18%" />
+<thead>
+<tr><th>数据集</th><th>变量</th><th>长度</th><th>格式</th></tr>
+</thead>
+<tbody>
+<tr><td>FDA1</td><td>a</td><td>3</td><td>$3.</td></tr>
+<tr><td>SUPPFDA1</td><td>a</td><td>18</td><td>$18.</td></tr>
+</tbody>
+</table>
+<p><code>SUPP_POLICY=FDA</code> 时，<code>SUPP</code> 开头的数据集不参与全库最大长度计算；<code>FDA1</code> 按自身最长值 3 压缩，<code>SUPPFDA1</code> 按自身最长值 18 压缩。</p>
+
+<h4>示例 4：保留原有格式与输入格式</h4>
+<pre class="code">options dlcreatedir;
+libname libfmt "%sysfunc(pathname(work))\libfmt";
+
+data libfmt.fmt1;
+  length a $20;
+  attrib a format=$20. informat=$20.;
+  a='abc';
+run;
+
+%lib_zipvarlen(library=libfmt,delfmt=N,delinfmt=N)
+
+proc sql;
+  select memname, name, length, format, informat
+  from dictionary.columns
+  where libname='LIBFMT' and memname='FMT1'
+  order by memname;
+quit;</pre>
+<p class="result-label">运行结果：</p>
+<table class="macro-table result-table">
+<col width="20%" />
+<col width="14%" />
+<col width="12%" />
+<col width="18%" />
+<col width="18%" />
+<thead>
+<tr><th>数据集</th><th>变量</th><th>长度</th><th>格式</th><th>输入格式</th></tr>
+</thead>
+<tbody>
+<tr><td>FMT1</td><td>a</td><td>3</td><td>$20.</td><td>$20.</td></tr>
+</tbody>
+</table>
+<p>长度压缩为实际最长值 3；<code>DELFMT=N</code> 与 <code>DELINFMT=N</code> 保留了原有的 <code>$20.</code> 格式与输入格式。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+
+<li>宏会不可逆地修改逻辑库中的数据集。</li>
+<li>宏使用数据集名 <code>lib_univarlen1</code>；若同名数据集已存在，可能被覆盖且无法恢复。</li>
+<li><code>SUPP_POLICY=CDE</code> 时，字符变量长度设为全库所有数据集中的最大使用长度；<code>FDA</code> 时设为当前数据集中的最大使用长度。</li>
+<li><code>DELFMT=Y</code> 删除格式并改为 <code>$n.</code>，<code>N</code> 保留；<code>DELINFMT=Y</code> 删除输入格式并改为 <code>$n.</code>，<code>N</code> 保留。</li>
+<li>依赖宏 <code>%ds_zipvarlen</code>。</li>
+
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<p>以下列出当前版本已知但未修复的问题、使用约束与冲突风险。</p>
+
+<h4>1. 对输入参数的强假设</h4>
+<ul class="notes">
+<li>宏会修改逻辑库内的全部数据集，包括 <code>SUPP</code> 开头的数据集；即使 <code>SUPP_POLICY=FDA</code> 将 SUPP 排除在全库长度计算之外，这些数据集仍会被单独压缩到自身最大长度。</li>
+</ul>
+
+<h4>2. 临时变量与临时数据集冲突风险</h4>
+<ul class="notes">
+<li>宏会在 WORK 中创建固定名称的临时数据集 <code>lib_univarlen1</code>，运行结束后删除；会话中已有的同名数据集会被覆盖并删除，原数据无法恢复。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/lib/lib_zipvarlen.sas" download>lib_zipvarlen.sas</a></p>
+<p class="download"><a href="../assets/macropackages/lib_zipvarlen.zip" download>lib_zipvarlen and its dependencies.zip</a></p>
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr>
+<th>日期</th>
+<th>修订人</th>
+<th>修订内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-11-09</td>
+<td>Luo Hao</td>
+<td>修复问题：增加 <code>/minoperator</code> 选项，使参数校验正常工作。</td>
+</tr>
+<tr>
+<td>2026-09-23</td>
+<td>Luo Hao</td>
+<td>新增 <code>SUPP_POLICY=</code> 参数。</td>
+</tr>
+<tr>
+<td>2026-05-22</td>
+<td>Luo Hao</td>
+<td>新增 <code>DELFMT=</code> 与 <code>DELINFMT=</code> 参数。</td>
+</tr>
+<tr>
+<td>2025-12-25</td>
+<td>Luo Hao</td>
+<td>原始版本。</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

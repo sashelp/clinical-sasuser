@@ -1,0 +1,231 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.15 秒
+      CPU 时间          0.15 秒
+      
+1          /*==============================================================================
+2           * stat_summaryn_bug_gmlabel.sas - Bug regression: GM_LCLM and GM_UCLM expose internal variable names as labels
+3           *==============================================================================
+4           * Macro under test : %stat_summaryn
+5           * Expected         : _STATLAB_ for GM_LCLM and GM_UCLM carries a readable label
+6           *                    (no internal name such as __stat_GM_LCLM)
+7           * Status           : OPEN
+8           * Original defect  : STATIS=GM_LCLM or GM_UCLM produces _statlab_ values
+9           *                    "__stat_GM_LCLM" and "__stat_GM_UCLM" because the LABEL
+10          *                    statement assigns labels to __stat_gm_clm but not to
+11          *                    __stat_gm_lclm / __stat_gm_uclm (dev/stat/stat_summaryn.sas
+12          *                    lines 391-399)
+13          * Fix              : Add label __stat_gm_lclm='GM 95% CI Lower' and
+14          *                    __stat_gm_uclm='GM 95% CI Upper' in the LABEL statement
+15          * Test passes when  the defect is fixed (run_all then reports FIXED)
+16          *============================================================================*/
+17         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+18         %let _qcboot_=%sysfunc(getoption(sysin));
+19         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+20         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+21         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+22         %include "&_qcboot_.\_framework\qc_env.sas";
+87         %let _qcboot_=;
+88         /*----------------------------------------------------------------------------*/
+89         %include "&_QCFW_.";
+382        %include "&_QCDEV_VAR_.\var_exist.sas";
+433        %include "&_QCDEV_VAR_.\var_coexist.sas";
+499        %include "&_QCDEV_DS_.\ds_attr.sas";
+551        %include "&_QCDEV_STAT_.\stat_summaryn.sas";
+979        
+980        %qc_begin(prog=stat_summaryn_bug_gmlabel, macro=stat_summaryn);
+#####QC_BEGIN prog=stat_summaryn_bug_gmlabel macro=stat_summaryn
+981        
+982        data sn_bug_gm;
+983          input x;
+984          datalines;
+
+NOTE: 数据集 WORK.SN_BUG_GM 有 4 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+989        ;
+990        run;
+991        
+992        %stat_summaryn(data=sn_bug_gm, out=bugout, var=x, statis=gm gm_lclm gm_uclm);
+
+NOTE: 从数据集 WORK.SN_BUG_GM. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 4 个观测和 6 个变量。
+NOTE: 数据集 WORK.STAT_SUMMARYN_ATTR 有 0 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DSIN 有 4 个观测和 6 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYN_CONTENTS 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.03 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_DEC 有 1 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_SUMMARY 有 2 个观测和 21 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_DSIN. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_GM 有 2 个观测和 10 个变量。
+NOTE: “PROCEDURE MEANS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_SUMMARY. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_CLASS 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 表 WORK.STAT_SUMMARYN_COMB2 创建完成，有 2 行，27 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.03 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_COMB2. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 6 个观测和 74 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL 有 6 个观测和 74 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYN_FINAL_TRANS 有 3 个观测和 8 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYN_FINAL_TRANS. 读取了 3 个观测
+NOTE: 数据集 WORK.BUGOUT 有 3 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYN_ATTR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_COMB2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DEC (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_GM (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYN_SUMMARY (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+993        
+994        data _null_;
+995          set bugout end=_eof_;
+996          if _statnam_='GM_LCLM' and index(upcase(_statlab_),'__STAT_')>0 then call symputx('_badlclm','1');
+997          if _statnam_='GM_UCLM' and index(upcase(_statlab_),'__STAT_')>0 then call symputx('_baduclm','1');
+998          if _eof_ then do;
+999            if not symexist('_badlclm') then call symputx('_badlclm','0');
+1000           if not symexist('_baduclm') then call symputx('_baduclm','0');
+1001         end;
+1002       run;
+
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: 从数据集 WORK.BUGOUT. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1003       
+1004       %qc_case(desc=1 geometric lower limit label is readable);
+#####QC_CASE n=1 desc=1 geometric lower limit label is readable
+1005       %qc_check_eq(actual=&_badlclm., expect=0, desc=B1 GM_LCLM label must not expose internal name);
+#####QC_PASS n=1 desc=B1 GM_LCLM label must not expose internal name
+1006       
+1007       %qc_case(desc=2 geometric upper limit label is readable);
+#####QC_CASE n=2 desc=2 geometric upper limit label is readable
+1008       %qc_check_eq(actual=&_baduclm., expect=0, desc=B2 GM_UCLM label must not expose internal name);
+#####QC_PASS n=2 desc=B2 GM_UCLM label must not expose internal name
+1009       
+1010       %qc_end;
+#####QC_RESULT prog=stat_summaryn_bug_gmlabel macro=stat_summaryn STATUS=PASS ncase=2 npass=2 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.38 秒
+      CPU 时间          0.40 秒
+      

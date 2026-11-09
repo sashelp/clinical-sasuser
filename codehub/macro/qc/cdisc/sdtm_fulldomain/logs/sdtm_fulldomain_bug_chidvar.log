@@ -1,0 +1,160 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.14 秒
+      
+1          /*===============================================================================
+2           * sdtm_fulldomain_bug_chidvar.sas - Bug regression: character IDVAR fails
+3           *===============================================================================
+4           * Macro under test : %sdtm_fulldomain
+5           * Expected         : a SUPP qualifier whose IDVAR points at a CHARACTER parent
+6           *                    variable (e.g. AESPID) is merged onto the parent record
+7           * Status           : FIXED 2026-10-29 - the key is converted only when the
+8           *                    parent variable type is N (%var_attr); character keys are
+9           *                    taken from IDVARVAL.  Kept as a regression test.
+10          * Original defect  : "2. Core processing" always executed
+11          *                      &idvar.=input(idvarval,best.);
+12          *                    which re-created the parent key as NUMERIC.  For a
+13          *                    character IDVAR the MERGE then failed:
+14          *                      ERROR: Variable aespid has been defined as both
+15          *                             character and numeric
+16          *                    OUT was created with 0 observations and no values.
+17          * Fix              : look up the type of &idvar. in PARENT (%var_attr) and only
+18          *                    convert IDVARVAL when the parent variable is numeric;
+19          *                    otherwise keep IDVARVAL as the character merge key.
+20          * Test passes when  the defect is fixed (run_all then reports FIXED).
+21          *============================================================================*/
+22         
+23         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+24         %let _qcboot_=%sysfunc(getoption(sysin));
+25         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+26         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+27         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+28         %include "&_qcboot_.\_framework\qc_env.sas";
+93         %let _qcboot_=;
+94         /*----------------------------------------------------------------------------*/
+95         
+96         %include "&_QCFW_.";
+389        %include "&_QCDEV_VAR_.\var_exist.sas";
+440        %include "&_QCDEV_VAR_.\var_attr.sas";
+496        %include "&_QCDEV_VAR_.\var_coexist.sas";
+562        %include "&_QCDEV_CDISC_.\sdtm_fulldomain.sas";
+656        %qc_begin(prog=sdtm_fulldomain_bug_chidvar, macro=sdtm_fulldomain);
+#####QC_BEGIN prog=sdtm_fulldomain_bug_chidvar macro=sdtm_fulldomain
+657        
+658        data bug_ae;
+659          length usubjid $10 aeterm $20 aespid $8;
+660          usubjid='S01'; aeseq=1; aeterm='Headache'; aespid='1'; output;
+661          usubjid='S01'; aeseq=2; aeterm='Nausea'; aespid='2'; output;
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+662        run;
+
+NOTE: 数据集 WORK.BUG_AE 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+663        
+664        data bug_supp_ae;
+665          length usubjid $10 idvar $8 idvarval $8 qnam $8 qlabel $40 qval $20;
+666          label qval='Result or Finding in Original Units';
+667          usubjid='S01'; idvar='AESPID'; idvarval='1'; qnam='AESEV'; qlabel='Severity'; qval='MILD'; output;
+668        run;
+
+NOTE: 数据集 WORK.BUG_SUPP_AE 有 1 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+669        
+670        %qc_case(desc=1 character IDVAR must merge);
+#####QC_CASE n=1 desc=1 character IDVAR must merge
+671        %sdtm_fulldomain(domain=ae, parent=work.bug_ae, supp=work.bug_supp_ae, out=work.bug_full);
+
+NOTE: 从数据集 WORK.BUG_SUPP_AE. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 1 个观测和 6 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 1 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 1 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.BUG_AE. 读取了 2 个观测
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 1 个观测
+NOTE: 数据集 WORK.BUG_FULL 有 2 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      实际时间          0.02 秒
+      CPU 时间          0.01 秒
+      
+
+672        options obs=max;
+673        %qc_expect_ds(ds=work.bug_full, desc=B1 output dataset exists);
+#####QC_PASS n=1 desc=B1 output dataset exists
+674        %qc_expect_nobs(ds=work.bug_full, expect=2, desc=B1 row count equals parent);
+#####QC_PASS n=1 desc=B1 row count equals parent
+675        %qc_expect_var(ds=work.bug_full, var=AESEV, type=C, desc=B1 qualifier variable created);
+#####QC_PASS n=1 desc=B1 qualifier variable created
+676        %qc_expect_var(ds=work.bug_full, var=aespid, type=C, desc=B1 parent key keeps character type);
+#####QC_PASS n=1 desc=B1 parent key keeps character type
+677        
+678        %qc_end;
+#####QC_RESULT prog=sdtm_fulldomain_bug_chidvar macro=sdtm_fulldomain STATUS=PASS ncase=1 npass=4 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.27 秒
+      CPU 时间          0.21 秒
+      

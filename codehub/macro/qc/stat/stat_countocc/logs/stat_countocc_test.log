@@ -1,0 +1,1885 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.12 秒
+      
+1          /*==============================================================================
+2           * stat_countocc_test.sas - Positive (functional) acceptance tests
+3           *==============================================================================
+4           * Macro under test : %stat_countocc
+5           * File under test   : dev/stat/stat_countocc.sas
+6           * Dependencies      : %var_exist, %var_coexist, %ds_attr
+7           * Coverage          : subject / event counts, denominator handling, missing
+8           *                     class exclusion, missing code imputation (UNCODE=),
+9           *                     cumulative (_TOTAL_) rows, multi-variable capture
+10          *                     hierarchy, custom UNCODE= / TOTCODELAB=, PCTFMT=,
+11          *                     SORTCLASSNUM=, TEST=NONE / CHISQ / FISHER / AUTO,
+12          *                     single class level warning path, numeric CLASS=,
+13          *                     custom CLASS= / SUBJECT=, output labels, sort order,
+14          *                     library-qualified OUT=, intermediate cleanup,
+15          *                     CODE= truncation warnings (UNCODE= / TOTCODELAB=).
+16          *                     The 0-observation abort paths are negative tests
+17          *                     (stat_countocc_err_16 / err_17).
+18          *============================================================================*/
+19         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+20         %let _qcboot_=%sysfunc(getoption(sysin));
+21         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+22         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+23         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+24         %include "&_qcboot_.\_framework\qc_env.sas";
+89         %let _qcboot_=;
+90         /*----------------------------------------------------------------------------*/
+91         %include "&_QCFW_.";
+384        %include "&_QCDEV_VAR_.\var_exist.sas";
+435        %include "&_QCDEV_VAR_.\var_coexist.sas";
+501        %include "&_QCDEV_DS_.\ds_attr.sas";
+553        %include "&_QCDEV_STAT_.\stat_countocc.sas";
+764        
+765        %qc_begin(prog=stat_countocc_test, macro=stat_countocc);
+#####QC_BEGIN prog=stat_countocc_test macro=stat_countocc
+766        
+767        /* helper: read a variable label through PROC CONTENTS (selecting the LABEL
+768         * column of dictionary.columns by name returns no rows in this SAS release) */
+769        %macro _qc_label(ds=, var=, mac=);
+770          %global &mac.;
+771          proc contents data=&ds. out=_qc_meta noprint;
+772          run;
+773          data _null_;
+774            set _qc_meta;
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+775            if upcase(name)=upcase("&var.") then call symputx("&mac.", label);
+776          run;
+777        %mend _qc_label;
+778        
+779        /*----------------------------------------------------------------------------
+780         * Shared input data
+781         *   treatment A : S1..S5 (5 subjects, S1-S3 with events, S4-S5 without)
+782         *   treatment B : S6..S8 (3 subjects, all with events)
+783         *   S9 has missing treatment -> must be excluded from every denominator
+784         *   S2 has the same event twice  -> counts as 1 subject but 2 events
+785         *   S8 has a missing AEDECOD     -> imputed with UNCODE=
+786         *--------------------------------------------------------------------------*/
+787        data adae;
+788          length usubjid $10 trt $3 aebodsys $20 aedecod $20;
+789          input usubjid $ trt $ aebodsys $ aedecod $;
+790          datalines;
+
+NOTE: 数据集 WORK.ADAE 有 8 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+799        ;
+800        run;
+801        data adsl;
+802          length usubjid $10 trt $3;
+803          input usubjid $ trt $;
+804          datalines;
+
+NOTE: 数据集 WORK.ADSL 有 9 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+814        ;
+815        run;
+816        
+817        /*----------------------------------------------------------------------------
+818         * CASE 1 : two code variables, TEST=NONE - counts, percents, denominators,
+819         *          labels, cumulative rows, missing-code row, sort order, cleanup
+820         *--------------------------------------------------------------------------*/
+821        %qc_case(desc=1 two code variables counts percents labels and order);
+#####QC_CASE n=1 desc=1 two code variables counts percents labels and order
+822        %stat_countocc(data=adae, denom=adsl, out=r1, class=trt, code=aebodsys aedecod, test=none);
+
+NOTE: 从数据集 WORK.ADAE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 24 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 20 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 10 个观测和 18 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 10 个观测
+NOTE: 数据集 WORK.R1 有 10 个观测和 18 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.01 秒
+      
+
+823        
+824        %qc_expect_ds(ds=r1, desc=C1 output dataset exists);
+#####QC_PASS n=1 desc=C1 output dataset exists
+825        %qc_expect_nobs(ds=r1, expect=10, desc=C1 one row per code combination);
+#####QC_PASS n=1 desc=C1 one row per code combination
+826        %qc_expect_var(ds=r1, var=aebodsys, type=C, desc=C1 aebodsys kept as char);
+#####QC_PASS n=1 desc=C1 aebodsys kept as char
+827        %qc_expect_var(ds=r1, var=aedecod, type=C, desc=C1 aedecod kept as char);
+#####QC_PASS n=1 desc=C1 aedecod kept as char
+828        %qc_expect_var(ds=r1, var=ns0, type=N, desc=C1 ns0 numeric);
+#####QC_PASS n=1 desc=C1 ns0 numeric
+829        %qc_expect_var(ds=r1, var=nsp0, type=C, desc=C1 nsp0 char combined count and percent);
+#####QC_PASS n=1 desc=C1 nsp0 char combined count and percent
+830        %qc_expect_var(ds=r1, var=nsp1, type=C, desc=C1 nsp1 char combined count and percent);
+#####QC_PASS n=1 desc=C1 nsp1 char combined count and percent
+831        %qc_expect_var(ds=r1, var=nsp2, type=C, desc=C1 nsp2 char combined count and percent);
+#####QC_PASS n=1 desc=C1 nsp2 char combined count and percent
+832        %qc_expect_len(ds=r1, var=nsp1, expect=20, desc=C1 nsp1 length 20);
+#####QC_PASS n=1 desc=C1 nsp1 length 20
+833        
+834        proc sql noprint;
+835          select count(*) into :c1tot from r1
+836            where aebodsys='_TOTAL_' and aedecod='_TOTAL_'
+837              and ns0=6 and ne0=8 and ns1=3 and ne1=4 and ns2=3 and ne2=4
+838              and strip(put(np0,8.1))='75.0' and strip(put(np1,8.1))='60.0' and strip(put(np2,8.1))='100.0'
+839              and nsp0='6(75.0)' and nsp1='3(60.0)' and nsp2='3(100.0)';
+840          select count(*) into :c1soc1 from r1
+841            where aebodsys='SOC1' and aedecod='_TOTAL_'
+842              and ns0=3 and ne0=3 and ns1=1 and ne1=1 and ns2=2 and ne2=2
+843              and nsp1='1(20.0)' and nsp2='2(66.7)';
+844          select count(*) into :c1soc2 from r1
+845            where aebodsys='SOC2' and aedecod='_TOTAL_'
+846              and ns0=3 and ne0=4 and ns1=2 and ne1=3 and ns2=1 and ne2=1
+847              and nsp1='2(40.0)' and nsp2='1(33.3)';
+848          select count(*) into :c1soc3 from r1
+849            where aebodsys='SOC3' and aedecod='_TOTAL_'
+850              and ns0=1 and ns1=0 and ns2=1 and nsp1='0(0.0)' and nsp2='1(33.3)';
+851          select count(*) into :c1unc from r1
+852            where aebodsys='SOC3' and aedecod='UNCODED'
+853              and ns0=1 and ns1=0 and ns2=1 and ne2=1;
+854          select count(*) into :c1dup from r1
+855            where aebodsys='SOC2' and aedecod='PT2' and ns1=1 and ne1=2;
+856          select count(*) into :c1tmp from dictionary.tables
+857            where libname='WORK' and memname like 'STAT_COUNTOCC%';
+858        quit;
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+859        %_qc_label(ds=r1, var=NS0, mac=c1lb0);
+
+NOTE: 数据集 WORK._QC_META 有 18 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 18 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+860        %_qc_label(ds=r1, var=NSP1, mac=c1lb1);
+
+NOTE: 数据集 WORK._QC_META 有 18 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 18 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+861        
+862        
+863        %qc_check_eq(actual=&c1tot., expect=1, desc=C1 grand total row counts and percents);
+#####QC_PASS n=1 desc=C1 grand total row counts and percents
+864        %qc_check_eq(actual=&c1soc1., expect=1, desc=C1 SOC1 total row);
+#####QC_PASS n=1 desc=C1 SOC1 total row
+865        %qc_check_eq(actual=&c1soc2., expect=1, desc=C1 SOC2 total row);
+#####QC_PASS n=1 desc=C1 SOC2 total row
+866        %qc_check_eq(actual=&c1soc3., expect=1, desc=C1 SOC3 total row with zero class A);
+#####QC_PASS n=1 desc=C1 SOC3 total row with zero class A
+867        %qc_check_eq(actual=&c1unc., expect=1, desc=C1 missing code imputed as UNCODED);
+#####QC_PASS n=1 desc=C1 missing code imputed as UNCODED
+868        %qc_check_eq(actual=&c1dup., expect=1, desc=C1 duplicate event counted once as subject);
+#####QC_PASS n=1 desc=C1 duplicate event counted once as subject
+869        %qc_check_eq(actual=&c1lb0., expect=Number of Subjects, desc=C1 label ns0);
+#####QC_PASS n=1 desc=C1 label ns0
+870        %qc_check_eq(actual=&c1lb1., expect=Number and Percent of Subjects of A, desc=C1 label nsp1);
+#####QC_PASS n=1 desc=C1 label nsp1
+871        %qc_check_eq(actual=&c1tmp., expect=0, desc=C1 intermediate datasets removed);
+#####QC_PASS n=1 desc=C1 intermediate datasets removed
+872        
+873        data _null_;
+874          length _s $200;
+875          do until(_e);
+876            set r1 end=_e;
+877            _s=catx(' ', _s, cats(aebodsys, '/', aedecod));
+878          end;
+879          call symputx('c1seq', _s);
+880        run;
+
+NOTE: 从数据集 WORK.R1. 读取了 10 个观测
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+881        %let c1exp=_TOTAL_/_TOTAL_ SOC1/_TOTAL_ SOC1/PT1 SOC1/PT2 SOC2/_TOTAL_ SOC2/PT2 SOC2/PT3 SOC2/PT9 SOC3/_TOTAL_
+881      ! SOC3/UNCODED;
+882        %qc_check_eq(actual=&c1seq., expect=&c1exp., desc=C1 total first uncoded last then by subjects);
+#####QC_PASS n=1 desc=C1 total first uncoded last then by subjects
+883        
+884        /*----------------------------------------------------------------------------
+885         * CASE 2 : single code variable, default TEST= and default SUBJECT=USUBJID
+886         *--------------------------------------------------------------------------*/
+887        %qc_case(desc=2 single code variable with default TEST and SUBJECT);
+#####QC_CASE n=2 desc=2 single code variable with default TEST and SUBJECT
+888        %stat_countocc(data=adae, denom=adsl, out=r2, class=trt, code=aebodsys);
+
+NOTE: 从数据集 WORK.ADAE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 16 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 8 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 4 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 4 个观测
+NOTE: 数据集 WORK.R2 有 4 个观测和 15 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+889        
+890        %qc_expect_nobs(ds=r2, expect=4, desc=C2 four rows for total and three levels);
+#####QC_PASS n=2 desc=C2 four rows for total and three levels
+891        %qc_expect_var(ds=r2, var=ns2, type=N, desc=C2 ns2 numeric);
+#####QC_PASS n=2 desc=C2 ns2 numeric
+892        data _null_;
+893          length _s $100;
+894          do until(_e);
+895            set r2 end=_e;
+6                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+896            _s=catx(' ', _s, aebodsys);
+897          end;
+898          call symputx('c2seq', _s);
+899        run;
+
+NOTE: 从数据集 WORK.R2. 读取了 4 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+900        %let c2exp=_TOTAL_ SOC1 SOC2 SOC3;
+901        %qc_check_eq(actual=&c2seq., expect=&c2exp., desc=C2 row order total first);
+#####QC_PASS n=2 desc=C2 row order total first
+902        
+903        proc sql noprint;
+904          select count(*) into :c2 from r2
+905            where aebodsys='_TOTAL_'
+906              and ns0=6 and ne0=8 and ns1=3 and ne1=4 and ns2=3 and ne2=4
+907              and nsp1='3(60.0)' and nsp2='3(100.0)';
+908          select count(*) into :c2b from r2
+909            where aebodsys='SOC1' and ns1=1 and ns2=2 and nsp2='2(66.7)';
+910        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+911        %qc_check_eq(actual=&c2., expect=1, desc=C2 total row counts);
+#####QC_PASS n=2 desc=C2 total row counts
+912        %qc_check_eq(actual=&c2b., expect=1, desc=C2 SOC1 row counts);
+#####QC_PASS n=2 desc=C2 SOC1 row counts
+913        
+914        /*----------------------------------------------------------------------------
+915         * CASE 3 : three code variables - cumulative hierarchy
+916         *--------------------------------------------------------------------------*/
+917        %qc_case(desc=3 three code variables cumulative hierarchy);
+#####QC_CASE n=3 desc=3 three code variables cumulative hierarchy
+918        data ae3code;
+919          length usubjid $10 trt $3 soc $10 pt $10 sev $10;
+920          input usubjid $ trt $ soc $ pt $ sev $;
+921          datalines;
+
+NOTE: 数据集 WORK.AE3CODE 有 3 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+925        ;
+926        run;
+927        data dm3code;
+928          length usubjid $10 trt $3;
+929          input usubjid $ trt $;
+930          datalines;
+
+NOTE: 数据集 WORK.DM3CODE 有 4 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+935        ;
+936        run;
+937        %stat_countocc(data=ae3code, denom=dm3code, out=r3, class=trt, code=soc pt sev);
+
+7                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: 从数据集 WORK.AE3CODE. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 12 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 18 行，9 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.03 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 18 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 9 个观测和 21 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 9 个观测
+NOTE: 数据集 WORK.R3 有 9 个观测和 21 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+938        %qc_expect_nobs(ds=r3, expect=9, desc=C3 nine rows for three level hierarchy);
+#####QC_PASS n=3 desc=C3 nine rows for three level hierarchy
+939        data _null_;
+940          length _s $250;
+941          do until(_e);
+942            set r3 end=_e;
+943            _s=catx(' ', _s, cats(soc, '/', pt, '/', sev));
+944          end;
+945          call symputx('c3seq', _s);
+946        run;
+
+NOTE: 从数据集 WORK.R3. 读取了 9 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+947        %let c3exp=_TOTAL_/_TOTAL_/_TOTAL_ SOC1/_TOTAL_/_TOTAL_ SOC1/PT1/_TOTAL_ SOC1/PT1/MILD SOC1/PT2/_TOTAL_
+947      ! SOC1/PT2/SEVERE SOC2/_TOTAL_/_TOTAL_ SOC2/PT3/_TOTAL_ SOC2/PT3/MILD;
+948        %qc_check_eq(actual=&c3seq., expect=&c3exp., desc=C3 hierarchy from total to detail);
+#####QC_PASS n=3 desc=C3 hierarchy from total to detail
+949        proc sql noprint;
+950          select count(*) into :c3 from r3
+951            where soc='_TOTAL_' and pt='_TOTAL_' and sev='_TOTAL_'
+952              and ns0=3 and ns1=2 and ns2=1 and nsp0='3(75.0)' and nsp1='2(100.0)' and nsp2='1(50.0)';
+953          select count(*) into :c3b from r3
+8                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+954            where soc='SOC1' and pt='PT1' and sev='MILD' and ns1=1 and ne1=1;
+955        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+956        %qc_check_eq(actual=&c3., expect=1, desc=C3 grand total row);
+#####QC_PASS n=3 desc=C3 grand total row
+957        %qc_check_eq(actual=&c3b., expect=1, desc=C3 lowest level row);
+#####QC_PASS n=3 desc=C3 lowest level row
+958        
+959        /*----------------------------------------------------------------------------
+960         * CASE 4 : three class levels
+961         *--------------------------------------------------------------------------*/
+962        %qc_case(desc=4 three class levels);
+#####QC_CASE n=4 desc=4 three class levels
+963        data ae3arm;
+964          length usubjid $10 trt $3 cod $10;
+965          input usubjid $ trt $ cod $;
+966          datalines;
+
+NOTE: 数据集 WORK.AE3ARM 有 6 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+973        ;
+974        run;
+975        data dm3arm;
+976          length usubjid $10 trt $3;
+977          input usubjid $ trt $;
+978          datalines;
+
+NOTE: 数据集 WORK.DM3ARM 有 9 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+988        ;
+989        run;
+990        %stat_countocc(data=ae3arm, denom=dm3arm, out=r4, class=trt, code=cod);
+
+NOTE: 从数据集 WORK.AE3ARM. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 12 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 9 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 9 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 3 个观测和 19 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+9                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 3 个观测
+NOTE: 数据集 WORK.R4 有 3 个观测和 19 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+991        %qc_expect_nobs(ds=r4, expect=3, desc=C4 total plus two code levels);
+#####QC_PASS n=4 desc=C4 total plus two code levels
+992        %qc_expect_var(ds=r4, var=ns3, type=N, desc=C4 third class statistic exists);
+#####QC_PASS n=4 desc=C4 third class statistic exists
+993        %qc_expect_var(ds=r4, var=nsp3, type=C, desc=C4 third class combined statistic exists);
+#####QC_PASS n=4 desc=C4 third class combined statistic exists
+994        proc sql noprint;
+995          select count(*) into :c4 from r4
+996            where cod='_TOTAL_'
+997              and ns0=6 and ns1=2 and ns2=3 and ns3=1
+998              and strip(put(np0,8.1))='66.7' and strip(put(np1,8.1))='50.0'
+999              and strip(put(np2,8.1))='100.0' and strip(put(np3,8.1))='50.0'
+1000             and nsp3='1(50.0)';
+1001       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1002       %_qc_label(ds=r4, var=NS3, mac=c4lb)
+
+NOTE: 数据集 WORK._QC_META 有 19 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 19 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1003       %qc_check_eq(actual=&c4lb., expect=Number of Subjects of C, desc=C4 label of third class);
+#####QC_PASS n=4 desc=C4 label of third class
+1004       %qc_check_eq(actual=&c4., expect=1, desc=C4 three class counts and percents);
+#####QC_PASS n=4 desc=C4 three class counts and percents
+1005       
+1006       /*----------------------------------------------------------------------------
+1007        * CASE 5 : numeric class variable
+1008        *--------------------------------------------------------------------------*/
+1009       %qc_case(desc=5 numeric class variable);
+#####QC_CASE n=5 desc=5 numeric class variable
+1010       data aenum;
+1011         length usubjid $10 pt $10;
+1012         input usubjid $ sexn pt $;
+10                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+1013         datalines;
+
+NOTE: 数据集 WORK.AENUM 有 3 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1017       ;
+1018       run;
+1019       data dmenum;
+1020         length usubjid $10;
+1021         input usubjid $ sexn;
+1022         datalines;
+
+NOTE: 数据集 WORK.DMENUM 有 4 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1027       ;
+1028       run;
+1029       %stat_countocc(data=aenum, denom=dmenum, out=r5, class=sexn, code=pt);
+
+NOTE: 从数据集 WORK.AENUM. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 6 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 6 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 3 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 3 个观测
+NOTE: 数据集 WORK.R5 有 3 个观测和 15 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1030       %qc_expect_nobs(ds=r5, expect=3, desc=C5 numeric class accepted);
+11                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+#####QC_PASS n=5 desc=C5 numeric class accepted
+1031       proc sql noprint;
+1032         select count(*) into :c5 from r5
+1033           where pt='_TOTAL_' and ns0=3 and ns1=2 and ns2=1
+1034             and strip(put(np0,8.1))='75.0' and strip(put(np1,8.1))='100.0' and strip(put(np2,8.1))='50.0';
+1035         select count(*) into :c5b from r5
+1036           where pt='HEAD' and ns0=2 and ns1=1 and ns2=1;
+1037       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1038       %_qc_label(ds=r5, var=NS1, mac=c5lb);
+
+NOTE: 数据集 WORK._QC_META 有 15 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 15 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1039       %qc_check_eq(actual=&c5lb., expect=Number of Subjects of 1, desc=C5 numeric class label);
+#####QC_PASS n=5 desc=C5 numeric class label
+1040       %qc_check_eq(actual=&c5., expect=1, desc=C5 numeric class counts);
+#####QC_PASS n=5 desc=C5 numeric class counts
+1041       %qc_check_eq(actual=&c5b., expect=1, desc=C5 numeric class level row);
+#####QC_PASS n=5 desc=C5 numeric class level row
+1042       
+1043       /*----------------------------------------------------------------------------
+1044        * CASE 6 : custom UNCODE= and TOTCODELAB=
+1045        *--------------------------------------------------------------------------*/
+1046       %qc_case(desc=6 custom UNCODE and TOTCODELAB);
+#####QC_CASE n=6 desc=6 custom UNCODE and TOTCODELAB
+1047       %stat_countocc(data=adae, denom=adsl, out=r6, class=trt, code=aebodsys aedecod,
+1048                      uncode=NOTCODED, totcodelab=TOTAL);
+
+NOTE: 从数据集 WORK.ADAE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 24 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 20 行，7 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.07 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 20 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 10 个观测和 18 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+12                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 10 个观测
+NOTE: 数据集 WORK.R6 有 10 个观测和 18 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1049       %qc_expect_nobs(ds=r6, expect=10, desc=C6 row count unchanged);
+#####QC_PASS n=6 desc=C6 row count unchanged
+1050       proc sql noprint;
+1051         select count(*) into :c6 from r6 where aebodsys='TOTAL' and aedecod='TOTAL';
+1052         select count(*) into :c6b from r6 where aebodsys='SOC3' and aedecod='NOTCODED';
+1053       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1054       %qc_check_eq(actual=&c6., expect=1, desc=C6 custom total label);
+#####QC_PASS n=6 desc=C6 custom total label
+1055       %qc_check_eq(actual=&c6b., expect=1, desc=C6 custom uncoded label);
+#####QC_PASS n=6 desc=C6 custom uncoded label
+1056       
+1057       data _null_;
+1058         length _s $200;
+1059         do until(_e);
+1060           set r6 end=_e;
+1061           _s=catx(' ', _s, cats(aebodsys, '/', aedecod));
+1062         end;
+1063         call symputx('c6seq', _s);
+1064       run;
+
+NOTE: 从数据集 WORK.R6. 读取了 10 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1065       %let c6exp=TOTAL/TOTAL SOC1/TOTAL SOC1/PT1 SOC1/PT2 SOC2/TOTAL SOC2/PT2 SOC2/PT3 SOC2/PT9 SOC3/TOTAL
+1065     ! SOC3/NOTCODED;
+1066       %qc_check_eq(actual=&c6seq., expect=&c6exp., desc=C6 custom labels keep total first uncoded last);
+#####QC_PASS n=6 desc=C6 custom labels keep total first uncoded last
+1067       
+1068       /*----------------------------------------------------------------------------
+1069        * CASE 7 : PCTFMT= controls percent presentation
+1070        *--------------------------------------------------------------------------*/
+1071       %qc_case(desc=7 PCTFMT option);
+#####QC_CASE n=7 desc=7 PCTFMT option
+1072       %stat_countocc(data=adae, denom=adsl, out=r7, class=trt, code=aebodsys, pctfmt=8.2);
+
+NOTE: 从数据集 WORK.ADAE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 16 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+13                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 8 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 4 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 4 个观测
+NOTE: 数据集 WORK.R7 有 4 个观测和 15 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1073       proc sql noprint;
+1074         select count(*) into :c7 from r7
+1075           where aebodsys='_TOTAL_'
+1076             and nsp0='6(75.00)' and nsp1='3(60.00)' and nsp2='3(100.00)'
+1077             and strip(put(np0,8.1))='75.0';
+1078         select count(*) into :c7b from r7
+1079           where aebodsys='SOC1' and nsp2='2(66.67)';
+1080       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1081       %qc_check_eq(actual=&c7., expect=1, desc=C7 pctfmt 8.2 applied to total row);
+#####QC_PASS n=7 desc=C7 pctfmt 8.2 applied to total row
+1082       %qc_check_eq(actual=&c7b., expect=1, desc=C7 pctfmt 8.2 applied to subgroup);
+#####QC_PASS n=7 desc=C7 pctfmt 8.2 applied to subgroup
+1083       
+1084       /*----------------------------------------------------------------------------
+1085        * CASE 8 : SORTCLASSNUM= selects the subgroup used for sorting
+1086        *--------------------------------------------------------------------------*/
+1087       %qc_case(desc=8 SORTCLASSNUM options);
+#####QC_CASE n=8 desc=8 SORTCLASSNUM options
+1088       %stat_countocc(data=adae, denom=adsl, out=r8a, class=trt, code=aebodsys, sortclassnum=1);
+
+NOTE: 从数据集 WORK.ADAE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 16 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+14                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 8 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 4 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 4 个观测
+NOTE: 数据集 WORK.R8A 有 4 个观测和 15 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1089       %stat_countocc(data=adae, denom=adsl, out=r8b, class=trt, code=aebodsys, sortclassnum=2);
+
+NOTE: 从数据集 WORK.ADAE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 16 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 8 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 4 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 4 个观测
+NOTE: 数据集 WORK.R8B 有 4 个观测和 15 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+15                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1090       data _null_;
+1091         length _s $100;
+1092         do until(_e);
+1093           set r8a end=_e;
+1094           _s=catx(' ', _s, aebodsys);
+1095         end;
+1096         call symputx('c8a', _s);
+1097         _s='';
+1098         do until(_e2);
+1099           set r8b end=_e2;
+1100           _s=catx(' ', _s, aebodsys);
+1101         end;
+1102         call symputx('c8b', _s);
+1103       run;
+
+NOTE: 从数据集 WORK.R8A. 读取了 4 个观测
+NOTE: 从数据集 WORK.R8B. 读取了 4 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1104       %let c8aexp=_TOTAL_ SOC2 SOC1 SOC3;
+1105       %let c8bexp=_TOTAL_ SOC1 SOC2 SOC3;
+1106       %qc_check_eq(actual=&c8a., expect=&c8aexp., desc=C8 sort by first class);
+#####QC_PASS n=8 desc=C8 sort by first class
+1107       %qc_check_eq(actual=&c8b., expect=&c8bexp., desc=C8 sort by second class);
+#####QC_PASS n=8 desc=C8 sort by second class
+1108       
+1109       /*----------------------------------------------------------------------------
+1110        * CASE 9 : TEST=CHISQ - statistics variables and values
+1111        *--------------------------------------------------------------------------*/
+1112       %qc_case(desc=9 chi-square test option);
+#####QC_CASE n=9 desc=9 chi-square test option
+1113       %stat_countocc(data=adae, denom=adsl, out=r9, class=trt, code=aebodsys, test=chisq);
+
+NOTE: 从数据集 WORK.ADAE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 16 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 8 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.04 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_TEST_PREPARE 有 16 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+16                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_TEST_PREPARE. 读取了 16 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_CHISQ 有 4 个观测和 22 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.04 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_CHISQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_TEST 有 4 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 从数据集 WORK.STAT_COUNTOCC_TEST. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 4 个观测和 18 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 4 个观测
+NOTE: 数据集 WORK.R9 有 4 个观测和 18 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_CHISQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_TEST (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_TEST_PREPARE (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1114       %qc_expect_var(ds=r9, var=_testv_, type=N, desc=C9 statistic variable exists);
+#####QC_PASS n=9 desc=C9 statistic variable exists
+1115       %qc_expect_var(ds=r9, var=_testp_, type=N, desc=C9 p value variable exists);
+#####QC_PASS n=9 desc=C9 p value variable exists
+1116       %qc_expect_var(ds=r9, var=_testm_, type=C, desc=C9 method variable exists);
+#####QC_PASS n=9 desc=C9 method variable exists
+1117       proc sql noprint;
+1118         select count(*) into :c9 from r9 where _testm_='Chisq';
+1119         select count(*) into :c9b from r9
+1120           where aebodsys='_TOTAL_' and strip(put(_testv_,8.4))='1.6000' and strip(put(_testp_,8.4))='0.2059';
+1121         select count(*) into :c9c from r9
+1122           where aebodsys='SOC2' and strip(put(_testv_,8.4))='0.0356' and strip(put(_testp_,8.4))='0.8504';
+1123       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1124       %_qc_label(ds=r9, var=_TESTV_, mac=c9lb);
+17                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 数据集 WORK._QC_META 有 18 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 18 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1125       %qc_check_eq(actual=&c9lb., expect=Statistics, desc=C9 statistic label);
+#####QC_PASS n=9 desc=C9 statistic label
+1126       %qc_check_eq(actual=&c9., expect=4, desc=C9 chi-square method on every row);
+#####QC_PASS n=9 desc=C9 chi-square method on every row
+1127       %qc_check_eq(actual=&c9b., expect=1, desc=C9 chi-square value of grand total row);
+#####QC_PASS n=9 desc=C9 chi-square value of grand total row
+1128       %qc_check_eq(actual=&c9c., expect=1, desc=C9 chi-square value of SOC2 row);
+#####QC_PASS n=9 desc=C9 chi-square value of SOC2 row
+1129       
+1130       /*----------------------------------------------------------------------------
+1131        * CASE 10 : TEST=FISHER - exact test, statistic is missing
+1132        *--------------------------------------------------------------------------*/
+1133       %qc_case(desc=10 Fisher exact test option);
+#####QC_CASE n=10 desc=10 Fisher exact test option
+1134       %stat_countocc(data=adae, denom=adsl, out=r10, class=trt, code=aebodsys, test=FISHER);
+
+NOTE: 从数据集 WORK.ADAE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 16 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 8 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_TEST_PREPARE 有 16 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_TEST_PREPARE. 读取了 16 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_CHISQ 有 4 个观测和 22 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_CHISQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_TEST 有 4 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+18                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 从数据集 WORK.STAT_COUNTOCC_TEST. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 4 个观测和 18 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 4 个观测
+NOTE: 数据集 WORK.R10 有 4 个观测和 18 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_CHISQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_TEST (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_TEST_PREPARE (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1135       proc sql noprint;
+1136         select count(*) into :c10 from r10 where _testm_='Fisher';
+1137         select count(*) into :c10b from r10 where missing(_testv_);
+1138         select count(*) into :c10c from r10
+1139           where aebodsys='_TOTAL_' and strip(put(_testp_,8.4))='0.4643';
+1140         select count(*) into :c10d from r10
+1141           where aebodsys='SOC2' and strip(put(_testp_,8.4))='1.0000';
+1142       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1143       %qc_check_eq(actual=&c10., expect=4, desc=C10 Fisher method on every row);
+#####QC_PASS n=10 desc=C10 Fisher method on every row
+1144       %qc_check_eq(actual=&c10b., expect=4, desc=C10 Fisher statistic is missing);
+#####QC_PASS n=10 desc=C10 Fisher statistic is missing
+1145       %qc_check_eq(actual=&c10c., expect=1, desc=C10 Fisher p value of grand total row);
+#####QC_PASS n=10 desc=C10 Fisher p value of grand total row
+1146       %qc_check_eq(actual=&c10d., expect=1, desc=C10 Fisher exact p equals 1);
+#####QC_PASS n=10 desc=C10 Fisher exact p equals 1
+1147       
+1148       /*----------------------------------------------------------------------------
+1149        * CASE 11 : TEST=AUTO - falls back to Fisher on small tables, keeps Chisq
+1150        *           when the chi-square assumptions hold
+1151        *--------------------------------------------------------------------------*/
+1152       %qc_case(desc=11 automatic test selection);
+#####QC_CASE n=11 desc=11 automatic test selection
+1153       %stat_countocc(data=adae, denom=adsl, out=r11a, class=trt, code=aebodsys, test=auto);
+
+NOTE: 从数据集 WORK.ADAE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 16 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+19                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 8 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_TEST_PREPARE 有 16 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_TEST_PREPARE. 读取了 16 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_CHISQ 有 4 个观测和 22 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_CHISQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_TEST 有 4 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 从数据集 WORK.STAT_COUNTOCC_TEST. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 4 个观测和 18 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 4 个观测
+NOTE: 数据集 WORK.R11A 有 4 个观测和 18 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_CHISQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_TEST (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_TEST_PREPARE (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1154       data ae_big;
+1155         length usubjid $10 trt $3 cod $20;
+20                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+1156         do i=1 to 100;
+1157           usubjid=cats('A',i); trt='A';
+1158           if i<=50 then do; cod='X'; output; end;
+1159         end;
+1160         do i=1 to 100;
+1161           usubjid=cats('B',i); trt='B';
+1162           if i<=80 then do; cod='X'; output; end;
+1163         end;
+1164       run;
+
+NOTE: 数据集 WORK.AE_BIG 有 130 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1165       data dm_big;
+1166         length usubjid $10 trt $3;
+1167         do i=1 to 100; usubjid=cats('A',i); trt='A'; output; end;
+1168         do i=1 to 100; usubjid=cats('B',i); trt='B'; output; end;
+1169       run;
+
+NOTE: 数据集 WORK.DM_BIG 有 200 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1170       %stat_countocc(data=ae_big, denom=dm_big, out=r11b, class=trt, code=cod, test=auto);
+
+NOTE: 从数据集 WORK.AE_BIG. 读取了 130 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 260 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 4 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_TEST_PREPARE 有 8 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_TEST_PREPARE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_CHISQ 有 2 个观测和 22 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_CHISQ. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_TEST 有 2 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+21                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 4 个观测
+NOTE: 从数据集 WORK.STAT_COUNTOCC_TEST. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 2 个观测和 18 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 2 个观测
+NOTE: 数据集 WORK.R11B 有 2 个观测和 18 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_CHISQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_TEST (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_TEST_PREPARE (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1171       proc sql noprint;
+1172         select count(*) into :c11a from r11a where _testm_='Fisher';
+1173         select count(*) into :c11b from r11b where _testm_='Chisq' and strip(put(_testv_,8.4))='19.7802' and
+1173     ! _testp_<0.001;
+1174       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1175       %qc_check_eq(actual=&c11a., expect=4, desc=C11 AUTO falls back to Fisher on small table);
+#####QC_PASS n=11 desc=C11 AUTO falls back to Fisher on small table
+1176       %qc_check_eq(actual=&c11b., expect=2, desc=C11 AUTO keeps chi-square on large table);
+#####QC_PASS n=11 desc=C11 AUTO keeps chi-square on large table
+1177       
+1178       /*----------------------------------------------------------------------------
+1179        * CASE 12 : single class level with TEST=CHISQ - warning branch, no test vars
+1180        *--------------------------------------------------------------------------*/
+1181       %qc_case(desc=12 single class level skips hypothesis test);
+#####QC_CASE n=12 desc=12 single class level skips hypothesis test
+1182       data ae_one;
+1183         set ae3code;
+1184         where trt='A';
+1185       run;
+
+NOTE: 从数据集 WORK.AE3CODE. 读取了 2 个观测
+      WHERE trt='A';
+NOTE: 数据集 WORK.AE_ONE 有 2 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1186       data dm_one;
+22                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+1187         set dm3code;
+1188         where trt='A';
+1189       run;
+
+NOTE: 从数据集 WORK.DM3CODE. 读取了 2 个观测
+      WHERE trt='A';
+NOTE: 数据集 WORK.DM_ONE 有 2 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1190       %stat_countocc(data=ae_one, denom=dm_one, out=r12, class=trt, code=soc, test=CHISQ);
+
+NOTE: 从数据集 WORK.AE_ONE. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 4 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 3 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+WARNING: No statistics are computed because trt has fewer than 2 nonmissing levels.
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 3 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 3 个观测和 11 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 3 个观测
+NOTE: 数据集 WORK.R12 有 3 个观测和 11 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1191       %qc_expect_nobs(ds=r12, expect=3, desc=C12 result produced for single class level);
+#####QC_PASS n=12 desc=C12 result produced for single class level
+1192       proc sql noprint;
+1193         select count(*) into :c12v from dictionary.columns
+1194           where libname='WORK' and memname='R12'
+1195             and upcase(name) in ('_TESTV_','_TESTP_','_TESTM_');
+1196         select count(*) into :c12 from r12
+1197           where soc='_TOTAL_' and ns0=2 and ns1=2 and strip(put(np0,8.1))='100.0';
+1198       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+23                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.00 秒
+      
+
+1199       %qc_check_eq(actual=&c12v., expect=0, desc=C12 no test variables for single class level);
+#####QC_PASS n=12 desc=C12 no test variables for single class level
+1200       %qc_check_eq(actual=&c12., expect=1, desc=C12 counts still computed);
+#####QC_PASS n=12 desc=C12 counts still computed
+1201       
+1202       /*----------------------------------------------------------------------------
+1203        * CASE 13 : custom CLASS= and SUBJECT=
+1204        *--------------------------------------------------------------------------*/
+1205       %qc_case(desc=13 custom class and subject variables);
+#####QC_CASE n=13 desc=13 custom class and subject variables
+1206       data ae_cs;
+1207         length subjid $10 sex $1 pt $10;
+1208         input subjid $ sex $ pt $;
+1209         datalines;
+
+NOTE: 数据集 WORK.AE_CS 有 4 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1214       ;
+1215       run;
+1216       data dm_cs;
+1217         length subjid $10 sex $1;
+1218         input subjid $ sex $;
+1219         datalines;
+
+NOTE: 数据集 WORK.DM_CS 有 4 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1224       ;
+1225       run;
+1226       %stat_countocc(data=ae_cs, denom=dm_cs, out=r13, class=sex, code=pt, subject=subjid);
+
+NOTE: 从数据集 WORK.AE_CS. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 8 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 6 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 3 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 3 个观测
+24                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: 数据集 WORK.R13 有 3 个观测和 15 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1227       %qc_expect_nobs(ds=r13, expect=3, desc=C13 custom class and subject accepted);
+#####QC_PASS n=13 desc=C13 custom class and subject accepted
+1228       data _null_;
+1229         length _s $60;
+1230         do until(_e);
+1231           set r13 end=_e;
+1232           _s=catx(' ', _s, pt);
+1233         end;
+1234         call symputx('c13seq', _s);
+1235       run;
+
+NOTE: 从数据集 WORK.R13. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1236       %let c13exp=_TOTAL_ HEAD BODY;
+1237       %qc_check_eq(actual=&c13seq., expect=&c13exp., desc=C13 row order by subject counts);
+#####QC_PASS n=13 desc=C13 row order by subject counts
+1238       proc sql noprint;
+1239         select count(*) into :c13 from r13
+1240           where pt='_TOTAL_' and ns0=3 and ns1=2 and ns2=1
+1241             and strip(put(np1,8.1))='100.0' and strip(put(np2,8.1))='50.0';
+1242         select count(*) into :c13b from r13
+1243           where pt='BODY' and ns1=1 and ns2=0;
+1244       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1245       %_qc_label(ds=r13, var=NS1, mac=c13lb);
+
+NOTE: 数据集 WORK._QC_META 有 15 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK._QC_META. 读取了 15 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1246       %qc_check_eq(actual=&c13lb., expect=Number of Subjects of F, desc=C13 class label from custom class);
+#####QC_PASS n=13 desc=C13 class label from custom class
+1247       %qc_check_eq(actual=&c13., expect=1, desc=C13 custom class and subject counts);
+#####QC_PASS n=13 desc=C13 custom class and subject counts
+25                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+1248       %qc_check_eq(actual=&c13b., expect=1, desc=C13 subject counted once despite two events);
+#####QC_PASS n=13 desc=C13 subject counted once despite two events
+1249       
+1250       /*----------------------------------------------------------------------------
+1251        * CASE 14 : library-qualified OUT=
+1252        *--------------------------------------------------------------------------*/
+1253       %qc_case(desc=14 library qualified OUT);
+#####QC_CASE n=14 desc=14 library qualified OUT
+1254       libname qcstat "&_QCRES_.";
+NOTE: 已成功分配逻辑库引用名“QCSTAT”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_results
+1255       %stat_countocc(data=adae, denom=adsl, out=qcstat.sc_lib, class=trt, code=aebodsys);
+
+NOTE: 从数据集 WORK.ADAE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 16 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 8 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 4 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 4 个观测
+NOTE: 数据集 QCSTAT.SC_LIB 有 4 个观测和 15 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1256       %qc_expect_ds(ds=qcstat.sc_lib, desc=C14 library qualified output exists);
+#####QC_PASS n=14 desc=C14 library qualified output exists
+1257       %qc_expect_var(ds=qcstat.sc_lib, var=ns1, type=N, desc=C14 library qualified output structure);
+#####QC_PASS n=14 desc=C14 library qualified output structure
+1258       %qc_expect_nobs(ds=qcstat.sc_lib, expect=4, desc=C14 library qualified output rows);
+#####QC_PASS n=14 desc=C14 library qualified output rows
+1259       
+1260       /*----------------------------------------------------------------------------
+1261        * CASE 15 : denominator level order does not change the class mapping
+1262        *--------------------------------------------------------------------------*/
+1263       %qc_case(desc=15 denominator physical order has no effect);
+#####QC_CASE n=15 desc=15 denominator physical order has no effect
+26                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+1264       data adsl_rev;
+1265         set adsl(where=(usubjid in ('S6','S7','S8','S9')))
+1266             adsl(where=(usubjid in ('S1','S2','S3','S4','S5')));
+1267       run;
+
+NOTE: 从数据集 WORK.ADSL. 读取了 4 个观测
+      WHERE usubjid in ('S6', 'S7', 'S8', 'S9');
+NOTE: 从数据集 WORK.ADSL. 读取了 5 个观测
+      WHERE usubjid in ('S1', 'S2', 'S3', 'S4', 'S5');
+NOTE: 数据集 WORK.ADSL_REV 有 9 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1268       %stat_countocc(data=adae, denom=adsl_rev, out=r15, class=trt, code=aebodsys);
+
+NOTE: 从数据集 WORK.ADAE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_DATA 有 16 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_COUNTOCC_FREQ 创建完成，有 8 行，5 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_FREQ. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_COUNTOCC_RESULT 有 4 个观测和 15 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_COUNTOCC_RESULT. 读取了 4 个观测
+NOTE: 数据集 WORK.R15 有 4 个观测和 15 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_COUNTOCC_DATA (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_COUNTOCC_RESULT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1269       proc sql noprint;
+1270         select count(*) into :c15 from r15
+1271           where aebodsys='SOC1' and ns1=1 and ns2=2 and ne1=1 and ne2=2
+1272             and nsp1='1(20.0)' and nsp2='2(66.7)';
+1273         select count(*) into :c15b from r15
+1274           where aebodsys='_TOTAL_' and nsp1='3(60.0)' and nsp2='3(100.0)';
+1275       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+27                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.00 秒
+      
+
+1276       %qc_check_eq(actual=&c15., expect=1, desc=C15 subgroup counts unchanged by denominator order);
+#####QC_PASS n=15 desc=C15 subgroup counts unchanged by denominator order
+1277       %qc_check_eq(actual=&c15b., expect=1, desc=C15 total counts unchanged by denominator order);
+#####QC_PASS n=15 desc=C15 total counts unchanged by denominator order
+1278       
+1279       /*----------------------------------------------------------------------------
+1280        * CASE 16 : CODE= variable shorter than UNCODE= / TOTCODELAB= must warn
+1281        *   SAS truncates the assigned text silently, which makes the total row
+1282        *   unusable (it is no longer recognised as the _TOTAL_ level), so the macro
+1283        *   reports a WARNING for each affected parameter.
+1284        *--------------------------------------------------------------------------*/
+1285       %qc_case(desc=16 short CODE variable triggers truncation warnings);
+#####QC_CASE n=16 desc=16 short CODE variable triggers truncation warnings
+1286       data adae_short;
+1287         length usubjid $10 trt $3 cod $5;
+1288         usubjid='S1'; trt='A'; cod='X'; output;
+1289         usubjid='S2'; trt='A'; cod='Y'; output;
+1290       run;
+
+NOTE: 数据集 WORK.ADAE_SHORT 有 2 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1291       data adsl_short;
+1292         length usubjid $10 trt $3;
+1293         usubjid='S1'; trt='A'; output;
+1294         usubjid='S2'; trt='A'; output;
+1295       run;
+
+NOTE: 数据集 WORK.ADSL_SHORT 有 2 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1296       %let _zlog=%sysfunc(pathname(work))\qc_zero18.log;
+1297       proc printto log="&_zlog." new; run;
+
+NOTE: “PROCEDURE PRINTTO”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1300       data _null_;
+1301         _u=0; _t=0;
+1302         infile "&_zlog." lrecl=32767 end=_e;
+1303         do until(_e);
+1304           input;
+1305           if index(_infile_,'WARNING: Parameter UNCODE= greater than COD')>0 then _u+1;
+1306           if index(_infile_,'WARNING: Parameter TOTCODELAB= greater than COD')>0 then _t+1;
+1307         end;
+1308         call symputx('_c18u',_u,'G');
+1309         call symputx('_c18t',_t,'G');
+1310       run;
+
+NOTE: INFILE ".\temp\SAS Temporary Files\_TD22820_HJG251215144921_\qc_zero18.log" 是:
+      文件名=.\temp\SAS Temporary Files\_TD22820_HJG251215144921_\qc_zero18.log,
+      RECFM=V,LRECL=32767,
+      文件大小（字节）=2095,
+      上次修改时间=2026年11月09日 14时05分26秒,
+      创建时间=2026年11月09日 14时05分26秒
+
+NOTE: 53 records were read from the infile ".\temp\SAS Temporary 
+      Files\_TD22820_HJG251215144921_\qc_zero18.log".
+      最小记录长度是 0。
+      最大记录长度是 123。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1311       %qc_check(cond=%sysevalf(&_c18u.>=1), desc=C16 UNCODE truncation warning raised);
+#####QC_PASS n=16 desc=C16 UNCODE truncation warning raised
+1312       %qc_check(cond=%sysevalf(&_c18t.>=1), desc=C16 TOTCODELAB truncation warning raised);
+#####QC_PASS n=16 desc=C16 TOTCODELAB truncation warning raised
+1313       %qc_expect_nobs(ds=z18, expect=3, desc=C16 result still produced);
+29                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+#####QC_PASS n=16 desc=C16 result still produced
+1314       proc sql noprint;
+1315         select count(*) into :_c18tot from z18 where cod='_TOTA';
+1316       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1317       %qc_check_eq(actual=&_c18tot., expect=1, desc=C16 total level truncated to _TOTA);
+#####QC_PASS n=16 desc=C16 total level truncated to _TOTA
+1318       data _null_;
+1319         if filename('zq18','&_zlog.')=0 then do;
+1320           _rc=fdelete('zq18');
+1321           _rc=filename('zq18','');
+1322         end;
+1323       run;
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1324       
+1325       %qc_end;
+#####QC_RESULT prog=stat_countocc_test macro=stat_countocc STATUS=PASS ncase=16 npass=75 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          1.33 秒
+      CPU 时间          0.99 秒
+      

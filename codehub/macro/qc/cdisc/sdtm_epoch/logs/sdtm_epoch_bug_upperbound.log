@@ -1,0 +1,233 @@
+1                                                            SAS 系统            2026年11月 7日 星期六 下午04时35分00秒
+
+NOTE: 无法打开 SASUSER.REGSTRY。系统将改为打开 WORK.REGSTRY。
+NOTE: 所有注册表的更改将在会话结束后丢失。
+
+WARNING: 无法将 SASUSER 注册表复制到 WORK 注册表中。因此在该会话过程中，
+         您不会看到注册表定制情况。
+NOTE: 无法打开 SASUSER.PROFILE。系统将改为打开 WORK.PROFILE。
+NOTE: 所有配置文件的更改将在会话结束后丢失。
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.11 秒
+      CPU 时间          0.12 秒
+      
+1          /*===============================================================================
+2           * sdtm_epoch_bug_upperbound.sas - Bug regression: event after last SEENDTC mapped
+3           *===============================================================================
+4           * Macro under test : %sdtm_epoch
+5           * Expected         : an event start after the last SEENDTC has no EPOCH because
+6           *                    the documented rule requires the date to be on/after SESTDTC
+7           *                    and prior to SEENDTC
+8           * Status           : OPEN
+9           * Original defect  : the matching condition is only "SESTDTC <= event start";
+10          *                    SEENDTC is never used, so any later date keeps the last EPOCH
+11          * Test passes when the defect is fixed (run_all then reports FIXED)
+12          *============================================================================*/
+13         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+14         %let _qcboot_=%sysfunc(getoption(sysin));
+15         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+16         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+17         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+18         %include "&_qcboot_.\_framework\qc_env.sas";
+67         %let _qcboot_=;
+68         /*----------------------------------------------------------------------------*/
+69         
+70         %include "&_QCFW_.";
+363        %include "&_QCDEV_VAR_.\var_exist.sas";
+414        %include "&_QCDEV_VAR_.\var_coexist.sas";
+480        %include "&_QCDEV_DS_.\ds_attr.sas";
+532        %include "&_QCDEV_CDISC_.\sdtm_epoch.sas";
+631        
+632        %qc_begin(prog=sdtm_epoch_bug_upperbound, macro=sdtm_epoch);
+#####QC_BEGIN prog=sdtm_epoch_bug_upperbound macro=sdtm_epoch
+633        
+634        data se_bug;
+635          length usubjid $10 sestdtc seendtc $20 epoch $30;
+2                                                            SAS 系统            2026年11月 7日 星期六 下午04时35分00秒
+
+636          usubjid='S01'; sestdtc='2024-01-01'; seendtc='2024-01-15'; epoch='SCRN'; output;
+637          usubjid='S01'; sestdtc='2024-01-15'; seendtc='2024-02-01'; epoch='TRT';  output;
+638        run;
+
+NOTE: 数据集 WORK.SE_BUG 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+639        data ae_bug;
+640          length usubjid $10 aestdtc $20;
+641          usubjid='S01'; aestdtc='2024-03-15'; output;
+642        run;
+
+NOTE: 数据集 WORK.AE_BUG 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+643        
+644        %sdtm_epoch(data=work.ae_bug, se=work.se_bug, stdtc=aestdtc, out=work.ae_bug_out);
+
+NOTE: 已验证输入数据集的排序顺序。
+NOTE: 输入数据集已排序；已被复制到输出数据集。
+NOTE: 从数据集 WORK.SE_BUG. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_EPOCH1 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 已验证输入数据集的排序顺序。
+NOTE: 输入数据集已排序；已被复制到输出数据集。
+NOTE: 从数据集 WORK.AE_BUG. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_EPOCH2 有 1 个观测和 2 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+WARNING: Row 1: aestdtc is later than the last SEENDTC.
+NOTE: 从数据集 WORK.SDTM_EPOCH1. 读取了 2 个观测
+NOTE: 从数据集 WORK.SDTM_EPOCH2. 读取了 1 个观测
+NOTE: 数据集 WORK.AE_BUG_OUT 有 1 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+3                                                            SAS 系统            2026年11月 7日 星期六 下午04时35分00秒
+
+
+NOTE: 正在删除 WORK.SDTM_EPOCH1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_EPOCH2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+645        
+646        %qc_case(desc=1 event after last SEENDTC must stay unmapped);
+#####QC_CASE n=1 desc=1 event after last SEENDTC must stay unmapped
+647        %qc_expect_ds(ds=work.ae_bug_out, desc=C1 output dataset created);
+#####QC_PASS n=1 desc=C1 output dataset created
+648        %qc_expect_colval(ds=work.ae_bug_out, var=epoch, where=usubjid='S01', expect=, desc=C1 EPOCH blank after last SEENDTC);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=C1 EPOCH blank after last SEENDTC
+649        
+650        /* case 2: event falls in the gap between an SEENDTC and the next SESTDTC */
+651        data se_bug2;
+652          length usubjid $10 sestdtc seendtc $20 epoch $30;
+653          usubjid='S01'; sestdtc='2024-01-01'; seendtc='2024-01-10'; epoch='SCRN'; output;
+654          usubjid='S01'; sestdtc='2024-01-20'; seendtc='2024-02-10'; epoch='TRT';  output;
+655        run;
+
+NOTE: 数据集 WORK.SE_BUG2 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+656        data ae_bug2;
+657          length usubjid $10 aestdtc $20;
+658          usubjid='S01'; aestdtc='2024-01-15'; output;
+659        run;
+
+NOTE: 数据集 WORK.AE_BUG2 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+660        %sdtm_epoch(data=work.ae_bug2, se=work.se_bug2, stdtc=aestdtc, out=work.ae_bug2_out);
+
+NOTE: 已验证输入数据集的排序顺序。
+NOTE: 输入数据集已排序；已被复制到输出数据集。
+NOTE: 从数据集 WORK.SE_BUG2. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_EPOCH1 有 2 个观测和 4 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 已验证输入数据集的排序顺序。
+4                                                            SAS 系统            2026年11月 7日 星期六 下午04时35分00秒
+
+NOTE: 输入数据集已排序；已被复制到输出数据集。
+NOTE: 从数据集 WORK.AE_BUG2. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_EPOCH2 有 1 个观测和 2 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_EPOCH1. 读取了 2 个观测
+NOTE: 从数据集 WORK.SDTM_EPOCH2. 读取了 1 个观测
+NOTE: 数据集 WORK.AE_BUG2_OUT 有 1 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_EPOCH1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_EPOCH2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+661        
+662        %qc_case(desc=2 event in the gap between epochs must stay unmapped);
+#####QC_CASE n=2 desc=2 event in the gap between epochs must stay unmapped
+663        %qc_expect_ds(ds=work.ae_bug2_out, desc=C2 output dataset created);
+#####QC_PASS n=2 desc=C2 output dataset created
+664        %qc_expect_colval(ds=work.ae_bug2_out, var=epoch, where=usubjid='S01', expect=, desc=C2 EPOCH blank inside the gap);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_FAIL n=2 desc=C2 EPOCH blank inside the gap [actual=SCRN expected=]
+665        
+666        %qc_end;
+#####QC_RESULT prog=sdtm_epoch_bug_upperbound macro=sdtm_epoch STATUS=FAIL ncase=2 npass=3 nfail=1
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.25 秒
+      CPU 时间          0.23 秒
+      

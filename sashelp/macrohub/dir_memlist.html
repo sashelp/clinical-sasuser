@@ -1,0 +1,302 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>dir_memlist - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html" class="current">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / 目录操作</p>
+<h2>dir_memlist</h2>
+<p class="subtitle">获取目录下的文件列表</p>
+<p class="dependency">依赖: <a href="dir_exist.html">dir_exist</a></p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>dir_memlist</code></p>
+
+<h3 id="brief">简介</h3>
+<p>按层遍历指定目录，将文件与子目录信息写入 <code>OUT=</code> 数据集。<code>MAXDEPTH=</code> 控制遍历深度：1 表示只处理当前目录，2 表示包含一级子目录，依此类推；<code>MEMINFO=N</code> 时输出路径、层级、名称、扩展名与类型，<code>MEMINFO=Y</code> 时 Windows 还会输出文件大小、修改时间、创建时间、RECFM 与 LRECL，Linux 还会输出所有者、用户组与权限。宏不返回值。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%dir_memlist(dir=&lt;directory&gt;)</pre>
+<p>该宏为过程式宏，结果写入 <code>OUT=</code> 数据集，不返回值。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DIR=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>待遍历的完整目录路径，不需要加引号；即使加了一对引号也会被去除。支持在路径中使用 SAS 环境变量。</td>
+</tr>
+<tr>
+<td>MAXDEPTH=</td>
+<td>可选参数</td>
+<td>1</td>
+<td>最大遍历层级，必须为正整数。1 表示只遍历当前目录，2 表示包含一级子目录，依此类推。</td>
+</tr>
+<tr>
+<td>MEMINFO=</td>
+<td>可选参数</td>
+<td>N</td>
+<td>是否获取成员详细信息，不区分大小写。<br/>
+N：只输出 path、depth、name、ext、type。<br/>
+Y：Windows 增加 filesize、modtm、recfm、lrecl、crdtm；Linux 增加 filesize、modtm、owner、groupname、permission，并额外包含根目录记录。</td>
+</tr>
+<tr>
+<td>OUT=</td>
+<td>可选参数</td>
+<td>_DATA_</td>
+<td>输出数据集名。</td>
+</tr>
+<tr>
+<td>EXT=</td>
+<td>可选参数</td>
+<td>无</td>
+<td>按文件扩展名过滤，填写不带点号的扩展名，例如 <code>sas7bdat</code>、<code>sas</code>。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：列出目录中的数据集文件</h4>
+<pre class="code">options dlcreatedir;
+libname dirdemo "%sysfunc(pathname(work))\dirdemo";
+data dirdemo.ds1; x=1; run;
+data dirdemo.ds2; x=2; run;
+
+%dir_memlist(dir=%sysfunc(pathname(dirdemo)),out=work.mem1,
+             ext=sas7bdat,maxdepth=1,meminfo=N)
+
+proc print data=work.mem1;
+run;</pre>
+<p class="result-label">运行结果（WORK.MEM1）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="52%" />
+<col width="8%" />
+<col width="16%" />
+<col width="12%" />
+<col width="8%" />
+<thead>
+<tr><th>观测</th><th>path</th><th>depth</th><th>name</th><th>ext</th><th>type</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>&lt;WORK&gt;\dirdemo\ds1.sas7bdat</td><td>1</td><td>ds1.sas7bdat</td><td>SAS7BDAT</td><td>File</td></tr>
+<tr><td>2</td><td>&lt;WORK&gt;\dirdemo\ds2.sas7bdat</td><td>1</td><td>ds2.sas7bdat</td><td>SAS7BDAT</td><td>File</td></tr>
+</tbody>
+</table>
+<p><code>MAXDEPTH=1</code> 只遍历当前目录，<code>EXT=sas7bdat</code> 过滤出两个 SAS 数据集；<code>MEMINFO=N</code> 时只输出 <code>path</code>、<code>depth</code>、<code>name</code>、<code>ext</code>、<code>type</code> 五列。表内 <code>&lt;WORK&gt;</code> 代表当前 WORK 临时目录。</p>
+
+<h4>示例 2：获取文件大小与时间信息</h4>
+<pre class="code">options dlcreatedir;
+libname dirdemo "%sysfunc(pathname(work))\dirdemo";
+data dirdemo.ds1; x=1; run;
+data dirdemo.ds2; x=2; run;
+
+%dir_memlist(dir=%sysfunc(pathname(dirdemo)),out=work.mem2,
+             maxdepth=1,meminfo=Y)
+
+proc print data=work.mem2;
+run;</pre>
+<p class="result-label">运行结果（WORK.MEM2，节选列）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="34%" />
+<col width="8%" />
+<col width="15%" />
+<col width="10%" />
+<col width="11%" />
+<col width="16%" />
+<thead>
+<tr><th>观测</th><th>path</th><th>depth</th><th>name</th><th>type</th><th>filesize</th><th>modtm</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>&lt;WORK&gt;\dirdemo</td><td>0</td><td></td><td>Directory</td><td>.</td><td>.</td></tr>
+<tr><td>2</td><td>&lt;WORK&gt;\dirdemo\ds1.sas7bdat</td><td>1</td><td>ds1.sas7bdat</td><td>File</td><td>131072</td><td>2026-11-03T23:00:59</td></tr>
+<tr><td>3</td><td>&lt;WORK&gt;\dirdemo\ds2.sas7bdat</td><td>1</td><td>ds2.sas7bdat</td><td>File</td><td>131072</td><td>2026-11-03T23:00:59</td></tr>
+</tbody>
+</table>
+<p><code>MEMINFO=Y</code> 时除文件信息外，还会输出一条 <code>DEPTH=0</code> 的根目录记录；Windows 下同时生成 <code>filesize</code>、<code>modtm</code>、<code>recfm</code>、<code>lrecl</code>、<code>crdtm</code>。</p>
+
+<h4>示例 3：递归两级目录</h4>
+<pre class="code">options dlcreatedir;
+libname dirdemo "%sysfunc(pathname(work))\dirdemo";
+data dirdemo.ds1; x=1; run;
+data dirdemo.ds2; x=2; run;
+
+libname dirsub "%sysfunc(pathname(dirdemo))\sub";
+data dirsub.ds3; x=3; run;
+
+%dir_memlist(dir=%sysfunc(pathname(dirdemo)),out=work.mem3,
+             ext=sas7bdat,maxdepth=2,meminfo=N)
+
+proc print data=work.mem3;
+run;</pre>
+<p class="result-label">运行结果（WORK.MEM3）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="46%" />
+<col width="8%" />
+<col width="16%" />
+<col width="12%" />
+<col width="8%" />
+<thead>
+<tr><th>观测</th><th>path</th><th>depth</th><th>name</th><th>ext</th><th>type</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>&lt;WORK&gt;\dirdemo\ds1.sas7bdat</td><td>1</td><td>ds1.sas7bdat</td><td>SAS7BDAT</td><td>File</td></tr>
+<tr><td>2</td><td>&lt;WORK&gt;\dirdemo\ds2.sas7bdat</td><td>1</td><td>ds2.sas7bdat</td><td>SAS7BDAT</td><td>File</td></tr>
+<tr><td>3</td><td>&lt;WORK&gt;\dirdemo\sub\ds3.sas7bdat</td><td>2</td><td>ds3.sas7bdat</td><td>SAS7BDAT</td><td>File</td></tr>
+</tbody>
+</table>
+<p><code>MAXDEPTH=2</code> 在一级目录之外继续遍历子目录，因此 <code>sub\ds3.sas7bdat</code> 以 <code>DEPTH=2</code> 出现在结果中。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+
+<li><code>MEMINFO=Y</code> 时，Windows 输出 <code>filesize</code>、<code>modtm</code>、<code>recfm</code>、<code>lrecl</code>、<code>crdtm</code>；Linux 输出 <code>filesize</code>、<code>modtm</code>、<code>owner</code>、<code>groupname</code>、<code>permission</code>。</li>
+<li>仅支持 Windows 与 Linux 操作系统。</li>
+<li>支持在 <code>DIR=</code> 中使用 SAS 环境变量，不支持操作系统环境变量。</li>
+<li>目录名无需加引号；宏会去掉外层成对引号。</li>
+<li><code>MAXDEPTH=</code> 为最大目录层级。</li>
+
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<h4>1. 已知但未修复的风险</h4>
+<ul class="notes">
+<li>这是 SAS 软件的已知缺陷：使用 SAS 9.4M7 Unicode 会话且运行于 Windows 时，可能无法获取文件的大小、修改时间、权限等属性。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/dir/dir_memlist.sas" download>dir_memlist.sas</a></p>
+<p class="download"><a href="../assets/macropackages/dir_memlist.zip" download>dir_memlist and its dependencies.zip</a></p>
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr>
+<th>日期</th>
+<th>修订人</th>
+<th>修订内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-11-02</td>
+<td>Luo Hao</td>
+<td>增强参数兼容性：允许在运行时为 <code>DIR=</code> 传入带引号的值。</td>
+</tr>
+<tr>
+<td>2025-12-30</td>
+<td>Luo Hao</td>
+<td>原始版本。</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

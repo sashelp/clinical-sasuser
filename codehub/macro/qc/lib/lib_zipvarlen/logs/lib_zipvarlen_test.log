@@ -1,0 +1,693 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.14 秒
+      
+1          /*===============================================================================
+2           * lib_zipvarlen_test.sas - Positive (functional) acceptance tests
+3           *===============================================================================
+4           * Macro under test : %lib_zipvarlen
+5           * File under test   : dev/lib/lib_zipvarlen.sas
+6           * Dependency        : %ds_zipvarlen
+7           * Coverage          : library-wide shrink to the max used length across data
+8           *                     sets, per-dataset shrink, DELFMT=N keeps formats, numeric
+9           *                     variables untouched, all-character-free library is a no-op.
+10          * Note              : the macro MODIFIES the whole library irreversibly, so each
+11          *                     case builds a throw-away library under the temporary
+12          *                     sandbox.
+13          * Note              : SUPP_POLICY=FDA (default) means "per current dataset"
+14          *                     (implemented by calling %ds_zipvarlen on every member),
+15          *                     while the joint pass excludes SUPP* datasets.
+16          * Run               : qc/run_all.ps1  (or standalone batch, see README)
+17          *============================================================================*/
+18         
+19         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+20         %let _qcboot_=%sysfunc(getoption(sysin));
+21         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+22         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+23         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+24         %include "&_qcboot_.\_framework\qc_env.sas";
+89         %let _qcboot_=;
+90         /*----------------------------------------------------------------------------*/
+91         
+92         %include "&_QCFW_.";
+385        %include "&_QCQC_.\_framework\qc_sandbox.sas";
+485        %include "&_QCDEV_DS_.\ds_attr.sas";
+537        %include "&_QCDEV_DS_.\ds_varlist.sas";
+589        %include "&_QCDEV_DS_.\ds_zipvarlen.sas";
+669        %include "&_QCDEV_LIB_.\lib_zipvarlen.sas";
+749        %qc_sandbox_reset;
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\f1.txt" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\f1.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分15秒,
+      创建时间=2026年11月09日 14时05分15秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\f1.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\f2.sas" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\f2.sas,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分15秒,
+      创建时间=2026年11月09日 14时05分15秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\f2.sas" 中。
+      最小记录长度是 15。
+      最大记录长度是 15。
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\sub1\f3.txt" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\sub1\f3.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分15秒,
+      创建时间=2026年11月09日 14时05分15秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\sub1\f3.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\sub1\f4.log" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\sub1\f4.log,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分15秒,
+      创建时间=2026年11月09日 14时05分15秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\sub1\f4.log" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\sub2\f5.csv" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\sub2\f5.csv,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分15秒,
+      创建时间=2026年11月09日 14时05分15秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d1\sub2\f5.csv" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d2\f6.txt" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d2\f6.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分15秒,
+      创建时间=2026年11月09日 14时05分15秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\d2\f6.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.00 秒
+      
+
+750        
+751        /*==============================================================================
+752         * helper: build a small, known library at <sandbox>\<libref>
+753         *============================================================================*/
+754        %macro _qc_build_lzl(libref=);
+755          %let _lzdir_=&_QCSB_.\&libref.;
+756          %_qc_sb_del(path=&_lzdir_.);
+757          data _null_;
+758            rc=dcreate("&libref.", "&_QCSB_.\");
+759          run;
+760          libname &libref. "&_lzdir_.";
+761        %mend _qc_build_lzl;
+762        
+763        %qc_begin(prog=lib_zipvarlen_test, macro=lib_zipvarlen);
+#####QC_BEGIN prog=lib_zipvarlen_test macro=lib_zipvarlen
+764        
+765        /*----------------------------------------------------------------------------
+766         * CASE 1 : two datasets with the same char variable name -- FDA policy (default)
+767         *          sets the length to the longest value across NON-SUPP data sets in
+768         *          the library (the joint pass in section 2.2), so both data sets end
+769         *          up with the shared maximum.
+770         *--------------------------------------------------------------------------*/
+771        %qc_case(desc=1 library-wide shrink);
+#####QC_CASE n=1 desc=1 library-wide shrink
+772        %_qc_build_lzl(libref=lz1);
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 已成功分配逻辑库引用名“LZ1”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\lz1
+773        
+774        data lz1.ds1;
+775          length name $40 code $20;
+776          name='ab'; code='x';
+777        run;
+
+NOTE: 数据集 LZ1.DS1 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+778        data lz1.ds2;
+779          length name $40 code $20;
+780          name='abcdef'; code='yz';
+781        run;
+
+NOTE: 数据集 LZ1.DS2 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+782        %lib_zipvarlen(library=lz1);
+
+NOTE: 从数据集 SASHELP.VSTABLE. 读取了 2 个观测
+      WHERE libname='LZ1';
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + data _null_;     do until(_eof_);       set lz1.DS1 end=_eof_;       array _chr_ _character_;       array 
+_len_ [2]_temporary_;       array _zip_ [2]_temporary_;       do _n_=1 to dim(_chr_);         if 
+length(_chr_[_n_])>_len_[_n_] then
+2         + _len_[_n_]=length(_chr_[_n_]);         if _eof_ and _len_[_n_]<vlength(_chr_[_n_]) then _zip_[_n_]=1;       
+end;     end;      if n(of _zip_[*]) then do;       call execute("proc sql;alter table lz1.DS1");       do _n_=1 to 
+dim(_chr_);         if
+3         + _zip_[_n_] then call execute('modify '||trim(vname(_chr_[_n_]))||' char('||cats(_len_[_n_])||')' ||' 
+format=$'||cats(_len_[_n_])||'.' ||' informat=$'||cats(_len_[_n_])||'.'          );       end;       call 
+execute(';quit;');     end;     else putlog
+4         + "NOTE: There are no variables whose lengths need to be modified.";   run;
+
+NOTE: 从数据集 LZ1.DS1. 读取了 1 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + proc sql;
+1         +          alter table lz1.DS1
+2         + modify name char(2) format=$2. informat=$2.
+3         + modify code char(1) format=$1. informat=$1.
+4         + ;
+NOTE: 表 LZ1.DS1 修改了 2 列。
+4         +  quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+5         + data _null_;     do until(_eof_);       set lz1.DS2 end=_eof_;       array _chr_ _character_;       array 
+_len_ [2]_temporary_;       array _zip_ [2]_temporary_;       do _n_=1 to dim(_chr_);         if 
+length(_chr_[_n_])>_len_[_n_] then
+6         + _len_[_n_]=length(_chr_[_n_]);         if _eof_ and _len_[_n_]<vlength(_chr_[_n_]) then _zip_[_n_]=1;       
+end;     end;      if n(of _zip_[*]) then do;       call execute("proc sql;alter table lz1.DS2");       do _n_=1 to 
+dim(_chr_);         if
+7         + _zip_[_n_] then call execute('modify '||trim(vname(_chr_[_n_]))||' char('||cats(_len_[_n_])||')' ||' 
+format=$'||cats(_len_[_n_])||'.' ||' informat=$'||cats(_len_[_n_])||'.'          );       end;       call 
+execute(';quit;');     end;     else putlog
+8         + "NOTE: There are no variables whose lengths need to be modified.";   run;
+
+NOTE: 从数据集 LZ1.DS2. 读取了 1 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + proc sql;
+1         +          alter table lz1.DS2
+2         + modify name char(6) format=$6. informat=$6.
+3         + modify code char(2) format=$2. informat=$2.
+4         + ;
+NOTE: 表 LZ1.DS2 修改了 2 列。
+4         +  quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+6                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 查询要求将汇总统计量与原始的数据重新合并。
+NOTE: 表 WORK.LIB_UNIVARLEN1 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.LIB_UNIVARLEN1. 读取了 2 个观测
+      WHERE length<max_length;
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + proc sql;
+1         +          alter table lz1.DS1
+2         + modify name char(6) format=$6. informat=$6.
+3         + modify code char(2) format=$2. informat=$2.
+4         + ;
+NOTE: 表 LZ1.DS1 修改了 2 列。
+4         +  quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 正在删除 WORK.LIB_UNIVARLEN1 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+783        %qc_expect_len(ds=lz1.ds1, var=name, expect=6,  desc=C1 ds1 name shared max 6);
+#####QC_PASS n=1 desc=C1 ds1 name shared max 6
+784        %qc_expect_len(ds=lz1.ds1, var=code, expect=2,  desc=C1 ds1 code shared max 2);
+#####QC_PASS n=1 desc=C1 ds1 code shared max 2
+785        %qc_expect_len(ds=lz1.ds2, var=name, expect=6,  desc=C1 ds2 name stays 6);
+#####QC_PASS n=1 desc=C1 ds2 name stays 6
+786        %qc_expect_len(ds=lz1.ds2, var=code, expect=2,  desc=C1 ds2 code stays 2);
+#####QC_PASS n=1 desc=C1 ds2 code stays 2
+787        %qc_expect_nobs(ds=lz1.ds1, expect=1, desc=C1 ds1 observation kept);
+#####QC_PASS n=1 desc=C1 ds1 observation kept
+788        %qc_expect_nobs(ds=lz1.ds2, expect=1, desc=C1 ds2 observation kept);
+#####QC_PASS n=1 desc=C1 ds2 observation kept
+789        libname lz1 clear;
+NOTE: 已取消对逻辑库引用名 LZ1 的分配。
+790        
+791        /*----------------------------------------------------------------------------
+792         * CASE 2 : numeric variables are never touched
+793         *--------------------------------------------------------------------------*/
+794        %qc_case(desc=2 numeric untouched);
+#####QC_CASE n=2 desc=2 numeric untouched
+795        %_qc_build_lzl(libref=lz2);
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+7                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 已成功分配逻辑库引用名“LZ2”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\lz2
+796        data lz2.num;
+797          length c $30;
+798          c='abc'; n1=1; n2=2.5;
+799        run;
+
+NOTE: 数据集 LZ2.NUM 有 1 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+800        %lib_zipvarlen(library=lz2);
+
+NOTE: 从数据集 SASHELP.VSTABLE. 读取了 1 个观测
+      WHERE libname='LZ2';
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + data _null_;     do until(_eof_);       set lz2.NUM end=_eof_;       array _chr_ _character_;       array 
+_len_ [1]_temporary_;       array _zip_ [1]_temporary_;       do _n_=1 to dim(_chr_);         if 
+length(_chr_[_n_])>_len_[_n_] then
+2         + _len_[_n_]=length(_chr_[_n_]);         if _eof_ and _len_[_n_]<vlength(_chr_[_n_]) then _zip_[_n_]=1;       
+end;     end;      if n(of _zip_[*]) then do;       call execute("proc sql;alter table lz2.NUM");       do _n_=1 to 
+dim(_chr_);         if
+3         + _zip_[_n_] then call execute('modify '||trim(vname(_chr_[_n_]))||' char('||cats(_len_[_n_])||')' ||' 
+format=$'||cats(_len_[_n_])||'.' ||' informat=$'||cats(_len_[_n_])||'.'          );       end;       call 
+execute(';quit;');     end;     else putlog
+4         + "NOTE: There are no variables whose lengths need to be modified.";   run;
+
+NOTE: 从数据集 LZ2.NUM. 读取了 1 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + proc sql;
+1         +          alter table lz2.NUM
+2         + modify c char(3) format=$3. informat=$3.
+3         + ;
+NOTE: 表 LZ2.NUM 修改了 3 列。
+3         +  quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 查询要求将汇总统计量与原始的数据重新合并。
+NOTE: 表 WORK.LIB_UNIVARLEN1 创建完成，有 1 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+8                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+
+NOTE: 从数据集 WORK.LIB_UNIVARLEN1. 读取了 0 个观测
+      WHERE length<max_length;
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.LIB_UNIVARLEN1 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+801        %qc_expect_len(ds=lz2.num, var=c,  expect=3, desc=C2 char shrunk to 3);
+#####QC_PASS n=2 desc=C2 char shrunk to 3
+802        %qc_expect_len(ds=lz2.num, var=n1, expect=8, desc=C2 n1 still numeric length 8);
+#####QC_PASS n=2 desc=C2 n1 still numeric length 8
+803        %qc_expect_len(ds=lz2.num, var=n2, expect=8, desc=C2 n2 still numeric length 8);
+#####QC_PASS n=2 desc=C2 n2 still numeric length 8
+804        libname lz2 clear;
+NOTE: 已取消对逻辑库引用名 LZ2 的分配。
+805        
+806        /*----------------------------------------------------------------------------
+807         * CASE 3 : DELFMT=N / DELINFMT=N keep the original format / informat
+808         *          (the parameter is forwarded to the inner %ds_zipvarlen call;
+809         *          regression is locked by lib_zipvarlen_bug_delfmt.sas)
+810         *--------------------------------------------------------------------------*/
+811        %qc_case(desc=3 DELFMT=N keeps format);
+#####QC_CASE n=3 desc=3 DELFMT=N keeps format
+812        %_qc_build_lzl(libref=lz3);
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 已成功分配逻辑库引用名“LZ3”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\lz3
+813        data lz3.fmt;
+814          length c $30;
+815          c='abc';
+816          format c $30.;
+817        run;
+
+NOTE: 数据集 LZ3.FMT 有 1 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+818        %lib_zipvarlen(library=lz3,delfmt=n,delinfmt=n);
+
+NOTE: 从数据集 SASHELP.VSTABLE. 读取了 1 个观测
+      WHERE libname='LZ3';
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+9                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.01 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + data _null_;     do until(_eof_);       set lz3.FMT end=_eof_;       array _chr_ _character_;       array 
+_len_ [1]_temporary_;       array _zip_ [1]_temporary_;       do _n_=1 to dim(_chr_);         if 
+length(_chr_[_n_])>_len_[_n_] then
+2         + _len_[_n_]=length(_chr_[_n_]);         if _eof_ and _len_[_n_]<vlength(_chr_[_n_]) then _zip_[_n_]=1;       
+end;     end;      if n(of _zip_[*]) then do;       call execute("proc sql;alter table lz3.FMT");       do _n_=1 to 
+dim(_chr_);         if
+3         + _zip_[_n_] then call execute('modify '||trim(vname(_chr_[_n_]))||' char('||cats(_len_[_n_])||')'          );  
+     end;       call execute(';quit;');     end;     else putlog "NOTE: There are no variables whose lengths need to be 
+modified.";   run;
+
+NOTE: 从数据集 LZ3.FMT. 读取了 1 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + proc sql;
+1         +          alter table lz3.FMT
+2         + modify c char(3)
+3         + ;
+NOTE: 表 LZ3.FMT 修改了 1 列。
+3         +  quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 查询要求将汇总统计量与原始的数据重新合并。
+NOTE: 表 WORK.LIB_UNIVARLEN1 创建完成，有 1 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.LIB_UNIVARLEN1. 读取了 0 个观测
+      WHERE length<max_length;
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.LIB_UNIVARLEN1 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+819        %qc_expect_len(ds=lz3.fmt, var=c, expect=3, desc=C3 length shrunk to 3);
+#####QC_PASS n=3 desc=C3 length shrunk to 3
+820        %qc_expect_fmt(ds=lz3.fmt, var=c, expect=$30., desc=C3 format kept with DELFMT=N);
+#####QC_PASS n=3 desc=C3 format kept with DELFMT=N
+821        libname lz3 clear;
+NOTE: 已取消对逻辑库引用名 LZ3 的分配。
+822        
+823        /*----------------------------------------------------------------------------
+824         * CASE 4 : library with only numeric variables is left unchanged
+825         *--------------------------------------------------------------------------*/
+826        %qc_case(desc=4 numeric-only library no-op);
+10                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+#####QC_CASE n=4 desc=4 numeric-only library no-op
+827        %_qc_build_lzl(libref=lz4);
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 已成功分配逻辑库引用名“LZ4”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_sandbox_tmp\lib_zipvarlen_test_23048\lz4
+828        data lz4.onlynum;
+829          a=1; b=2;
+830        run;
+
+NOTE: 数据集 LZ4.ONLYNUM 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+831        %lib_zipvarlen(library=lz4);
+
+NOTE: Dataset lz4.ONLYNUM contains none character variables.
+NOTE: 从数据集 SASHELP.VSTABLE. 读取了 1 个观测
+      WHERE libname='LZ4';
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 成功执行了 CALL EXECUTE 例程，但未生成任何 SAS 语句。
+NOTE: 查询要求将汇总统计量与原始的数据重新合并。
+NOTE: 表 WORK.LIB_UNIVARLEN1 创建完成，有 0 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.LIB_UNIVARLEN1. 读取了 0 个观测
+      WHERE length<max_length;
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.LIB_UNIVARLEN1 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+832        %qc_check_eq(actual=%ds_attr(data=lz4.onlynum,attr=nvars), expect=2,
+833          desc=C4 nvars unchanged);
+#####QC_PASS n=4 desc=C4 nvars unchanged
+834        %qc_expect_nobs(ds=lz4.onlynum, expect=1, desc=C4 observation kept);
+#####QC_PASS n=4 desc=C4 observation kept
+11                                                      SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+835        libname lz4 clear;
+NOTE: 已取消对逻辑库引用名 LZ4 的分配。
+836        
+837        %qc_end;
+#####QC_RESULT prog=lib_zipvarlen_test macro=lib_zipvarlen STATUS=PASS ncase=4 npass=13 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.38 秒
+      CPU 时间          0.35 秒
+      

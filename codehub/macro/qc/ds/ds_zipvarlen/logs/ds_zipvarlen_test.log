@@ -1,0 +1,330 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.16 秒
+      CPU 时间          0.06 秒
+      
+1          /*===============================================================================
+2           * ds_zipvarlen_test.sas - Positive (functional) acceptance tests
+3           *===============================================================================
+4           * Macro under test : %ds_zipvarlen
+5           * File under test   : dev/ds/ds_zipvarlen.sas
+6           * Dependency        : %ds_attr, %ds_varlist
+7           * Coverage          : shrink char length to max used value, default format /
+8           *                     informat replacement with $n., DELFMT=N / DELINFMT=N keep
+9           *                     original attributes, numeric vars untouched, 0-observation
+10          *                     dataset becomes char(1), dataset without char vars is a
+11          *                     no-op.
+12          * Note              : the macro MODIFIES the input dataset irreversibly, so
+13          *                     every case builds its own throw-away dataset.
+14          * Run               : qc/run_all.ps1  (or standalone batch, see README)
+15          *============================================================================*/
+16         
+17         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+18         %let _qcboot_=%sysfunc(getoption(sysin));
+19         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+20         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+21         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+22         %include "&_qcboot_.\_framework\qc_env.sas";
+87         %let _qcboot_=;
+88         /*----------------------------------------------------------------------------*/
+89         
+90         %include "&_QCFW_.";
+383        %include "&_QCDEV_DS_.\ds_attr.sas";
+435        %include "&_QCDEV_DS_.\ds_varlist.sas";
+487        %include "&_QCDEV_DS_.\ds_zipvarlen.sas";
+567        
+568        %qc_begin(prog=ds_zipvarlen_test, macro=ds_zipvarlen);
+#####QC_BEGIN prog=ds_zipvarlen_test macro=ds_zipvarlen
+569        
+570        /*----------------------------------------------------------------------------
+571         * CASE 1 : shrink lengths to the maximum value actually used
+572         *--------------------------------------------------------------------------*/
+573        %qc_case(desc=1 shrink char length to max used);
+#####QC_CASE n=1 desc=1 shrink char length to max used
+574        data zv1;
+575          length c1 $20 c2 $50;
+576          c1='abc'; c2='hello';
+577          n1=1;
+578        run;
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 数据集 WORK.ZV1 有 1 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+579        %ds_zipvarlen(data=zv1);
+
+NOTE: 从数据集 WORK.ZV1. 读取了 1 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + proc sql;
+1         +          alter table zv1
+2         + modify c1 char(3) format=$3. informat=$3.
+3         + modify c2 char(5) format=$5. informat=$5.
+4         + ;
+NOTE: 表 WORK.ZV1 修改了 3 列。
+4         +  quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+580        %qc_expect_len(ds=zv1, var=c1, expect=3, desc=C1 c1 shrunk to 3);
+#####QC_PASS n=1 desc=C1 c1 shrunk to 3
+581        %qc_expect_len(ds=zv1, var=c2, expect=5, desc=C1 c2 shrunk to 5);
+#####QC_PASS n=1 desc=C1 c2 shrunk to 5
+582        %qc_expect_len(ds=zv1, var=n1, expect=8, desc=C1 numeric var untouched);
+#####QC_PASS n=1 desc=C1 numeric var untouched
+583        %qc_expect_nobs(ds=zv1, expect=1, desc=C1 observation preserved);
+#####QC_PASS n=1 desc=C1 observation preserved
+584        
+585        /*----------------------------------------------------------------------------
+586         * CASE 2 : default DELFMT=Y replaces format with $n.
+587         *--------------------------------------------------------------------------*/
+588        %qc_case(desc=2 default DELFMT replaces format);
+#####QC_CASE n=2 desc=2 default DELFMT replaces format
+589        data zv2;
+590          length c1 $20;
+591          c1='abc';
+592          format c1 $20.;
+593        run;
+
+NOTE: 数据集 WORK.ZV2 有 1 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+594        %ds_zipvarlen(data=zv2);
+
+NOTE: 从数据集 WORK.ZV2. 读取了 1 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + proc sql;
+1         +          alter table zv2
+2         + modify c1 char(3) format=$3. informat=$3.
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+3         + ;
+NOTE: 表 WORK.ZV2 修改了 1 列。
+3         +  quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+595        %qc_expect_len(ds=zv2, var=c1, expect=3, desc=C2 c1 shrunk to 3);
+#####QC_PASS n=2 desc=C2 c1 shrunk to 3
+596        %qc_expect_fmt(ds=zv2, var=c1, expect=$3., desc=C2 format replaced by $3.);
+#####QC_PASS n=2 desc=C2 format replaced by $3.
+597        
+598        /*----------------------------------------------------------------------------
+599         * CASE 3 : DELFMT=N keeps the original format
+600         *--------------------------------------------------------------------------*/
+601        %qc_case(desc=3 DELFMT=N keeps format);
+#####QC_CASE n=3 desc=3 DELFMT=N keeps format
+602        data zv3;
+603          length c1 $20;
+604          c1='abc';
+605          format c1 $20.;
+606        run;
+
+NOTE: 数据集 WORK.ZV3 有 1 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+607        %ds_zipvarlen(data=zv3,delfmt=n,delinfmt=n);
+
+NOTE: 从数据集 WORK.ZV3. 读取了 1 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + proc sql;
+1         +          alter table zv3
+2         + modify c1 char(3)
+3         + ;
+NOTE: 表 WORK.ZV3 修改了 1 列。
+3         +  quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+608        %qc_expect_len(ds=zv3, var=c1, expect=3, desc=C3 c1 shrunk to 3);
+#####QC_PASS n=3 desc=C3 c1 shrunk to 3
+609        %qc_expect_fmt(ds=zv3, var=c1, expect=$20., desc=C3 original format kept);
+#####QC_PASS n=3 desc=C3 original format kept
+610        
+611        /*----------------------------------------------------------------------------
+612         * CASE 4 : multi-observation dataset uses the longest value
+613         *--------------------------------------------------------------------------*/
+614        %qc_case(desc=4 max length across observations);
+#####QC_CASE n=4 desc=4 max length across observations
+615        data zv4;
+616          length c1 $40;
+617          c1='a'; output;
+618          c1='abcdefghij'; output;
+619        run;
+
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: 数据集 WORK.ZV4 有 2 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+620        %ds_zipvarlen(data=zv4);
+
+NOTE: 从数据集 WORK.ZV4. 读取了 2 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: CALL EXECUTE 生成了代码行。
+1         + proc sql;
+1         +          alter table zv4
+2         + modify c1 char(10) format=$10. informat=$10.
+3         + ;
+NOTE: 表 WORK.ZV4 修改了 1 列。
+3         +  quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+621        %qc_expect_len(ds=zv4, var=c1, expect=10, desc=C4 c1 shrunk to longest 10);
+#####QC_PASS n=4 desc=C4 c1 shrunk to longest 10
+622        %qc_expect_nobs(ds=zv4, expect=2, desc=C4 both observations kept);
+#####QC_PASS n=4 desc=C4 both observations kept
+623        
+624        /*----------------------------------------------------------------------------
+625         * CASE 5 : 0-observation dataset -> every char var becomes char(1)
+626         *--------------------------------------------------------------------------*/
+627        %qc_case(desc=5 zero observation dataset);
+#####QC_CASE n=5 desc=5 zero observation dataset
+628        data zv5;
+629          length c1 $20 c2 $30;
+630          if 0;
+631          c1='x'; c2='y';
+632        run;
+
+NOTE: 数据集 WORK.ZV5 有 0 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+633        %ds_zipvarlen(data=zv5);
+NOTE: 表 WORK.ZV5 修改了 2 列。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+634        %qc_expect_len(ds=zv5, var=c1, expect=1, desc=C5 c1 becomes char 1);
+#####QC_PASS n=5 desc=C5 c1 becomes char 1
+635        %qc_expect_len(ds=zv5, var=c2, expect=1, desc=C5 c2 becomes char 1);
+#####QC_PASS n=5 desc=C5 c2 becomes char 1
+636        %qc_expect_nobs(ds=zv5, expect=0, desc=C5 still 0 observations);
+#####QC_PASS n=5 desc=C5 still 0 observations
+637        
+638        /*----------------------------------------------------------------------------
+639         * CASE 6 : dataset without char variables is a no-op
+640         *--------------------------------------------------------------------------*/
+641        %qc_case(desc=6 dataset without char variables);
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+#####QC_CASE n=6 desc=6 dataset without char variables
+642        data zv6;
+643          n1=1; n2=2;
+644        run;
+
+NOTE: 数据集 WORK.ZV6 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+645        %ds_zipvarlen(data=zv6);
+NOTE: Dataset zv6 contains none character variables.
+646        %qc_check_eq(actual=%ds_attr(data=zv6,attr=nvars), expect=2, desc=C6 nvars unchanged);
+#####QC_PASS n=6 desc=C6 nvars unchanged
+647        %qc_check_eq(actual=%ds_attr(data=zv6,attr=nobs), expect=1, desc=C6 nobs unchanged);
+#####QC_PASS n=6 desc=C6 nobs unchanged
+648        %qc_expect_len(ds=zv6, var=n1, expect=8, desc=C6 numeric untouched);
+#####QC_PASS n=6 desc=C6 numeric untouched
+649        
+650        /*----------------------------------------------------------------------------
+651         * CASE 7 : already optimal length is left as is
+652         *--------------------------------------------------------------------------*/
+653        %qc_case(desc=7 already optimal length);
+#####QC_CASE n=7 desc=7 already optimal length
+654        data zv7;
+655          length c1 $3;
+656          c1='abc';
+657        run;
+
+NOTE: 数据集 WORK.ZV7 有 1 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+658        %ds_zipvarlen(data=zv7);
+
+NOTE: There are no variables whose lengths need to be modified.
+NOTE: 从数据集 WORK.ZV7. 读取了 1 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+659        %qc_expect_len(ds=zv7, var=c1, expect=3, desc=C7 length stays 3);
+#####QC_PASS n=7 desc=C7 length stays 3
+660        
+661        %qc_end;
+#####QC_RESULT prog=ds_zipvarlen_test macro=ds_zipvarlen STATUS=PASS ncase=7 npass=17 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.34 秒
+      CPU 时间          0.23 秒
+      

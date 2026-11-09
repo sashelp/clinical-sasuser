@@ -1,0 +1,90 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.13 秒
+      
+1          /*===============================================================================
+2           * sdtm_lobxfl_err_13.sas - Negative test: RFDTC= empty
+3           *===============================================================================
+4           * Macro under test : %sdtm_lobxfl
+5           * Expected         : abort cancel with "ERROR: Parameter RFDTC= not specified."
+6           *============================================================================*/
+7          /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+8          %let _qcboot_=%sysfunc(getoption(sysin));
+9          %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+10         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+11         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+12         %include "&_qcboot_.\_framework\qc_env.sas";
+77         %let _qcboot_=;
+78         /*----------------------------------------------------------------------------*/
+79         %include "&_QCFW_.";
+372        %include "&_QCDEV_VAR_.\var_exist.sas";
+423        %include "&_QCDEV_VAR_.\var_coexist.sas";
+489        %include "&_QCDEV_VAR_.\var_attr.sas";
+545        %include "&_QCDEV_CDISC_.\sdtm_lobxfl.sas";
+692        
+693        data dm_neg;
+694          length USUBJID $10 RFXSTDTC $20;
+695          USUBJID='S01'; RFXSTDTC='2024-01-10'; output;
+696        run;
+
+NOTE: 数据集 WORK.DM_NEG 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+697        data lb_neg;
+698          length USUBJID $10 LBTESTCD $8 LBDTC $20 LBORRES $8;
+699          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBORRES='10'; output;
+700        run;
+
+NOTE: 数据集 WORK.LB_NEG 有 1 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+701        
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+702        %qc_begin(prog=sdtm_lobxfl_err_13, macro=sdtm_lobxfl);
+#####QC_BEGIN prog=sdtm_lobxfl_err_13 macro=sdtm_lobxfl
+703        %qc_case(desc=1 RFDTC= empty must abort);
+#####QC_CASE n=1 desc=1 RFDTC= empty must abort
+704        *EXPECTED_ERROR: ERROR: Parameter RFDTC= not specified.;
+705        %qc_abort_marker;
+#####QC_ABORT_MARKER n=1
+706        %sdtm_lobxfl(data=work.lb_neg, out=work.lb_neg_out, var=LBORRES, dtc=LBDTC,
+707                      by=LBTESTCD, blfl=LOBXFL, subject=USUBJID,
+708                      rfdtc=);
+ERROR: Parameter RFDTC= not specified.
+ERROR: 已通过 %ABORT CANCEL 语句取消执行。
+NOTE: 由于收到 CANCEL 请求，SAS 系统已停止处理。
+ERROR: 打印以下页时出错: 2.
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.17 秒
+      CPU 时间          0.15 秒
+      

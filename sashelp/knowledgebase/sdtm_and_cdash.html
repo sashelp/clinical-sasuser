@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>SDTM 与 CDASH - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html" class="current">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SDTM</p>
+<h2>既然最后都要交 SDTM，为什么还要先按 CDASH 采集？</h2>
+<p class="subtitle">两者目的不同：CDASH 为采集设计，问得清楚、能确认“确实没发生”；SDTM 为传输和分析设计，机器可读、按域组织。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>因为它们回答的是两个不同的问题。CDASH 管“怎么把数据从站点收上来”，要求表单好填、问题问得没有歧义、能区分“没发生”和“没记录”。SDTM 管“怎么把干净数据交出去”，要求机器可读、结构可预测、按域归类。大部分数据两边是一样的，但设计哲学不同，所以具体做法必然有差别。CDASH 不是 SDTM 之前的一道映射工序，它是采集端的标准，设计目的就是让数据顺畅流进 SDTM。</p>
+</div>
+
+<h3 id="missing">最典型的一处差别：缺失数据</h3>
+<p>SDTM 假设数据是干净的——缺失已经核实过了，所以数据集里不放占位记录。一个受试者整个研究期间没有不良事件，他在 AE 数据集里就不出现。</p>
+<p>CDASH 的立场完全不同：<b>没有证据不等于证据不存在</b>。没收到 AE 数据，只说明没收到，不代表这个受试者没发生 AE。所以 CDASH 要求有一个指示性问题，比如“是否发生过不良事件？”，答案本身也要采上来。</p>
+<div class="callout">
+<p>CDASH：absence of evidence is not evidence of absence，必须确认“缺失”确实是缺失。<br/>
+SDTM：show me the data, not lack of data。</p>
+</div>
+<p>这就是为什么 SDTM 里一条记录都没有的域，在 CRF 上往往有一个“是/否”的勾选。少了这个勾选，SDTM 里那条“没发生”的判断就没有依据。</p>
+
+<h3 id="others">其余五处差别</h3>
+<table class="kb-table">
+<col width="16%" />
+<col width="28%" />
+<col width="28%" />
+<col width="28%" />
+<thead>
+<tr><th>维度</th><th>CDASH</th><th>SDTM</th><th>为什么不一样</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>非标准变量</td>
+<td>和主数据放同一条记录里，不用 RELREC</td>
+<td>放单独的 SUPPQUAL，通过 RELREC 关联回父记录</td>
+<td>SDTM 要保证父数据集的结构稳定，不能被额外变量撑变形；采集端把相关字段拆到不同屏幕反而难填</td>
+</tr>
+<tr>
+<td>日期时间</td>
+<td>人能读：分成两三个字段，DD-MMM-YYYY、HH:MM:SS</td>
+<td>机器能读：一个变量，ISO 8601，如 2023-04-01T08:30</td>
+<td>人按不熟悉的格式录入容易出错；机器处理 ISO 8601 最省事</td>
+</tr>
+<tr>
+<td>数据组织</td>
+<td>按“一起采集”来组织，一张 CRF 可以跨多个域</td>
+<td>必须按域落到对应数据集</td>
+<td>站点按病历本来的顺序填最快；SDTM 靠结构可预测来实现程序复用</td>
+</tr>
+<tr>
+<td>横竖结构</td>
+<td>问卷类数据可能横向展开，每个问题一个变量、一套选项</td>
+<td>必须是纵向的，一个问题一条记录</td>
+<td>采集系统通常一个变量只能挂一套码表，纵向结构放不下“每题一套选项”</td>
+</tr>
+<tr>
+<td>元数据</td>
+<td>问题文本、填写说明、SDTM 映射说明</td>
+<td>变量标签、变量角色</td>
+<td>一个为“问得清楚”，一个为“表格可预测”</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="later">有些变量只能等研究结束才有</h3>
+<p>这也是两边必须分开的原因之一：</p>
+<ul class="notes">
+<li><b>USUBJID</b>：要求同一个人在整个申报里唯一。如果一个人在多个研究里出现，USUBJID 要一样，那技术上就得等申报里所有研究都结束才能定下来。</li>
+<li><b>--STRESC / --STRESN</b>：装的是整个申报统一之后的标准化结果，未必等于站点采集时用的单位，所以才需要 <code>--ORRES</code> 存原始结果。</li>
+<li><b>EXTRT / EXDOSE</b>：记录受试者实际接受了什么治疗。双盲研究里，这要等揭盲之后才知道。</li>
+</ul>
+<p>而 CDASH 这边，<code>SUBJID</code> 本来就只在单个研究内唯一；<code>ECTRT</code>/<code>ECDOSE</code> 采集的是研究期间“已知的那部分”，盲态下就是盲态信息。</p>
+
+<h3 id="so">所以两者是什么关系</h3>
+<p>不是“先按 CDASH，再翻译成 SDTM”这么简单，而是同一条流水线的上下游：</p>
+<ul class="notes">
+<li><b>同一个问题、同一套选项</b>从采集一直用到分析，中间不用换语言。</li>
+<li><b>可追溯</b>：从分析结果能一路回到 CRF 上填的那个格。</li>
+<li><b>省资源</b>：采集到制表的转换环节越少，程序和人力的投入越小，出错也越少。</li>
+<li><b>面向未来</b>：结构稳定的 SDTM 数据在入库、复用、二次分析时都更省事。</li>
+</ul>
+<p>CDASHIG 里给了每个标准变量到 SDTM 的映射。如果你手上的数据本来就不是标准格式，先映射到 CDASH 往往比直接映射到 SDTM 容易，因为 CDASH 的结构更接近常见的采集方式；映射到 CDASH 之后，再按 CDASHIG 的说明转到 SDTM。</p>
+<p>原文最后有一句话说得挺直白：如果你用 SDTM 去采集数据，等把所有为了采集方便而做的调整都加完，你其实已经造出了一个 CDASH，那为什么不一开始就用它。</p>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>CDISC, <a href="https://www.cdisc.org/kb/articles/sdtm-and-cdash-why-you-need-both" target="_blank" rel="noopener"><i>SDTM and CDASH: Why You Need Both</i></a>（CDISC 知识库文章，cdisc.org/kb）。<span class="src">缺失数据、非标准变量、日期格式、数据组织、横竖结构、元数据、只能用研究结束后才能得到的变量，以及两者的收益。</span></li>
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/cdash" target="_blank" rel="noopener"><i>CDASHIG</i></a>。<span class="src">CDASH 到 SDTM 的变量映射。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

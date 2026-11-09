@@ -1,0 +1,72 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.10 秒
+      
+1          /*==============================================================================
+2           * stat_summaryn_err_16.sas - Negative test: STATIS= contains an invalid statistic
+3           *==============================================================================
+4           * Macro under test : %stat_summaryn
+5           * Expected         : abort cancel with "ERROR: Invalid value of STATIS=, expecting one of the following: N,
+5        ! NMISS, N_NMISS, MEAN, LCLM, UCLM, CLM,"
+6           * Note             : the macro message is longer than the SAS log line width, so
+7           *                    the EXPECTED_ERROR marker carries the prefix that reliably
+8           *                    fits on one log line
+9           *============================================================================*/
+10         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+11         %let _qcboot_=%sysfunc(getoption(sysin));
+12         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+13         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+14         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+15         %include "&_qcboot_.\_framework\qc_env.sas";
+80         %let _qcboot_=;
+81         /*----------------------------------------------------------------------------*/
+82         %include "&_QCFW_.";
+375        %include "&_QCDEV_VAR_.\var_exist.sas";
+426        %include "&_QCDEV_VAR_.\var_coexist.sas";
+492        %include "&_QCDEV_DS_.\ds_attr.sas";
+544        %include "&_QCDEV_STAT_.\stat_summaryn.sas";
+972        
+973        %qc_begin(prog=stat_summaryn_err_16, macro=stat_summaryn);
+#####QC_BEGIN prog=stat_summaryn_err_16 macro=stat_summaryn
+974        %qc_case(desc=1 unknown statistic keyword must abort);
+#####QC_CASE n=1 desc=1 unknown statistic keyword must abort
+975        *EXPECTED_ERROR: ERROR: Invalid value of STATIS=, expecting one of the following: N, NMISS, N_NMISS, MEAN,
+975      ! LCLM, UCLM, CLM,;
+976        %qc_abort_marker;
+#####QC_ABORT_MARKER n=1
+977        %stat_summaryn(data=sashelp.class, out=oerr, class=sex, var=age, statis=meanx);
+ERROR: Invalid value of STATIS=, expecting one of the following: N, NMISS, N_NMISS, MEAN, LCLM, UCLM, CLM, MEDIAN, Q1, 
+Q3, MIN, MAX, RANGE, MIN_MAX, SUM, STDDEV, STDERR, VAR, CV, MEAN_STD, Q1_Q3, MED_Q1_Q3, GM, GM_LCLM, GM_UCLM, GM_CLM, 
+GM_STD, GM_STDDEV, GM_CV.
+ERROR: 已通过 %ABORT CANCEL 语句取消执行。
+NOTE: 由于收到 CANCEL 请求，SAS 系统已停止处理。
+ERROR: 打印以下页时出错: 1.
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      实际时间          0.16 秒
+      CPU 时间          0.12 秒
+      

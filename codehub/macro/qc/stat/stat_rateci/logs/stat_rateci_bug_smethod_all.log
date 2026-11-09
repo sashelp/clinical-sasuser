@@ -1,0 +1,185 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.15 秒
+      CPU 时间          0.09 秒
+      
+1          /*==============================================================================
+2           * stat_rateci_bug_smethod_all.sas - Bug regression: SMETHOD=ALL omits Blaker
+3           *==============================================================================
+4           * Macro under test : %stat_rateci
+5           * Expected         : SMETHOD=ALL also computes the Blaker interval, as stated
+6           *                    in the macro header ("ALL: Requests AC, BLAKER, EXACT,
+7           *                    JEFFREYS, WALD and WILSON confidence limits")
+8           * Status           : FIXED 2026-10-30 - ALL expanded to AC BLAKER EXACT JEFFREYS LR LOGIT MIDP WALD WILSON
+9           * Original defect  : SMETHOD=ALL is forwarded as "cl=(ALL)"; in PROC FREQ the
+10          *                    ALL keyword expands to Agresti-Coull, Exact, Jeffreys,
+11          *                    Wald and Wilson only, so the Blaker row requested by the
+12          *                    macro documentation is silently missing
+13          * Fix              : expand ALL explicitly, e.g.
+14          *                    cl=(AC BLAKER EXACT JEFFREYS WALD WILSON)
+15          * Test passes when  the defect is fixed (run_all then reports FIXED).
+16          *============================================================================*/
+17         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+18         %let _qcboot_=%sysfunc(getoption(sysin));
+19         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+20         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+21         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+22         %include "&_qcboot_.\_framework\qc_env.sas";
+87         %let _qcboot_=;
+88         /*----------------------------------------------------------------------------*/
+89         %include "&_QCFW_.";
+382        %include "&_QCDEV_VAR_.\var_exist.sas";
+433        %include "&_QCDEV_VAR_.\var_coexist.sas";
+499        %include "&_QCDEV_DS_.\ds_attr.sas";
+551        %include "&_QCDEV_STAT_.\stat_rateci.sas";
+948        
+949        data rates;
+950          length subj $12 study $2 trt $1 resp $1;
+951          retain _k 0;
+952          input study $ trt $ resp $ n;
+953          do i=1 to n;
+954            _k+1;
+955            subj=cats(trt,_k);
+956            output;
+957          end;
+958          drop n i;
+959        datalines;
+
+NOTE: 数据集 WORK.RATES 有 40 个观测和 5 个变量。
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.04 秒
+      CPU 时间          0.01 秒
+      
+
+964        ;
+965        run;
+966        
+967        %qc_begin(prog=stat_rateci_bug_smethod_all, macro=stat_rateci);
+#####QC_BEGIN prog=stat_rateci_bug_smethod_all macro=stat_rateci
+968        
+969        %qc_case(desc=1 SMETHOD ALL must include the Blaker interval);
+#####QC_CASE n=1 desc=1 SMETHOD ALL must include the Blaker interval
+970        %stat_rateci(data=rates, out=bug3, by=study, class=trt, var=resp, level=%str('Y'),
+971                     smethod=ALL, dmethod=NONE, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 5 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，4 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.07 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 30 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.03 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 18 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 18 个观测
+NOTE: 数据集 WORK.BUG3 有 18 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.BUG3. 读取了 18 个观测
+NOTE: 数据集 WORK.BUG3 有 18 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+972        proc sql noprint;
+973          select count(*) into :b1bk from bug3 where trt='A' and _method_='Blaker';
+974        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+975        %qc_check_eq(actual=&b1bk., expect=1, desc=B1 Blaker interval present for class A);
+#####QC_PASS n=1 desc=B1 Blaker interval present for class A
+976        
+977        %qc_end;
+#####QC_RESULT prog=stat_rateci_bug_smethod_all macro=stat_rateci STATUS=PASS ncase=1 npass=1 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.40 秒
+      CPU 时间          0.31 秒
+      

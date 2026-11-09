@@ -1,0 +1,283 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.15 秒
+      
+1          /*==============================================================================
+2           * stat_rateci_bug_noby.sas - Bug regression: BY= empty cannot be processed
+3           *==============================================================================
+4           * Macro under test : %stat_rateci
+5           * Expected         : with BY= omitted the macro still produces the same result
+6           *                    as a single level BY= variable (the macro has an explicit
+7           *                    empty BY= branch, so empty BY= is meant to be supported)
+8           * Status           : FIXED 2026-10-30 - section 2.1.2 now has a separate SQL
+9           *                    branch for empty BY= (select b.*, c.* / group by class)
+10          * Original defect  : the 2.1.2 SQL builds "select distinct from ...",
+11          *                    "group by a.," and "countw()" with no argument when BY=
+12          *                    is empty, so the step stops with ERROR 22-322 plus
+13          *                    "COUNTW 参数过少" and the macro terminates without
+14          *                    creating the OUT= dataset
+15          * Fix              : build a separate SQL branch for empty BY= that does not
+16          *                    reference the BY variables, or validate BY= at entry
+17          * Test passes when  the defect is fixed (run_all then reports FIXED).
+18          *============================================================================*/
+19         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+20         %let _qcboot_=%sysfunc(getoption(sysin));
+21         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+22         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+23         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+24         %include "&_qcboot_.\_framework\qc_env.sas";
+89         %let _qcboot_=;
+90         /*----------------------------------------------------------------------------*/
+91         %include "&_QCFW_.";
+384        %include "&_QCDEV_VAR_.\var_exist.sas";
+435        %include "&_QCDEV_VAR_.\var_coexist.sas";
+501        %include "&_QCDEV_DS_.\ds_attr.sas";
+553        %include "&_QCDEV_STAT_.\stat_rateci.sas";
+950        
+951        data rates;
+952          length subj $12 study $2 trt $1 resp $1;
+953          retain _k 0;
+954          input study $ trt $ resp $ n;
+955          do i=1 to n;
+956            _k+1;
+957            subj=cats(trt,_k);
+958            output;
+959          end;
+960          drop n i;
+961        datalines;
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 数据集 WORK.RATES 有 40 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+966        ;
+967        run;
+968        
+969        %qc_begin(prog=stat_rateci_bug_noby, macro=stat_rateci);
+#####QC_BEGIN prog=stat_rateci_bug_noby macro=stat_rateci
+970        
+971        %qc_case(desc=1 empty BY must still produce the rate and difference);
+#####QC_CASE n=1 desc=1 empty BY must still produce the rate and difference
+972        %stat_rateci(data=rates, out=bug1, class=trt, var=resp, level=%str('Y'),
+973                     smethod=WALD, dmethod=WALD, debug=0);
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.RATES. 读取了 40 个观测
+NOTE: 数据集 WORK.STAT_RATECI_INDS 有 40 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_VARATTR 有 1 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_FREQ 创建完成，有 4 行，3 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE1 有 2 个观测和 13 个变量。
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_SINGLE2 有 2 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_CLASSPAIR 创建完成，有 2 行，2 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_CLASSPAIR. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: 数据集 WORK.STAT_RATECI_PAIRWISE 有 8 个观测和 4 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 3 个观测
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_RATECI_DIFF1 有 2 个观测和 7 个变量。
+NOTE: 从数据集 WORK.STAT_RATECI_PAIRWISE. 读取了 8 个观测
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 变量 _pair_ 存在于输入数据集中，但在 I/O 语句选项中也已指定。
+      变量不会包括在任何输出数据集中。
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF1. 读取了 2 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF2 有 2 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_FREQ. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL1 有 2 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: 执行该查询涉及到执行无法优化的一个或多个笛卡尔乘积连接。
+NOTE: 表 WORK.STAT_RATECI_DIFF_MANUAL2 创建完成，有 2 行，6 列。
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.06 秒
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL2. 读取了 0 个观测
+      WHERE ((_s1_=0) and (_s2_=0)) or ((_s1_=_n1_) and (_s2_=_n2_));
+NOTE: 数据集 WORK.STAT_RATECI_DIFF_MANUAL3 有 0 个观测和 14 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_RATECI_SINGLE2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF2. 读取了 2 个观测
+NOTE: 从数据集 WORK.STAT_RATECI_DIFF_MANUAL3. 读取了 0 个观测
+NOTE: 数据集 WORK.BUG1 有 4 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.BUG1. 读取了 4 个观测
+NOTE: 数据集 WORK.BUG1 有 4 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_RATECI_CLASSPAIR (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_DIFF_MANUAL3 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_FREQ (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_INDS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_PAIRWISE (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE1 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_SINGLE2 (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_RATECI_VARATTR (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+974        %qc_expect_ds(ds=bug1, desc=B1 output dataset created without BY);
+#####QC_PASS n=1 desc=B1 output dataset created without BY
+975        %qc_expect_nobs(ds=bug1, expect=4, desc=B1 two single rows and two difference rows);
+#####QC_PASS n=1 desc=B1 two single rows and two difference rows
+976        proc sql noprint;
+977          select count(*) into :b1a from bug1
+978            where trt='A' and missing(ref_trt) and strip(put(_prop_,8.1))='25.0';
+979          select count(*) into :b1d from bug1
+980            where trt='A' and ref_trt='B' and strip(put(_prop_,8.1))='-30.0';
+981        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+982        %qc_check_eq(actual=&b1a., expect=1, desc=B1 class A rate without BY);
+#####QC_PASS n=1 desc=B1 class A rate without BY
+983        %qc_check_eq(actual=&b1d., expect=1, desc=B1 difference without BY);
+#####QC_PASS n=1 desc=B1 difference without BY
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+984        
+985        %qc_end;
+#####QC_RESULT prog=stat_rateci_bug_noby macro=stat_rateci STATUS=PASS ncase=1 npass=4 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.35 秒
+      CPU 时间          0.37 秒
+      

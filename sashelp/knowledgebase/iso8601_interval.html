@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>ISO8601 区间格式 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html" class="current">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SDTM</p>
+<h2>日期格式写着“ISO 8601 datetime or interval”，这个 interval 什么时候才用？</h2>
+<p class="subtitle">很少用。事件的起止有 --STDTC 和 --ENDTC，时长有 duration；只有 --EVLINT 这种“评估区间”在结束时间不等于采集日期时才写成区间。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>SDTMIG v3.4 和 SDTM v2.0 把日期时间变量的格式描述改成了“ISO 8601 datetime <b>or interval</b>”，这个大帽子扣在很多变量头上，但真正需要写 interval 的场合很少。绝大多数情况有更专门的变量可用：事件和干预的起止有 <code>--STDTC</code> 和 <code>--ENDTC</code>，时长用 duration，相对时间点用 <code>--RFTDTC</code> 和 <code>--ELTM</code>。真正会用到区间格式的，主要是 <code>--EVLINT</code>。</p>
+</div>
+
+<h3 id="three">区间的三种写法</h3>
+<p>先认识格式。ISO 8601 允许用斜杠把“起点”和“终点”连起来，两端可以是时间点，也可以是时长：</p>
+
+<table class="kb-table">
+<col width="26%" />
+<col width="40%" />
+<col width="34%" />
+<thead>
+<tr><th>写法</th><th>格式</th><th>例子</th></tr>
+</thead>
+<tbody>
+<tr><td>起点 / 终点</td><td>YYYY-MM-DDThh:mm:ss/YYYY-MM-DDThh:mm:ss</td><td>2023-04-01T08:00/2023-04-02T08:00</td></tr>
+<tr><td>起点 / 时长</td><td>YYYY-MM-DDThh:mm:ss/PnYnMnDTnHnMnS</td><td>2023-04-01T08:00/P1D</td></tr>
+<tr><td>时长 / 终点</td><td>PnYnMnDTnHnMnS/YYYY-MM-DDThh:mm:ss</td><td>P1D/2023-04-02T08:00</td></tr>
+</tbody>
+</table>
+
+<p>顺带认一下另外两种常见格式：<code>2021-10-17T07:44</code> 是 datetime，<code>P14DT7H57M</code> 是时长（14 天 7 小时 57 分）。区间不如这两个常见，所以很多人第一次看到“or interval”会愣一下。</p>
+
+<h3 id="normal">大多数情况根本用不到</h3>
+<ul class="notes">
+<li><b>事件和干预</b>：起点放 <code>--STDTC</code>，终点放 <code>--ENDTC</code>。两个变量就够了，不需要写成区间。</li>
+<li><b>检查或采样占一段时间</b>：同样用 <code>--DTC</code> 加 <code>--ENDTC</code>。</li>
+<li><b>某个时间点相对参照时间点</b>：用 <code>--RFTDTC</code> 和 <code>--ELTM</code>，也不是区间。</li>
+</ul>
+
+<h3 id="evlint">真正会用到的：--EVLINT</h3>
+<p><code>--EVLINT</code> 是评估区间，通常填一个时长，默认这个区间在 <code>--DTC</code> 那一刻结束。比如“近 7 天的平均血糖”，写 <code>P7D</code> 就够了。</p>
+<p>但有例外：区间不一定在采集那天结束。这时候只能在 <code>--EVLINT</code> 里用区间格式，把起止都写清楚。</p>
+<div class="callout">
+<p>CRF 上采集的是“24 小时内最低的一小时尿量”。这条记录里，LBDTC 是那一小时收集的开始，LBENDTC 是结束，而评估区间 LBEVLINT 是“从哪 24 小时里挑出这一小时”，用 <code>YYYY-MM-DDThh:mm:ss/YYYY-MM-DDThh:mm:ss</code> 表示。</p>
+</div>
+
+<h3 id="uncertain">不确定区间：能不用就别用</h3>
+<p>还有一种用法是表示“时间不确定”，实际发生时间不知道，只知道最早和最晚可能是什么时候：</p>
+<div class="callout">
+<p>2003-12-15T10:00/2003-12-15T10:30</p>
+</div>
+<p>理论上可以这么写，实践中很少见。因为这种精度通常不重要，更常见的做法是填一个“最佳猜测”时间（比如 2003-12-15T10:15），或者干脆只写到小时（2003-12-15T10）。区间格式会让下游做统计分析时多一层解析，收益不大。</p>
+
+<h3 id="table">什么时候用什么</h3>
+<table class="kb-table">
+<col width="42%" />
+<col width="30%" />
+<col width="28%" />
+<thead>
+<tr><th>场景</th><th>用什么</th><th>要不要 interval</th></tr>
+</thead>
+<tbody>
+<tr><td>不良事件从某天到某天</td><td>AESTDTC + AEENDTC</td><td>不用</td></tr>
+<tr><td>采血过程持续了 10 分钟</td><td>LBDTC + LBENDTC</td><td>不用</td></tr>
+<tr><td>“近 7 天”的评估区间</td><td>--EVLINT = P7D</td><td>不用（默认在 --DTC 结束）</td></tr>
+<tr><td>评估区间不在采集日结束</td><td>--EVLINT 写起止</td><td>用</td></tr>
+<tr><td>只知道大概时间段</td><td>优先猜一个时间或写部分日期</td><td>尽量不用</td></tr>
+</tbody>
+</table>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>CDISC, <a href="https://www.cdisc.org/kb/articles/when-would-i-use-iso8601-interval-format" target="_blank" rel="noopener"><i>When Would I Use ISO8601 Interval Format?</i></a>（CDISC 知识库文章，cdisc.org/kb）。<span class="src">三种区间写法、--STDTC/--ENDTC、--RFTDTC/--ELTM、--EVLINT 的例外与不确定区间。</span></li>
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/sdtmig/sdtmig-v3-4" target="_blank" rel="noopener"><i>SDTMIG v3.4 / SDTM v2.0</i></a>。<span class="src">Date/Time 变量的格式描述与 --EVLINT 的定义。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

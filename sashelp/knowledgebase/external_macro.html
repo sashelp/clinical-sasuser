@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>避免外部宏调用 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html" class="current">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / 临床提交</p>
+<h2>CDE 所说的“避免外部宏调用”怎么理解？</h2>
+<p class="subtitle">交上去的代码要自包含、能独立跑、逻辑透明，不能依赖公司内部才有的宏库。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>指导原则原话是：<b>“申报资料中递交的程序代码应当易懂、可读性强，建议提供充分的注释、避免外部（宏）程序调用。”</b>“避免外部宏调用”说白了就是——交上去的代码要<b>自包含、能独立跑、逻辑透明</b>，不能依赖公司内部才有的宏库。否则监管那边跑不起来，也就复现不了结果。</p>
+</div>
+
+<h3 id="what">“外部宏调用”到底指什么</h3>
+<p>这里的“宏”在咱们这行基本专指 SAS 宏，也就是用 <code>%macro ... %mend</code> 包起来的复用代码，通过 <code>%宏名(...)</code> 去调。关键词是“外部”：</p>
+<div class="callout">
+<p>你代码里调的那个宏，<b>定义不在你交的 .sas 文件里</b>，而是放在别的地方——公司的宏库（<code>%include "路径/xxx.sas"</code>）、SAS autocall 目录、或者共享宏库。</p>
+</div>
+<p>举个例子：审评员拿到你的 <code>ae_analysis.sas</code>，一跑发现里面 <code>%crf_fmt(...)</code>、<code>%pvalue(...)</code> 这些宏的定义根本不在这个文件里。他跑不通，也看不懂宏里到底干了啥——这就是 CDE 要避免的情况。</p>
+
+<h3 id="why">为什么 CDE 点名要避免</h3>
+<p>根子还是那句话：监管要能拿原始数据衍生出一致的分析库、直接重现一致的结果。要做到“重现”，代码得同时满足两点：</p>
+<ul class="notes">
+<li><b>能跑通</b>：审评员在监管环境里能把这套代码运行起来；</li>
+<li><b>能看懂</b>：审评员能看清每一步在算什么。</li>
+</ul>
+<p>而外部宏调用正好把这两点都破坏了：<b>跑不通</b>——宏定义在你们内部宏库里，审评员拿不到，一调就报错；<b>看不懂</b>——宏是个黑盒，内部逻辑看不到，没法验证结果对不对。</p>
+
+<h3 id="boundary">“避免”要避免到什么程度</h3>
+<p>这事别一刀切，得分几种情况看：</p>
+<table class="kb-table">
+<col width="46%" />
+<col width="12%" />
+<col width="42%" />
+<thead>
+<tr><th>情形</th><th>是否要避免</th><th>说明</th></tr>
+</thead>
+<tbody>
+<tr><td>调用公司内部宏库（<code>%include</code> 公司共享路径 / autocall 宏）</td><td>✅ 要避免</td><td>审评员拿不到、跑不通</td></tr>
+<tr><td>调了宏，但宏定义就写在同一个递交文件里</td><td>❌ 不算</td><td>自包含，能跑能读</td></tr>
+<tr><td>用 SAS 语言元素（<code>%let</code>、<code>%do</code>、<code>%sysfunc</code> 等）</td><td>❌ 不算</td><td>这是语法本身，不是“外部宏程序”</td></tr>
+<tr><td>调公开标准宏（CDISC 或统计组织的开放宏），定义一并交</td><td>边界情形</td><td>定义随文件交、有注释，通常能接受</td></tr>
+</tbody>
+</table>
+<p><b>判断标准就一条：审评员拿到你交的所有文件，能不能不靠你们公司内部环境就把代码跑通、看懂。</b>能，就合规；不能，就是 CDE 要避免的。</p>
+
+<h3 id="team">把团队宏一起交上去行不行</h3>
+<p>行，这做法本身是合规、被接受的，关键是“一起交”有没有做到位。但注意：<b>团队宏（自研、私有）跟“公开标准宏”不是一回事</b>，来源和性质不同：</p>
+<table class="kb-table">
+<col width="24%" />
+<col width="76%" />
+<thead>
+<tr><th>性质</th><th>说明</th></tr>
+</thead>
+<tbody>
+<tr><td>团队宏（自研私有）</td><td>不属于“公开标准”，只是随包一起交；能接受的前提是宏定义真交了、逻辑写清楚、有注释、审评员能跑能看。</td></tr>
+<tr><td>公开标准宏</td><td>CDISC 或公认组织公开发布、有统一版本和维护；有权威来源和公开文档背书，更容易被接受。</td></tr>
+</tbody>
+</table>
+<p>团队宏交上去能不能过关，看三个硬条件：</p>
+<ul class="notes">
+<li><b>能跑通</b>：宏里不能有公司私有路径（<code>%include ".\_external\共享库\xxx.sas"</code>）、私有 libname、私有数据引用，也不能依赖公司的 autocall 配置。</li>
+<li><b>能看懂</b>：逻辑要透明。团队宏往往封装得很重、参数多、逻辑绕，就算交了也可能因为“黑盒”违背“易懂可读”的要求。</li>
+<li><b>有注释、有交代</b>：宏头写清输入/输出/功能，调用处写注释，数据审阅说明里交代宏的用途和调用关系。</li>
+</ul>
+<table class="kb-table">
+<col width="42%" />
+<col width="16%" />
+<col width="42%" />
+<thead>
+<tr><th>做法</th><th>推荐度</th><th>说明</th></tr>
+</thead>
+<tbody>
+<tr><td>关键疗效分析代码不用宏，写直白的显式代码</td><td>最稳</td><td>最符合“易懂、可读”，零争议</td></tr>
+<tr><td>宏定义内联进递交文件</td><td>好</td><td>自包含，一个文件看全</td></tr>
+<tr><td>宏定义单独文件一起交 + 注释 + 说明</td><td>可接受</td><td>满足条件就行</td></tr>
+<tr><td>只交调用、不交宏定义（依赖公司宏库）</td><td>不可行</td><td>这正是要避免的“外部宏调用”</td></tr>
+</tbody>
+</table>
+
+<h3 id="advice">几个实操建议</h3>
+<ul class="notes">
+<li><b>代码自包含</b>：用到的宏定义要么直接写进同一个文件，要么把宏定义文件作为支持性文件一起交，并在数据审阅说明里讲清调用关系。</li>
+<li><b>关键疗效部分优先用显式代码</b>：衍生和统计尽量写直白、一步步的代码（<code>if ... then ...</code>、<code>proc freq</code>、<code>proc ttest</code>），别把逻辑藏进公司宏。</li>
+<li><b>非要用宏的话</b>：把定义内联进来，宏头和调用处写清注释——输入什么、输出什么、内部做什么。</li>
+<li><b>别依赖盘符路径、共享逻辑库、外部数据引用</b>：审评员环境里没有你公司那个 <code>.\</code> 或对应的 libname，也会跑不通。</li>
+<li><b>数据审阅说明里交代清楚</b>：软件版本、程序调用顺序、用没用宏、宏干嘛的。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li><a href="https://www.cde.org.cn/main/news/viewInfoCommon/f649995d3a9ade8dcd67f6a2ced36f0b" target="_blank" rel="noopener">《药物临床试验数据递交指导原则（试行）》</a>，国家药品监督管理局药品审评中心（CDE），2020 年 7 月。<span class="src">第二部分“（六）程序代码”。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

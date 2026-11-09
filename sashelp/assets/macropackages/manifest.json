@@ -1,0 +1,170 @@
+{
+    "var_attr":  {
+                     "files":  [
+                                   "var_attr.sas",
+                                   "var_exist.sas"
+                               ],
+                     "fingerprint":  "5064A001C11185465D84A8A42D884CCF76C514D8"
+                 },
+    "var_nlevel":  {
+                       "files":  [
+                                     "var_exist.sas",
+                                     "var_nlevel.sas"
+                                 ],
+                       "fingerprint":  "903DAACB83A9A7A0652C723F1B0FBA1E6D85A812"
+                   },
+    "ds_num2char":  {
+                        "files":  [
+                                      "ds_num2char.sas",
+                                      "ds_varlist.sas",
+                                      "var_coexist.sas"
+                                  ],
+                        "fingerprint":  "65FB0FE28C407570EEA572670C3F796E8E69B835"
+                    },
+    "ds_zipvarlen":  {
+                         "files":  [
+                                       "ds_attr.sas",
+                                       "ds_varlist.sas",
+                                       "ds_zipvarlen.sas"
+                                   ],
+                         "fingerprint":  "24B81515CC744650365FAF5323A46490207DA076"
+                     },
+    "lib_zipvarlen":  {
+                          "files":  [
+                                        "ds_attr.sas",
+                                        "ds_varlist.sas",
+                                        "ds_zipvarlen.sas",
+                                        "lib_zipvarlen.sas"
+                                    ],
+                          "fingerprint":  "8969D055CFF342B2A6426759F66F6D411D68A9E9"
+                      },
+    "dir_attr":  {
+                     "files":  [
+                                   "dir_attr.sas",
+                                   "dir_exist.sas"
+                               ],
+                     "fingerprint":  "9ADBFF6C5EE778B33EB77983313C885E8463B61B"
+                 },
+    "dir_memlist":  {
+                        "files":  [
+                                      "dir_exist.sas",
+                                      "dir_memlist.sas"
+                                  ],
+                        "fingerprint":  "63456BDB6472B6C422D506187549246DFF5F1124"
+                    },
+    "sdtm_epoch":  {
+                       "files":  [
+                                     "ds_attr.sas",
+                                     "sdtm_epoch.sas",
+                                     "var_coexist.sas",
+                                     "var_exist.sas"
+                                 ],
+                       "fingerprint":  "D2045826628FC77D3FC1CBCFEEF575BA233A94FE"
+                   },
+    "sdtm_fulldomain":  {
+                            "files":  [
+                                          "sdtm_fulldomain.sas",
+                                          "var_attr.sas",
+                                          "var_coexist.sas",
+                                          "var_exist.sas"
+                                      ],
+                            "fingerprint":  "C7FC0795F41D820356D1B2E7EC52D3B296F9D3B4"
+                        },
+    "sdtm_lobxfl":  {
+                        "files":  [
+                                      "sdtm_lobxfl.sas",
+                                      "var_attr.sas",
+                                      "var_coexist.sas",
+                                      "var_exist.sas"
+                                  ],
+                        "fingerprint":  "9DC33261DE080EB629929EFAF6C88AE70EFEC784"
+                    },
+    "stat_countocc":  {
+                          "files":  [
+                                        "ds_attr.sas",
+                                        "stat_countocc.sas",
+                                        "var_coexist.sas",
+                                        "var_exist.sas"
+                                    ],
+                          "fingerprint":  "2904904C160B34A9B69B5CA56FD1CA311AE3C3A0"
+                      },
+    "stat_rateci":  {
+                        "files":  [
+                                      "ds_attr.sas",
+                                      "stat_rateci.sas",
+                                      "var_coexist.sas",
+                                      "var_exist.sas"
+                                  ],
+                        "fingerprint":  "AA1C7089ED3FB7D7E66D434D15190481E26552D6"
+                    },
+    "stat_summaryc":  {
+                          "files":  [
+                                        "ds_attr.sas",
+                                        "stat_summaryc.sas",
+                                        "var_coexist.sas",
+                                        "var_exist.sas"
+                                    ],
+                          "fingerprint":  "B96508925259196737C75C352341E7F85897CD9F"
+                      },
+    "stat_summaryn":  {
+                          "files":  [
+                                        "ds_attr.sas",
+                                        "stat_summaryn.sas",
+                                        "var_coexist.sas",
+                                        "var_exist.sas"
+                                    ],
+                          "fingerprint":  "50366D6EEE06546A81BE62CF040229F11FB8368A"
+                      },
+    "nodup":  {
+                  "files":  [
+                                "nodup.sas",
+                                "words.sas"
+                            ],
+                  "fingerprint":  "C98B629DE19F9E7BEB27D47E806C0C6F725394AE"
+              },
+    "windex":  {
+                   "files":  [
+                                 "windex.sas",
+                                 "words.sas"
+                             ],
+                   "fingerprint":  "9DBB439FC3EFECCA17D01834EEF8E3F9FBADE3DB"
+               },
+    "__all__":  {
+                    "files":  [
+                                  "dir_attr.sas",
+                                  "dir_exist.sas",
+                                  "dir_memlist.sas",
+                                  "ds_attr.sas",
+                                  "ds_num2char.sas",
+                                  "ds_varlist.sas",
+                                  "ds_zipvarlen.sas",
+                                  "file_attr.sas",
+                                  "for.sas",
+                                  "lib_memlist.sas",
+                                  "lib_zipvarlen.sas",
+                                  "nodup.sas",
+                                  "parmv.sas",
+                                  "prefix.sas",
+                                  "range.sas",
+                                  "sdtm_epoch.sas",
+                                  "sdtm_fulldomain.sas",
+                                  "sdtm_lobxfl.sas",
+                                  "seplist.sas",
+                                  "sorted.sas",
+                                  "splitmac.sas",
+                                  "stat_countocc.sas",
+                                  "stat_rateci.sas",
+                                  "stat_summaryc.sas",
+                                  "stat_summaryn.sas",
+                                  "suffix.sas",
+                                  "suffix_counter.sas",
+                                  "var_attr.sas",
+                                  "var_coexist.sas",
+                                  "var_exist.sas",
+                                  "var_nlevel.sas",
+                                  "windex.sas",
+                                  "words.sas"
+                              ],
+                    "fingerprint":  "88B136F4D0966442503019B5FD281121166BA2DA"
+                }
+}

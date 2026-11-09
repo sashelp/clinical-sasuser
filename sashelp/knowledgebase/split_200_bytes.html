@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>按 200 字节切分变量 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html" class="current">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SAS 编程</p>
+<h2>如何按 200 字节长度切分变量？</h2>
+<p class="subtitle">substr 按字节切，会把一个汉字劈成两半；改用 ksubstrb 按字节切并自动丢掉破字符，想不切断句子再用 kfindc 从右往左找标点。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>XPT V5 对字符型变量的长度上限是 200 字节，超长就得拆成几个变量。但 <code>substr</code> 是按<b>字节</b>切的，一个汉字在 UTF-8 里占 3 个字节，切在第 200 字节很可能正好劈开一个字，后半截字节不成字符，显示成乱码。<b>用 <code>ksubstrb</code> 代替：它同样按字节切，但会把末尾不完整的字符自动丢弃</b>。如果还想尽量避免把一句话拆到两个变量里，切完再用 <code>kfindc(…,'b')</code> 从右往左找最后一个标点，在那里截断。</p>
+</div>
+
+<h3 id="why">为什么是 200</h3>
+<p>向 CDE 递交时数据集通常用 XPT（SAS Transport Format），建议 XPT V5 或以上。V5 格式有一条硬性限制：<b>字符型变量的长度至多为 200</b>。超过就得拆，拆出来的每一段也不能超过 200。</p>
+
+<h3 id="byte">字符和字节不是一回事</h3>
+<p>一个字符在计算机里可能占 1 个到多个字节。以 UTF-8 为例：</p>
+
+<table class="kb-table">
+<col width="38%" />
+<col width="22%" />
+<col width="40%" />
+<thead>
+<tr><th>字符类型</th><th>字节数</th><th>例子</th></tr>
+</thead>
+<tbody>
+<tr><td>数字、英文字母</td><td>1</td><td>A、7</td></tr>
+<tr><td>欧洲字母、希腊字母</td><td>2</td><td>é、α</td></tr>
+<tr><td>中、日、韩文字</td><td>3</td><td>汉、字</td></tr>
+<tr><td>表情符号</td><td>4</td><td>😀</td></tr>
+</tbody>
+</table>
+
+<p>所以“200 字节”不等于“200 个字”。英文能放 200 个，中文最多只能放 66 个。这也是为什么按字节切的时候，边界经常落在汉字中间。</p>
+
+<h3 id="broken">substr 是怎么切出乱码的</h3>
+<p>拿 <code>汉字</code> 举例，切前 4 个字节：</p>
+
+<pre class="code">data _null_;
+  x = substr('汉字', 1, 4);   /* 汉占 3 字节，第 4 字节是“字”的第 1 个字节 */
+  put x=;
+run;</pre>
+
+<p>结果是 <code>汉</code> 加上半个字符，那半个字节在当前编码里凑不成合法字符，屏幕上就是乱码。</p>
+
+<p>换成实际的长文本更明显。一段 535 字节的中文，按 200 字节切三段，第一段末尾的字节是 <code>E6 88</code>——一个三字节汉字只拿到了前两字节，后面那段又从第三个字节开始，两段都读不出这个字。</p>
+
+<p>直接照这个思路写程序，还有个小毛病：最后一段的起点可能已经超过字符串总长度，<code>substr</code> 会报“第三个参数非法”，并把 <code>_ERROR_</code> 置 1。</p>
+
+<pre class="code">data tab1;
+  set raw;
+  text_1 = substr(text, 1, 200);
+  text_2 = substr(text, length(text_1)+1, 200);
+  text_3 = substr(text, length(text_1)+length(text_2)+1, 200);
+run;</pre>
+
+<p>把 <code>substr</code> 换成 <code>substrn</code> 可以消掉这个报错（起点越界时安静地返回空），但乱码管不了——两件事得分开解决。</p>
+
+<h3 id="ktruncate">修法一：ktruncate 丢掉破字符</h3>
+<p><code>ktruncate</code> 干的就是这件事：把字符串末尾“破裂”的多字节字符部分切掉。套在 <code>substrn</code> 外面就行：</p>
+
+<pre class="code">data tab2;
+  set raw;
+  text_1 = ktruncate(substrn(text, 1, 200));
+  text_2 = ktruncate(substrn(text, length(text_1)+1, 200));
+  text_3 = ktruncate(substrn(text, length(text_1)+length(text_2)+1, 200));
+
+  length text_99 $1024.;
+  text_99 = trim(text_1)||trim(text_2)||trim(text_3);
+  comp = (text = text_99);
+  put comp=;
+run;</pre>
+
+<p>注意 <code>length()</code> 返回的也是字节数，所以 <code>length(text_1)+1</code> 这个起点会自动落到完整字符的开头——被丢掉的那两个字节，会在下一段开头被重新读进来，不会丢内容。实测这段：第一段从 200 字节被截到 197 字节，拼回去和原文完全一致。</p>
+
+<h3 id="ksubstrb">修法二：ksubstrb 一步到位</h3>
+<p><code>ksubstrb</code> 把两件事合在一起：按字节截取，同时自动丢掉末尾不完整的字符。语法和 <code>substrn</code> 一样：</p>
+
+<pre class="code">data tab3;
+  set raw;
+  array _dummy_[3] $200. text_1-text_3;
+  used_len = 1;
+  do i = 1 to dim(_dummy_);
+    _dummy_[i] = ksubstrb(text, used_len, 200);
+    used_len + length(_dummy_[i]);
+  end;
+run;</pre>
+
+<p>数组声明 <code>$200.</code> 保证每个变量不超过 200 字节；<code>used_len</code> 记录下一段从第几个字节开始，每次加上刚切出来的字节数。这种写法比一句句抄三遍好维护，段数改了只改数组维度。</p>
+
+<h3 id="punctuation">别把一句话切成两半</h3>
+<p>按固定 200 字节切，很可能把一句话从中间劈开。改善办法：切完一段后，在这段里找最后一个句末标点，从那里截断，剩下的留给下一段。</p>
+
+<pre class="code">data tab4;
+  set raw;
+  array _dummy_[3] $200. text_1-text_3;
+  used_len = 1;
+  do i = 1 to dim(_dummy_);
+    _dummy_[i] = ksubstrb(text, used_len, 200);
+    _dummy_[i] = ksubstr(_dummy_[i], 1, kfindc(_dummy_[i], '，。？；', 'b'));
+    used_len + length(_dummy_[i]);
+  end;
+run;</pre>
+
+<p>关键是 <code>kfindc</code> 的第三个参数 <code>'b'</code>：默认从左往右找，返回<b>第一个</b>标点的位置；加了 <code>b</code> 就从右往左找，返回<b>最后一个</b>标点的位置。实测一句 <code>ab，cd。ef？gh；ij</code>，正向返回 3，反向返回 12。</p>
+
+<h3 id="patch">这个初版有三个坑，补丁版长这样</h3>
+<p>上面那段是照着一个固定例子写的，直接拿去用会出问题。我实测过：<b>最后一段在标点处截断后，标点后面的内容就丢了</b>，三段拼回去和原文对不上（<code>comp=0</code>）。原因是最后一段后面没有第四段来接手剩下的内容。</p>
+
+<p>作者后来给了修订版，改了五处：</p>
+<ol class="notes">
+<li><code>len</code> 挪到分割用的数据步里算，不污染原始数据集。</li>
+<li>只有 <code>len &gt; 200</code> 才进循环，短变量直接 <code>text_1 = text</code>。</li>
+<li>每段切完先判断后面还有没有内容（<code>used_len + 200 &gt; len</code>），没有了就直接跳出，最后一段不再按标点截。</li>
+<li>标点集合扩到中英文的逗号、句号、冒号、分号、问号、感叹号和中文顿号。</li>
+<li>只有这段里确实找到标点（<code>kpos</code> 非 0）才截断。</li>
+</ol>
+
+<pre class="code">data tab4;
+  set raw;
+
+  len = length(text);
+  array _dummy_[3] $200. text_1-text_3;
+  used_len = 1;
+  if len > 200 then do i = 1 to dim(_dummy_);
+    _dummy_[i] = ksubstrb(text, used_len, 200);
+    if used_len + 200 > len then leave;
+    kpos = kfindc(_dummy_[i], '，。、：；？！,.:;?!', 'b');
+    if kpos then _dummy_[i] = ksubstr(_dummy_[i], 1, kpos);
+    used_len + length(_dummy_[i]);
+  end;
+  else text_1 = text;
+run;</pre>
+
+<p>这一版实测三段拼回去和原文完全一致。</p>
+
+<h3 id="test">我在 SAS 9.4 上实测到的几个数</h3>
+<table class="kb-table">
+<col width="46%" />
+<col width="24%" />
+<col width="30%" />
+<thead>
+<tr><th>检查项</th><th>结果</th><th>说明</th></tr>
+</thead>
+<tbody>
+<tr><td>示例中文文本的 <code>length()</code></td><td>535</td><td>UTF-8 会话下，按字节算</td></tr>
+<tr><td><code>substrn</code> 切出的第一段</td><td>200 字节，末尾 <code>E6 88</code></td><td>半个汉字，显示为乱码</td></tr>
+<tr><td><code>ktruncate</code> 后的第一段</td><td>197 字节</td><td>丢掉 3 个破字节，末尾是完整字符</td></tr>
+<tr><td><code>ksubstrb</code> 方案重组</td><td>与原变量一致</td><td>无内容丢失</td></tr>
+<tr><td>未打补丁的标点版重组</td><td>与原变量不一致</td><td>最后一段标点之后的内容被截掉</td></tr>
+<tr><td>补丁版重组</td><td>与原变量一致</td><td>修好了</td></tr>
+</tbody>
+</table>
+
+<h3 id="pitfalls">几个容易踩的点</h3>
+<ul class="notes">
+<li><b><code>length()</code> 给的是字节数，不是字数。</b>用它推位置没问题（和 <code>ksubstrb</code> 的字节定位配套），但别拿它当“第几个字”用，要做字符计数得用 <code>klength()</code>。</li>
+<li><b><code>ksubstrb</code> 起点越界也会置 <code>_ERROR_=1</code>，</b>不像 <code>substrn</code> 那样安静返回空。所以循环次数要算准，或者像补丁版那样提前 <code>leave</code>。</li>
+<li><b>切出来的变量是定长的。</b>声明成 <code>$200.</code>，短的那段末尾一堆空格，拼接前记得 <code>trim</code> 或 <code>strip</code>。</li>
+<li><b>中文标点也占 3 个字节</b>（UTF-8 下），标点集合里别只写英文标点。</li>
+<li><b>编码环境会影响结果。</b>同一段程序，在 EUC-CN 会话里汉字占 2 字节，能放的字符数完全不同；跑之前先确认会话编码，别拿 UTF-8 的数字套到别的环境。</li>
+<li><b>切分后要留校验。</b>像示例那样拼回去和原变量比一次，是发现“丢了尾巴”这类问题最省事的办法。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS骆豪, <a href="https://www.bilibili.com/opus/893016476467855362" target="_blank" rel="noopener"><i>按200字节切分字符型变量</i></a>，哔哩哔哩，2024 年 2 月 21 日。<span class="src">XPT V5 的 200 字节限制、substr 乱码成因、ktruncate 与 ksubstrb 两种修法、数组循环写法、按标点切分及补丁版的五处修订。</span></li>
+<li>国家药品监督管理局药品审评中心, <a href="https://www.cde.org.cn/main/news/viewInfoCommon/f649995d3a9ade8dcd67f6a2ced36f0b" target="_blank" rel="noopener"><i>药物临床试验数据递交指导原则（试行）</i></a>，2020 年 7 月。<span class="src">数据集采用 XPT 格式、建议 XPT V5 或以上版本。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/en/software/base-sas-support.html#documentation" target="_blank" rel="noopener"><i>SAS 9.4 Functions and CALL Routines: Reference</i></a>。<span class="src">SUBSTR、SUBSTRN、KSUBSTRB、KTRUNCATE、KFINDC 的函数定义与 'b' 修饰符。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

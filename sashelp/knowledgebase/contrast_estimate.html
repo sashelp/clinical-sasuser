@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>CONTRAST / ESTIMATE 系数 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html" class="current">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SAS 编程</p>
+<h2>CONTRAST 和 ESTIMATE 里那串 0 和 1，是怎么算出来的？</h2>
+<p class="subtitle">先把模型写出来，再把要检验的假设用模型参数表示并化简，最后按参数顺序把系数填进去；系数对不对，取决于参数化和参数顺序。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>这两条语句不接受“我想要比较 A 和 B”这种描述，只接受一组<b>模型参数的线性组合系数</b>。所以写之前必须先做三件事：写下你拟合的模型；把要检验的假设翻译成模型参数的表达式；按 SAS 输出里参数的排列顺序，把每个参数的乘数填进去。跳过任何一步，写出来的系数都是碰运气。</p>
+</div>
+
+<h3 id="steps">三步法</h3>
+<ol class="notes">
+<li><b>写模型。</b>要确认两件事：参数化方式（CLASS 变量生成的设计变量是怎么编码的）和参数顺序（多个参数在效应内部的排列）。</li>
+<li><b>化简假设。</b>把要估的量写成参数的表达式，能消的项先消掉。检验类问题先把原假设写成“对比 = 0”。</li>
+<li><b>填系数。</b>按输出里的参数顺序，一个参数一个乘数，写成 <code>效应 系数1 系数2 …</code>。</li>
+</ol>
+
+<p>第 1 步最容易被跳过，但它决定了后面全对不对。SAS 里最常用两种参数化：</p>
+
+<table class="kb-table">
+<col width="18%" />
+<col width="30%" />
+<col width="52%" />
+<thead>
+<tr><th>参数化</th><th>谁来用</th><th>参数怎么解释</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>GLM（哑变量）</td>
+<td>GLM、MIXED、GLIMMIX、GENMOD 默认；LOGISTIC 用 <code>PARAM=GLM</code></td>
+<td>每个水平对参照水平的差，最后一个水平系数为 0</td>
+</tr>
+<tr>
+<td>EFFECT（效应编码）</td>
+<td>CATMOD、LOGISTIC 默认；GENMOD 用 <code>PARAM=EFFECT</code></td>
+<td>每个水平对“各水平平均”的偏离，系数和为零，最后一个水平是 −1</td>
+</tr>
+</tbody>
+</table>
+
+<p>参数顺序则由 <code>CLASS</code> 里变量的书写顺序和 <code>ORDER=</code> 决定。同一份数据，<code>class a b</code> 和 <code>class b a</code> 得到的两组交互参数顺序是反的，系数也得跟着反。所以别猜，直接看输出：<code>Class Level Information</code> 表和参数估计表里参数是怎么排的，就按那个顺序数格子。</p>
+
+<h3 id="cell">先从一个单元格均值开始</h3>
+<p>两因素交互模型，A 有 5 个水平、B 有 2 个水平，模型是：</p>
+<div class="callout">
+<p>Y<sub>ijk</sub> = μ + α<sub>i</sub> + β<sub>j</sub> + αβ<sub>ij</sub> + ε<sub>ijk</sub></p>
+</div>
+<p>A=1、B=1 这个单元格的均值就是 μ + α<sub>1</sub> + β<sub>1</sub> + αβ<sub>11</sub>。翻译成系数，就是截距给 1，A 的第一个参数给 1，B 的第一个参数给 1，交互的第一个参数给 1，其余全给 0：</p>
+
+<pre class="code">proc mixed data=test;
+   class a b;
+   model y=a b a*b;
+   estimate 'AB11' intercept 1
+                   a 1 0 0 0 0
+                   b 1 0
+                 a*b 1 0 0 0 0 0 0 0 0 0;
+run;</pre>
+
+<p>这里有个坑：交互参数的排列是“先变哪个因子”决定的。因为代码里 <code>class a b</code>，B 先动，所以第二个交互参数是 αβ<sub>12</sub>。如果写成 <code>class b a</code>，第二个就变成 αβ<sub>21</sub>，系数要整排挪位置。这就是为什么第 1 步要确认参数顺序。</p>
+
+<h3 id="diff">两个单元格均值之差，截距和主效应会自己消掉</h3>
+<p>要检验 μ<sub>11</sub> − μ<sub>12</sub> = 0，先展开：</p>
+<div class="callout">
+<p>μ<sub>11</sub> − μ<sub>12</sub> = (μ + α<sub>1</sub> + β<sub>1</sub> + αβ<sub>11</sub>) − (μ + α<sub>1</sub> + β<sub>2</sub> + αβ<sub>12</sub>) = β<sub>1</sub> − β<sub>2</sub> + αβ<sub>11</sub> − αβ<sub>12</sub></p>
+</div>
+<p>截距和 α<sub>1</sub> 都抵消了，所以系数只落在 B 和交互上：</p>
+
+<pre class="code">estimate 'AB11 - AB12' b 1 -1
+                       a*b 1 -1 0 0 0 0 0 0 0 0;</pre>
+
+<p>跑出来估计差是 −2.5148，附带一个 t 检验。用 <code>contrast</code> 写同样的系数，得到的是等价的 F 检验，只是不显示估计值。</p>
+
+<h3 id="complex">复杂一点的对比，用 DIVISOR 避免 Non-est</h3>
+<p>要比较“A=1 时 B 两个水平的平均”和“A=2 时 B 两个水平的平均”，系数里会出现 0.5：</p>
+
+<pre class="code">contrast 'avg AB11,AB12 - avg AB21,AB22' a 1 -1
+                                         a*b .5 .5 -.5 -.5;</pre>
+
+<p>这个能算，因为 0.5 在二进制里是精确的。换成三分之一就不行了。比如拿一个单元格去和全部 6 个单元格的平均比，系数本来是 1/6、5/6 这种，直接写 <code>.1667</code> 会因为精度不够被判成估不出来，输出里出现 <code>Non-est</code>，日志里提示 not estimable。正确做法是<b>把系数整体放大成整数，再用 DIVISOR= 除掉</b>：</p>
+
+<pre class="code">estimate 'AB12 vs avg ABij' a 3 -3
+                            b -2 4 -2
+                          a*b -1 5 -1 -1 -1 -1 / divisor=6;</pre>
+
+<p>系数 ×6 之后都是整数，SAS 先按整数算，最后除以 6，结果和用分数是同一个，但不会掉进精度坑里。</p>
+
+<h3 id="logistic">Logistic 模型里，得到的是 log odds 的差</h3>
+<p>换成 logistic 模型，模型参数描述的是 log odds。两个单元格的 log odds 相减，正好是 log odds ratio，指数一下就是 OR：</p>
+
+<pre class="code">proc logistic data=uti;
+   freq count;
+   class diagnosis treatment / param=glm;
+   model response(event='cured') = diagnosis treatment diagnosis*treatment;
+   contrast 'trt A vs C in comp' treatment 1 0 -1
+            diagnosis*treatment 1 0 -1 0 0 0 / estimate=both;
+run;</pre>
+
+<p><code>estimate=both</code> 会同时给出两列：<code>L'Beta Estimate</code> 是 log OR（0.6336），<code>Mean Estimate</code> 是 OR（1.8845）。这一步常见的错误是把 log OR 当成 OR 报出去。</p>
+
+<p>如果 CLASS 用的是效应编码，同样的比较系数完全不同。上面这个“复杂诊断下治疗 A 对 C”的对比，在效应编码下要写成：</p>
+
+<pre class="code">contrast 'trt A vs C in comp' treatment 2 1
+         diagnosis*treatment 2 1 / estimate=both;</pre>
+
+<p>原因还是第 1 步：效应编码里参照水平是 −1 而不是 0，A 和 C 的差展开后系数就变成了 2 和 1。所以<b>换参数化方式，必须重算系数</b>，不能照抄。</p>
+
+<div class="flow">
+<p class="flow-title">写一条 CONTRAST / ESTIMATE 的顺序</p>
+<svg viewBox="0 0 680 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ce-ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <rect x="190" y="10" width="300" height="44" rx="4" fill="#0070C0" stroke="#005a9e"/>
+  <text x="340" y="37" text-anchor="middle" fill="#ffffff" font-size="14">要比较 / 检验的东西</text>
+
+  <line x1="340" y1="54" x2="340" y2="84" stroke="#8a8a8a" marker-end="url(#ce-ar)"/>
+
+  <rect x="140" y="84" width="400" height="52" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="106" text-anchor="middle" fill="#e6e6e6" font-size="13">LSMEANS、LSMESTIMATE、SLICE、ODDSRATIO</text>
+  <text x="340" y="124" text-anchor="middle" fill="#8a8a8a" font-size="12">能不能直接出？</text>
+
+  <line x1="540" y1="110" x2="566" y2="110" stroke="#8a8a8a" marker-end="url(#ce-ar)"/>
+
+  <rect x="568" y="84" width="100" height="52" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="618" y="106" text-anchor="middle" fill="#ffffff" font-size="12">能，直接用</text>
+  <text x="618" y="123" text-anchor="middle" fill="#e8f5e0" font-size="11">不用手写</text>
+
+  <line x1="340" y1="136" x2="340" y2="164" stroke="#8a8a8a" marker-end="url(#ce-ar)"/>
+  <text x="354" y="154" fill="#8a8a8a" font-size="12">不能</text>
+
+  <rect x="150" y="164" width="380" height="46" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="193" text-anchor="middle" fill="#e6e6e6" font-size="13">写出模型和参数化方式</text>
+
+  <line x1="340" y1="210" x2="340" y2="238" stroke="#8a8a8a" marker-end="url(#ce-ar)"/>
+
+  <rect x="150" y="238" width="380" height="46" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="267" text-anchor="middle" fill="#e6e6e6" font-size="13">把假设化成参数的线性组合，能消的消掉</text>
+
+  <line x1="340" y1="284" x2="340" y2="312" stroke="#8a8a8a" marker-end="url(#ce-ar)"/>
+
+  <rect x="150" y="312" width="380" height="46" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="341" text-anchor="middle" fill="#e6e6e6" font-size="13">按参数顺序填系数，出现分数就配 DIVISOR=</text>
+
+  <line x1="340" y1="358" x2="340" y2="382" stroke="#8a8a8a" marker-end="url(#ce-ar)"/>
+
+  <rect x="90" y="382" width="500" height="32" rx="4" fill="#333333" stroke="#555555"/>
+  <text x="340" y="403" text-anchor="middle" fill="#cccccc" font-size="12">跑一次 E 选项或参数估计表，核对系数位置对不对</text>
+</svg>
+</div>
+
+<h3 id="pitfalls">几个容易踩的坑</h3>
+<ul class="notes">
+<li><b>漏了截距。</b>只要对比里含均值本身（不是两个均值相减），截距系数就要给 1。写成 0，估出来的是“偏离”，不是均值。</li>
+<li><b>参数顺序和 CLASS 顺序不一致。</b>加一个因子、调一下 <code>class</code> 的书写顺序，原有系数全部作废，必须重数。</li>
+<li><b>小数系数写成 .333。</b>精度不够会被判 <code>Non-est</code>，用 <code>DIVISOR=</code> 改成整数系数。</li>
+<li><b>把 log OR 当 OR。</b>logistic 模型的 <code>contrast</code> 默认给的是 log 尺度，记得看 <code>Mean Estimate</code> 或用 <code>/ exp</code>。</li>
+<li><b>换了参数化却照抄系数。</b>GLM 和 EFFECT 两套编码下，同一个比较的系数不一样。</li>
+<li><b>想用 CONTRAST 算比值。</b>比值、概率这类非线性组合不在线性组合的范围里，得用 NLEST 或 NLMeans 宏。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS Support, <a href="https://sas.service-now.com/csm?id=kb_article_view&sys_kb_id=02c5702e1b3fb250c325a643b24bcb3e" target="_blank" rel="noopener"><i>Examples of writing CONTRAST and ESTIMATE statements</i></a>（SAS 知识库文章，sas.service-now.com）。<span class="src">三步法、双因素与三因素交互模型、哑变量与效应编码下的 OR 对比、DIVISOR= 的用法、嵌套模型与非嵌套模型的比较。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/documentation/onlinedoc/stat/" target="_blank" rel="noopener"><i>SAS/STAT User's Guide</i></a>：PROC GLM、PROC MIXED、PROC LOGISTIC、PROC GENMOD 章节。<span class="src">CONTRAST、ESTIMATE、LSMESTIMATE 语句的参数化与系数约定。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

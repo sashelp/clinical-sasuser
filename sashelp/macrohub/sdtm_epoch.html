@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>sdtm_epoch - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html" class="current">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / CDISC 标准</p>
+<h2>sdtm_epoch</h2>
+<p class="subtitle">将 SDTM 标准 SE 数据集中的 EPOCH 映射到输入数据集</p>
+<p class="dependency">依赖: <a href="var_exist.html">var_exist</a>、<a href="var_coexist.html">var_coexist</a>、<a href="ds_attr.html">ds_attr</a></p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>sdtm_epoch</code></p>
+
+<h3 id="brief">简介</h3>
+<p>按受试者从 SDTM 标准 SE 数据集中查找与记录日期匹配的 EPOCH。匹配到的 SE 记录的 SESTDTC、SEENDTC 与 EPOCH 一并写入输出数据集，输入数据集的其余变量保持不变。宏不返回值，结果写入 <code>OUT=</code> 数据集；<code>OUT=</code> 默认与 <code>DATA=</code> 相同，即直接更新输入数据集。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%sdtm_epoch(data=&lt;dataset&gt;, dtc=&lt;variable&gt;, se=&lt;dataset&gt;)</pre>
+<p>该宏为过程式宏，结果写入 <code>OUT=</code> 数据集，不返回值。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DATA=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>输入数据集名。</td>
+</tr>
+<tr>
+<td>SUBJECT=</td>
+<td>可选参数</td>
+<td>USUBJID</td>
+<td>用于识别受试者的一个或多个变量，可指定多个变量。</td>
+</tr>
+<tr>
+<td>DTC=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>记录日期时间变量，须为字符型 ISO8601 格式。</td>
+</tr>
+<tr>
+<td>SE=</td>
+<td>必需参数</td>
+<td>SDTM.SE</td>
+<td>标准 SDTM SE 数据集，应包含全部受试者，且须包含 SESTDTC、SEENDTC 与 EPOCH。</td>
+</tr>
+<tr>
+<td>OUT=</td>
+<td>可选参数</td>
+<td>&amp;DATA.</td>
+<td>输出数据集名，默认与 <code>DATA=</code> 相同。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：按 SESTDTC 边界映射 EPOCH</h4>
+<pre class="code">data work.se;
+  length USUBJID $10 SESTDTC SEENDTC $20 EPOCH $30;
+  USUBJID='S01'; SESTDTC='2024-01-01'; SEENDTC='2024-01-15'; EPOCH='SCRN'; output;
+  USUBJID='S01'; SESTDTC='2024-01-15'; SEENDTC='2024-02-01'; EPOCH='TRT';  output;
+  USUBJID='S01'; SESTDTC='2024-02-01'; SEENDTC='2024-03-01'; EPOCH='FU';   output;
+run;
+
+data work.vs;
+  length USUBJID $10 VSDTC $20;
+  USUBJID='S01'; VSSEQ=1; VSDTC='2024-01-05'; output;
+  USUBJID='S01'; VSSEQ=2; VSDTC='2024-01-15'; output;
+  USUBJID='S01'; VSSEQ=3; VSDTC='2024-02-10'; output;
+run;
+
+%sdtm_epoch(data=work.vs, se=work.se, dtc=VSDTC, out=work.vs_ep);
+
+proc print data=work.vs_ep noobs;
+  var USUBJID VSSEQ VSDTC SESTDTC SEENDTC EPOCH;
+run;</pre>
+<p class="result-label">运行结果（WORK.VS_EP）：</p>
+<table class="macro-table result-table">
+<col width="10%" />
+<col width="8%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="12%" />
+<thead>
+<tr><th>USUBJID</th><th>VSSEQ</th><th>VSDTC</th><th>SESTDTC</th><th>SEENDTC</th><th>EPOCH</th></tr>
+</thead>
+<tbody>
+<tr><td>S01</td><td>1</td><td>2024-01-05</td><td>2024-01-01</td><td>2024-01-15</td><td>SCRN</td></tr>
+<tr><td>S01</td><td>2</td><td>2024-01-15</td><td>2024-01-15</td><td>2024-02-01</td><td>TRT</td></tr>
+<tr><td>S01</td><td>3</td><td>2024-02-10</td><td>2024-02-01</td><td>2024-03-01</td><td>FU</td></tr>
+</tbody>
+</table>
+<p><code>VSDTC=2024-01-05</code> 位于 SCRN 区间 <code>[2024-01-01, 2024-01-15)</code> 内；<code>2024-01-15</code> 等于下一个 EPOCH 的 SESTDTC，按起始日包含归入 TRT；<code>2024-02-10</code> 位于 FU 区间 <code>[2024-02-01, 2024-03-01)</code> 内。宏同时把匹配到的 SE 记录的 SESTDTC、SEENDTC 写入输出。</p>
+
+<h4>示例 2：边界、空档与最后一段 SEENDTC 缺失</h4>
+<pre class="code">data work.se2;
+  length USUBJID $10 SESTDTC SEENDTC $20 EPOCH $30;
+  USUBJID='S01'; SESTDTC='2024-01-01'; SEENDTC='2024-01-10'; EPOCH='SCRN'; output;
+  USUBJID='S01'; SESTDTC='2024-01-20'; SEENDTC='2024-02-10'; EPOCH='TRT';  output;
+  USUBJID='S02'; SESTDTC='2024-02-20'; SEENDTC='';           EPOCH='TRT';  output;
+run;
+
+data work.vs2;
+  length USUBJID $10 VSDTC $20;
+  USUBJID='S01'; VSSEQ=1; VSDTC='2024-01-01'; output;
+  USUBJID='S01'; VSSEQ=2; VSDTC='2024-01-15'; output;
+  USUBJID='S01'; VSSEQ=3; VSDTC='2024-01-20'; output;
+  USUBJID='S01'; VSSEQ=4; VSDTC='2024-02-10'; output;
+  USUBJID='S01'; VSSEQ=5; VSDTC='2024-02-25'; output;
+  USUBJID='S02'; VSSEQ=6; VSDTC='2024-02-25'; output;
+run;
+
+%sdtm_epoch(data=work.vs2, se=work.se2, dtc=VSDTC, out=work.vs2_ep);
+
+proc print data=work.vs2_ep noobs;
+  var USUBJID VSSEQ VSDTC SESTDTC SEENDTC EPOCH;
+run;</pre>
+<p class="result-label">运行结果（WORK.VS2_EP）：</p>
+<table class="macro-table result-table">
+<col width="10%" />
+<col width="8%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="12%" />
+<thead>
+<tr><th>USUBJID</th><th>VSSEQ</th><th>VSDTC</th><th>SESTDTC</th><th>SEENDTC</th><th>EPOCH</th></tr>
+</thead>
+<tbody>
+<tr><td>S01</td><td>1</td><td>2024-01-01</td><td>2024-01-01</td><td>2024-01-10</td><td>SCRN</td></tr>
+<tr><td>S01</td><td>2</td><td>2024-01-15</td><td></td><td></td><td></td></tr>
+<tr><td>S01</td><td>3</td><td>2024-01-20</td><td>2024-01-20</td><td>2024-02-10</td><td>TRT</td></tr>
+<tr><td>S01</td><td>4</td><td>2024-02-10</td><td>2024-01-20</td><td>2024-02-10</td><td>TRT</td></tr>
+<tr><td>S01</td><td>5</td><td>2024-02-25</td><td></td><td></td><td></td></tr>
+<tr><td>S02</td><td>6</td><td>2024-02-25</td><td>2024-02-20</td><td></td><td>TRT</td></tr>
+</tbody>
+</table>
+<p><code>2024-01-15</code> 落在 SCRN 结束日 <code>2024-01-10</code> 与 TRT 起始日 <code>2024-01-20</code> 之间的空档，不满足任一映射条件，三个变量均为空。<code>2024-02-10</code> 等于最后一个 SEENDTC，归入 TRT；<code>2024-02-25</code> 晚于最后一个 SEENDTC，不映射，日志输出 <code>WARNING: Row 5: VSDTC is later than the last SEENDTC.</code>。S02 的最后一个 SEENDTC 缺失，<code>2024-02-25</code> 不早于最后一个 SESTDTC <code>2024-02-20</code>，归入 TRT。</p>
+
+<h4>示例 3：省略 OUT= 时直接更新输入数据集</h4>
+<pre class="code">data work.vs3;
+  length USUBJID $10 VSDTC $20;
+  USUBJID='S01'; VSSEQ=1; VSDTC='2024-01-05'; output;
+  USUBJID='S01'; VSSEQ=2; VSDTC='2024-02-10'; output;
+run;
+
+%sdtm_epoch(data=work.vs3, se=work.se, dtc=VSDTC);
+
+proc print data=work.vs3 noobs;
+  var USUBJID VSSEQ VSDTC SESTDTC SEENDTC EPOCH;
+run;</pre>
+<p class="result-label">运行结果（WORK.VS3）：</p>
+<table class="macro-table result-table">
+<col width="10%" />
+<col width="8%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="12%" />
+<thead>
+<tr><th>USUBJID</th><th>VSSEQ</th><th>VSDTC</th><th>SESTDTC</th><th>SEENDTC</th><th>EPOCH</th></tr>
+</thead>
+<tbody>
+<tr><td>S01</td><td>1</td><td>2024-01-05</td><td>2024-01-01</td><td>2024-01-15</td><td>SCRN</td></tr>
+<tr><td>S01</td><td>2</td><td>2024-02-10</td><td>2024-02-01</td><td>2024-03-01</td><td>FU</td></tr>
+</tbody>
+</table>
+<p>未指定 <code>OUT=</code> 时默认使用 <code>&amp;DATA.</code>，结果直接写回 <code>WORK.VS3</code>：<code>VSSEQ</code>、<code>VSDTC</code> 保留，新增 <code>SESTDTC</code>、<code>SEENDTC</code> 与 <code>EPOCH</code>。</p>
+
+<h4>示例 4：使用多个 SUBJECT= 变量作为匹配键</h4>
+<pre class="code">data work.se4;
+  length USUBJID $10 SUBJID $6 SESTDTC SEENDTC $20 EPOCH $30;
+  USUBJID='S01'; SUBJID='001'; SESTDTC='2024-01-01'; SEENDTC='2024-01-15'; EPOCH='SCRN'; output;
+  USUBJID='S01'; SUBJID='001'; SESTDTC='2024-01-15'; SEENDTC='2024-02-01'; EPOCH='TRT';  output;
+  USUBJID='S02'; SUBJID='002'; SESTDTC='2024-02-10'; SEENDTC='2024-02-20'; EPOCH='SCRN'; output;
+run;
+
+data work.vs4;
+  length USUBJID $10 SUBJID $6 VSDTC $20;
+  USUBJID='S01'; SUBJID='001'; VSSEQ=1; VSDTC='2024-01-05'; output;
+  USUBJID='S01'; SUBJID='001'; VSSEQ=2; VSDTC='2024-01-20'; output;
+  USUBJID='S02'; SUBJID='002'; VSSEQ=1; VSDTC='2024-02-12'; output;
+run;
+
+%sdtm_epoch(data=work.vs4, se=work.se4, subject=USUBJID SUBJID,
+             dtc=VSDTC, out=work.vs4_ep);
+
+proc print data=work.vs4_ep noobs;
+  var USUBJID SUBJID VSSEQ VSDTC SESTDTC SEENDTC EPOCH;
+run;</pre>
+<p class="result-label">运行结果（WORK.VS4_EP）：</p>
+<table class="macro-table result-table">
+<col width="10%" />
+<col width="8%" />
+<col width="8%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="12%" />
+<thead>
+<tr><th>USUBJID</th><th>SUBJID</th><th>VSSEQ</th><th>VSDTC</th><th>SESTDTC</th><th>SEENDTC</th><th>EPOCH</th></tr>
+</thead>
+<tbody>
+<tr><td>S01</td><td>001</td><td>1</td><td>2024-01-05</td><td>2024-01-01</td><td>2024-01-15</td><td>SCRN</td></tr>
+<tr><td>S01</td><td>001</td><td>2</td><td>2024-01-20</td><td>2024-01-15</td><td>2024-02-01</td><td>TRT</td></tr>
+<tr><td>S02</td><td>002</td><td>1</td><td>2024-02-12</td><td>2024-02-10</td><td>2024-02-20</td><td>SCRN</td></tr>
+</tbody>
+</table>
+<p><code>SUBJECT=USUBJID SUBJID</code> 指定两个键变量，宏按组合键在 SE 中查找：<code>S01/001</code> 的两条记录分别映射到 SCRN 与 TRT，<code>S02/002</code> 映射到 SCRN。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+<li>记录日期 <code>DTC=</code> 满足以下任一条件时映射：不早于 SESTDTC 且早于 SEENDTC；等于最后一个 SEENDTC；不早于最后一个 SESTDTC 且最后一个 SEENDTC 缺失。</li>
+<li><code>DTC=</code> 为字符型 ISO8601 格式；含缺失日期部分时不做填补，按非缺失部分参与映射；若有多个 EPOCH 匹配，取最后一个。</li>
+<li><code>SE=</code> 应为 SDTM 标准 SE 数据集，包含 SESTDTC、SEENDTC 与 EPOCH，并应包含全部受试者。</li>
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<p>以下列出当前版本已知但未修复的问题、使用约束与冲突风险。</p>
+
+<h4>1. 已知但未修复的风险</h4>
+<ul class="notes">
+<li>超出最后一个 SEENDTC 的记录会逐条写入 <code>WARNING: Row ... is later than the last SEENDTC.</code>；批量数据下日志噪声较大。</li>
+<li>部分日期按非缺失部分参与映射，多个匹配取最后一个；该行为依赖下述“相邻 SE 连续”假设，SE 存在空档或重叠时可能取不到预期 EPOCH。</li>
+</ul>
+
+<h4>2. 对输入参数的强假设</h4>
+<ul class="notes">
+<li><b>SE 数据集</b>：同一受试者相邻两条 SE 记录须满足本条 SEENDTC = 下一条 SESTDTC（无空档、无重叠）；SE 应包含全部受试者，并包含 SESTDTC、SEENDTC、EPOCH，且仅最后一个 SEENDTC 可为空。DATA 中的受试者若不在 SE 中，记录不映射；非末段 SEENDTC 缺失、SESTDTC 缺失或同一受试者 SESTDTC 重复、EPOCH 区间重叠时，不在宏的约定范围内。</li>
+<li><code>DTC=</code> 必须是字符型 ISO8601；宏按字符串与前缀比较，要求年、月、日各段定长书写，如 <code>2024-03</code>、<code>2024-03-01</code>、<code>2024-03-01T09:30</code>。</li>
+<li><code>SUBJECT=</code> 变量应同时存在于 DATA 与 SE，且取值含义一致；多个键变量按组合键匹配。</li>
+</ul>
+
+<h4>3. 临时变量与临时数据集冲突风险</h4>
+<ul class="notes">
+<li>宏会使用临时变量 <code>_RC_</code>、<code>_RC_NEXT_</code>、<code>_HASH_RST_</code>；若输入数据集已有同名变量，会被覆盖并在输出时删除，原值丢失。</li>
+<li>宏会把匹配到的 <code>SESTDTC</code>、<code>SEENDTC</code> 与 <code>EPOCH</code> 写入输出。若输入数据集已含这些变量，原值会被清空后按映射结果重写；未匹配到 EPOCH 时该列为空。</li>
+<li>宏使用固定中间数据集 <code>WORK.SDTM_EPOCH1</code>；若 WORK 中已有同名数据集，会被覆盖并在宏运行结束时删除，原数据丢失。</li>
+<li>规避：调用前确认 WORK 中不存在 <code>SDTM_EPOCH1</code>，输入数据集避免使用上述临时变量名。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/cdisc/sdtm_epoch.sas" download>sdtm_epoch.sas</a></p>
+<p class="download"><a href="../assets/macropackages/sdtm_epoch.zip" download>sdtm_epoch and its dependencies.zip</a></p>
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr>
+<th>日期</th>
+<th>修订人</th>
+<th>修订内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-11-09</td>
+<td>Luo Hao</td>
+<td>原始版本。</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

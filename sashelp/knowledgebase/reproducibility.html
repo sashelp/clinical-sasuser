@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>程序文件可复现 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html" class="current">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / 临床提交</p>
+<h2>药物临床试验资料递交是否要求程序文件可复现？</h2>
+<p class="subtitle">是。CDE 要的是“能直接重现出和申办方一致的统计结果”，FDA 靠“可追溯 + 交源代码”达到同样目的。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>不管是交给 CDE 还是 FDA，要求其实指向同一件事：<b>你交的程序得能跑通，监管的人能拿它把分析数据集和关键图表重新算出来</b>。两家说法不一样——CDE 直接写“可追溯、能重现”，FDA 写“traceability + 交源代码”，但落点完全一致。</p>
+</div>
+
+<h3 id="cde">CDE 怎么说的</h3>
+<p>《药物临床试验数据递交指导原则（试行）》（2020 年 7 月）里，有两句话最要紧。</p>
+
+<h4>第一句，讲可追溯性</h4>
+<div class="callout">
+<p>“申办方在递交数据库时应确保监管部门能够<b>利用原始数据库衍生出与申办方一致的分析数据库，利用分析数据库能够直接重现出与申办方一致的统计分析结果</b>。”</p>
+</div>
+<p>这句话说白了，就是把“能复现”定成了递交的底线。同一节还列了审评人员要能做的四件事：看懂分析数据集怎么建的；知道每个衍生变量用了哪些原始记录、什么算法；看懂统计结果怎么算的；能把原始数据一路对到报表。</p>
+
+<h4>第二句，讲程序代码</h4>
+<div class="callout">
+<p>“申报资料中递交的程序代码应当<b>易懂、可读性强，建议提供充分的注释、避免外部（宏）程序调用</b>。”</p>
+</div>
+<p>程序代码要覆盖两块：分析数据集的衍生过程、疗效指标的分析过程。这正好对应“复现分析数据集 + 核心疗效图表”这两件事。</p>
+<p><b>小结：</b>CDE 没说“必须一键重跑”这么死板的话，但“直接重现出与申办方一致的统计分析结果”这句，已经把“能跑、能复现”变成硬要求了。</p>
+
+<h3 id="fda">FDA 怎么说的</h3>
+<p>《Study Data Technical Conformance Guide》里也有两处对应。</p>
+
+<h4>第一处，讲 traceability</h4>
+<div class="callout">
+<p>“Traceability permits an understanding of the relationships between the analysis results (tables, listings and figures in the study report), analysis datasets, tabulation datasets, and source data.”</p>
+</div>
+<p>意思是审评员要能搞清楚：分析数据集怎么建的；衍生变量用了哪些观测记录和算法；某个置信区间或 p 值是怎么算出来的；报告里每张表、每个数字都能对回底层数据。</p>
+
+<h4>第二处，讲程序文件</h4>
+<div class="callout">
+<p>“Sponsors should provide the <b>source code</b> used to create all ADaM datasets, tables, and figures associated with <b>primary and secondary efficacy analyses</b>.”</p>
+</div>
+<p>同时要求：源代码用单字节 ASCII 文本，别交 <code>.cmd</code>、<code>.com</code>、<code>.exe</code> 这类可执行文件；用的软件版本和操作系统要写进 ADRG。</p>
+<p><b>小结：</b>FDA 没直说“必须能复现”，但它靠三件事把同一目的落实了：强制交源代码；要求结果能对回底层数据、算法能看懂；在“遗留数据转换的可追溯性问题”清单里，反复把“复现不了分析数据集”列为典型问题。等于变相告诉你——数据要是复现不出来，就是问题。</p>
+
+<h3 id="compare">两家口径放一起看</h3>
+<table class="kb-table">
+<col width="14%" />
+<col width="43%" />
+<col width="43%" />
+<thead>
+<tr><th>维度</th><th>CDE</th><th>FDA</th></tr>
+</thead>
+<tbody>
+<tr><td>措辞</td><td>明确写“直接重现出……一致的结果”</td><td>用 traceability + 交源代码，没直说“复现”</td></tr>
+<tr><td>代码范围</td><td>衍生变量过程 + 疗效指标分析过程</td><td>主/次要疗效分析的 ADaM + 表 + 图</td></tr>
+<tr><td>程序要求</td><td>易懂、注释充分、避免外部宏调用</td><td>ASCII 文本，禁 .exe/.com/.cmd</td></tr>
+<tr><td>软件环境</td><td>数据审阅说明里写</td><td>ADRG 里写软件版本 + 操作系统</td></tr>
+<tr><td>语言</td><td>中文为主（标签、aCRF、审阅说明等要中文）</td><td>英文</td></tr>
+</tbody>
+</table>
+
+<h3 id="flow">从头到尾的链路</h3>
+<div class="flow">
+<p class="flow-title">数据一路从原始走到统计结果，每一步都得能对上</p>
+<svg viewBox="0 0 680 190" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <rect x="10" y="24" width="140" height="44" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="80" y="42" text-anchor="middle" fill="#e6e6e6" font-size="13">原始数据</text>
+  <text x="80" y="58" text-anchor="middle" fill="#8a8a8a" font-size="11">CRF / eDT</text>
+
+  <line x1="150" y1="46" x2="188" y2="46" stroke="#8a8a8a" marker-end="url(#arr1)"/>
+  <rect x="190" y="24" width="150" height="44" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="265" y="42" text-anchor="middle" fill="#e6e6e6" font-size="13">SDTM 原始数据库</text>
+  <text x="265" y="58" text-anchor="middle" fill="#8a8a8a" font-size="11">Tabulation</text>
+
+  <line x1="340" y1="46" x2="378" y2="46" stroke="#8a8a8a" marker-end="url(#arr1)"/>
+  <rect x="380" y="24" width="150" height="44" rx="4" fill="#0070C0" stroke="#005a9e"/>
+  <text x="455" y="42" text-anchor="middle" fill="#ffffff" font-size="13">ADaM 分析数据库</text>
+  <text x="455" y="58" text-anchor="middle" fill="#d8ecff" font-size="11">Analysis</text>
+
+  <line x1="530" y1="46" x2="568" y2="46" stroke="#8a8a8a" marker-end="url(#arr1)"/>
+  <rect x="570" y="24" width="100" height="44" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="620" y="42" text-anchor="middle" fill="#ffffff" font-size="13">图表 / 结果</text>
+  <text x="620" y="58" text-anchor="middle" fill="#e8f5e0" font-size="11">TLFs</text>
+
+  <rect x="10" y="108" width="660" height="40" rx="4" fill="#1a1a1a" stroke="#333333"/>
+  <text x="340" y="125" text-anchor="middle" fill="#00B0F0" font-size="13">可追溯性</text>
+  <text x="340" y="141" text-anchor="middle" fill="#8a8a8a" font-size="11">每一步都能对回上游数据，算法能看懂、能复现</text>
+
+  <line x1="80" y1="68" x2="80" y2="108" stroke="#555555"/>
+  <line x1="265" y1="68" x2="265" y2="108" stroke="#555555"/>
+  <line x1="455" y1="68" x2="455" y2="108" stroke="#555555"/>
+  <line x1="620" y1="68" x2="620" y2="108" stroke="#555555"/>
+</svg>
+</div>
+
+<h3 id="practice">对你意味着什么</h3>
+<ul class="notes">
+<li><b>程序能跑通是前提。</b>CDE 那句“监管能衍生出一致的分析数据库、直接重现一致的结果”，前提就是你的程序在人家环境里跑得起来。所以代码要自包含、能执行：别调外部宏、路径别写死、环境依赖写清楚。</li>
+<li><b>核心图表必须能复现。</b>CDE 的“疗效指标分析结果的生成过程”、FDA 的“primary and secondary efficacy analyses 的表和图”，都指向主/次要疗效终点的表和图的代码必须交、必须能追溯。安全性的关键图，比如 K-M 曲线、主要终点森林图，也一样要能复现。</li>
+<li><b>做的时候记住这几条：</b>代码注释写足，每步逻辑和衍生规则讲清楚；别依赖外部宏、外部库、特定盘符；软件版本、操作系统、编码、程序调用顺序写进数据审阅说明或 ADRG；SDTM 到 ADaM 到输出图表的每一步都有对应代码、都能追溯；中文环境注意标签和编码统一。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li><a href="https://www.cde.org.cn/main/news/viewInfoCommon/f649995d3a9ade8dcd67f6a2ced36f0b" target="_blank" rel="noopener">《药物临床试验数据递交指导原则（试行）》</a>，国家药品监督管理局药品审评中心（CDE），2020 年 7 月。<span class="src">第四部分“试验数据的可追溯性”、第二部分“（六）程序代码”。</span></li>
+<li>FDA, <a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/study-data-technical-conformance-guide-technical-specifications-document" target="_blank" rel="noopener"><i>Study Data Technical Conformance Guide</i></a>。<span class="src">4.1.2.10 Software Programs、8.1.3 Study Data Traceability。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

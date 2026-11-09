@@ -1,0 +1,1518 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.09 秒
+      
+1          /*===============================================================================
+2           * sdtm_lobxfl_test.sas - Positive (functional) acceptance tests
+3           *===============================================================================
+4           * Macro under test : %sdtm_lobxfl
+5           * File under test   : dev/cdisc/sdtm_lobxfl.sas
+6           * Dependencies      : %var_exist, %var_coexist, %var_attr
+7           * Coverage          : baseline flag selection per subject and BY group, latest
+8           *                     eligible record, DTC on or before RFDTC, character
+9           *                     result exclusions, numeric missing exclusions, partial
+10          *                     ISO8601 dates, date-time values, missing DTC, subject
+11          *                     absent from DM, existing BLFL reset, default OUT,
+12          *                     zero-observation input, BY= omitted, multiple BY=
+13          *                     variables, RFDTC single/two/three-part forms,
+14          *                     SUBJECT= custom key, output attributes and cleanup
+15          * Run               : qc/run_all.ps1 -Macro sdtm_lobxfl
+16          *============================================================================*/
+17         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+18         %let _qcboot_=%sysfunc(getoption(sysin));
+19         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+20         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+21         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+22         %include "&_qcboot_.\_framework\qc_env.sas";
+87         %let _qcboot_=;
+88         /*----------------------------------------------------------------------------*/
+89         
+90         %include "&_QCFW_.";
+383        %include "&_QCDEV_VAR_.\var_exist.sas";
+434        %include "&_QCDEV_VAR_.\var_coexist.sas";
+500        %include "&_QCDEV_VAR_.\var_attr.sas";
+556        %include "&_QCDEV_CDISC_.\sdtm_lobxfl.sas";
+703        
+704        %qc_begin(prog=sdtm_lobxfl_test, macro=sdtm_lobxfl);
+#####QC_BEGIN prog=sdtm_lobxfl_test macro=sdtm_lobxfl
+705        
+706        /*----------------------------------------------------------------------------
+707         * Test data
+708         *   DM      : reference date of first study drug administration
+709         *   LBMAIN  : LB extract covering every documented selection rule
+710         *             S01 normal records before and after RFDTC
+711         *             S02 character result exclusions NA ND UK and blank
+712         *             S03 partial ISO date and date-time value
+713         *             S04 missing DTC and a tie on the latest DTC
+714         *             S05 all records after RFDTC
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+715         *             S06 subject absent from DM
+716         *--------------------------------------------------------------------------*/
+717        data dm;
+718          length USUBJID $10 RFXSTDTC $20;
+719          USUBJID='S01'; RFXSTDTC='2024-01-10';       output;
+720          USUBJID='S02'; RFXSTDTC='2024-01-10';       output;
+721          USUBJID='S03'; RFXSTDTC='2024-01-15';       output;
+722          USUBJID='S04'; RFXSTDTC='2024-01-10';       output;
+723          USUBJID='S05'; RFXSTDTC='2024-01-10';       output;
+724          USUBJID='S07'; RFXSTDTC='2024-01-15T08:00'; output;
+725        run;
+
+NOTE: 数据集 WORK.DM 有 6 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+726        
+727        data lbmain;
+728          length USUBJID $10 LBTESTCD $8 LBDTC $20 LBORRES $8 VISIT $10;
+729          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05';       LBORRES='10'; VISIT='V1'; output;
+730          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-08';       LBORRES='20'; VISIT='V2'; output;
+731          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-10';       LBORRES='25'; VISIT='V3'; output;
+732          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-12';       LBORRES='30'; VISIT='V4'; output;
+733          USUBJID='S01'; LBTESTCD='AST'; LBDTC='2024-01-08';       LBORRES='5';  VISIT='V2'; output;
+734          USUBJID='S02'; LBTESTCD='ALT'; LBDTC='2024-01-03';       LBORRES='NA'; VISIT='V1'; output;
+735          USUBJID='S02'; LBTESTCD='ALT'; LBDTC='2024-01-04';       LBORRES='';   VISIT='V1'; output;
+736          USUBJID='S02'; LBTESTCD='ALT'; LBDTC='2024-01-05';       LBORRES='ND'; VISIT='V2'; output;
+737          USUBJID='S02'; LBTESTCD='ALT'; LBDTC='2024-01-06';       LBORRES='UK'; VISIT='V2'; output;
+738          USUBJID='S02'; LBTESTCD='ALT'; LBDTC='2024-01-07';       LBORRES='40'; VISIT='V3'; output;
+739          USUBJID='S02'; LBTESTCD='ALT'; LBDTC='2024-01-09';       LBORRES='NA'; VISIT='V3'; output;
+740          USUBJID='S03'; LBTESTCD='ALT'; LBDTC='2024-01';          LBORRES='50'; VISIT='V1'; output;
+741          USUBJID='S03'; LBTESTCD='ALT'; LBDTC='2024-01-20';       LBORRES='60'; VISIT='V2'; output;
+742          USUBJID='S03'; LBTESTCD='AST'; LBDTC='2024-01-15T09:30'; LBORRES='7';  VISIT='V1'; output;
+743          USUBJID='S04'; LBTESTCD='ALT'; LBDTC='';                 LBORRES='80'; VISIT='V1'; output;
+744          USUBJID='S04'; LBTESTCD='ALT'; LBDTC='2024-01-02';       LBORRES='90'; VISIT='V1'; output;
+745          USUBJID='S04'; LBTESTCD='AST'; LBDTC='2024-01-02';       LBORRES='1';  VISIT='V1'; output;
+746          USUBJID='S04'; LBTESTCD='AST'; LBDTC='2024-01-02';       LBORRES='2';  VISIT='V1'; output;
+747          USUBJID='S05'; LBTESTCD='ALT'; LBDTC='2024-02-01';       LBORRES='11'; VISIT='V1'; output;
+748          USUBJID='S06'; LBTESTCD='ALT'; LBDTC='2024-01-01';       LBORRES='12'; VISIT='V1'; output;
+749        run;
+
+NOTE: 数据集 WORK.LBMAIN 有 20 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+750        
+751        /*----------------------------------------------------------------------------
+752         * CASE 1 : basic flagging one baseline per subject and test
+753         *--------------------------------------------------------------------------*/
+754        %qc_case(desc=1 basic flagging and output structure);
+#####QC_CASE n=1 desc=1 basic flagging and output structure
+755        %sdtm_lobxfl(data=work.lbmain, out=work.lbm_out, var=LBORRES, dtc=LBDTC,
+756                      by=LBTESTCD, blfl=LOBXFL, subject=USUBJID,
+757                      rfdtc=work.dm.rfxstdtc);
+
+NOTE: 从数据集 WORK.DM. 读取了 6 个观测
+NOTE: 从数据集 WORK.LBMAIN. 读取了 20 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 20 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 20 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 20 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 10 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 10 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 10 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 10 个观测
+NOTE: 数据集 WORK.LBM_OUT 有 20 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+758        %qc_expect_ds(ds=work.lbm_out, desc=C1 output dataset created);
+#####QC_PASS n=1 desc=C1 output dataset created
+759        %qc_expect_nobs(ds=work.lbm_out, expect=20, desc=C1 row count equals input);
+#####QC_PASS n=1 desc=C1 row count equals input
+760        %qc_expect_var(ds=work.lbm_out, var=LOBXFL, type=C, desc=C1 BLFL is character);
+#####QC_PASS n=1 desc=C1 BLFL is character
+761        %qc_expect_len(ds=work.lbm_out, var=LOBXFL, expect=1, desc=C1 BLFL length is one);
+#####QC_PASS n=1 desc=C1 BLFL length is one
+762        %qc_expect_var(ds=work.lbm_out, var=_RFdtc_, type=C, desc=C1 working RFDTC kept);
+#####QC_PASS n=1 desc=C1 working RFDTC kept
+763        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S01' and lbtestcd='ALT' and lbdtc='2024-01-10',
+763      ! expect=Y, desc=C1 latest eligible record flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=C1 latest eligible record flagged
+764        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S01' and lbtestcd='ALT' and lbdtc='2024-01-12',
+764      ! expect=, desc=C1 record after RFDTC not flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=C1 record after RFDTC not flagged
+765        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S01' and lbtestcd='AST' and lbdtc='2024-01-08',
+765      ! expect=Y, desc=C1 second test flagged independently);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=C1 second test flagged independently
+766        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S02' and lbtestcd='ALT' and lbdtc='2024-01-07',
+766      ! expect=Y, desc=C1 second subject flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=C1 second subject flagged
+767        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S01' and lbtestcd='ALT' and lbdtc='2024-01-05',
+767      ! expect=, desc=C1 earlier eligible record not flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=C1 earlier eligible record not flagged
+768        proc sql noprint;
+769          select count(*) into :_ny trimmed from work.lbm_out where LOBXFL='Y';
+770        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+771        %qc_check_eq(actual=&_ny., expect=7, desc=C1 exactly one flag for each eligible group);
+#####QC_PASS n=1 desc=C1 exactly one flag for each eligible group
+772        
+773        /*----------------------------------------------------------------------------
+774         * CASE 2 : character result exclusions
+775         *--------------------------------------------------------------------------*/
+776        %qc_case(desc=2 character result exclusions);
+#####QC_CASE n=2 desc=2 character result exclusions
+777        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S02' and lbdtc='2024-01-03', expect=, desc=C2 NA
+777      ! excluded);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=2 desc=C2 NA excluded
+778        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S02' and lbdtc='2024-01-04', expect=, desc=C2
+778      ! blank excluded);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=2 desc=C2 blank excluded
+779        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S02' and lbdtc='2024-01-05', expect=, desc=C2 ND
+779      ! excluded);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=2 desc=C2 ND excluded
+780        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S02' and lbdtc='2024-01-06', expect=, desc=C2 UK
+780      ! excluded);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+
+#####QC_PASS n=2 desc=C2 UK excluded
+781        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S02' and lbdtc='2024-01-09', expect=, desc=C2
+781      ! excluded latest record does not take the flag);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+#####QC_PASS n=2 desc=C2 excluded latest record does not take the flag
+782        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S02' and lbdtc='2024-01-07', expect=Y, desc=C2
+782      ! earlier non-missing record flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=2 desc=C2 earlier non-missing record flagged
+783        
+784        /*----------------------------------------------------------------------------
+785         * CASE 3 : DTC on or before RFDTC and missing DTC
+786         *--------------------------------------------------------------------------*/
+787        %qc_case(desc=3 DTC boundary and missing DTC);
+#####QC_CASE n=3 desc=3 DTC boundary and missing DTC
+788        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S01' and lbtestcd='ALT' and lbdtc='2024-01-10',
+788      ! expect=Y, desc=C3 DTC equal to RFDTC is eligible);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=3 desc=C3 DTC equal to RFDTC is eligible
+789        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S04' and lbdtc='', expect=, desc=C3 missing DTC
+789      ! not eligible);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=3 desc=C3 missing DTC not eligible
+790        
+791        /*----------------------------------------------------------------------------
+792         * CASE 4 : subject not present in DM has no reference date
+793         *--------------------------------------------------------------------------*/
+794        %qc_case(desc=4 missing RFDTC for one subject);
+#####QC_CASE n=4 desc=4 missing RFDTC for one subject
+795        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S06', expect=, desc=C4 subject absent from DM not
+795      !  flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=4 desc=C4 subject absent from DM not flagged
+796        
+797        /*----------------------------------------------------------------------------
+798         * CASE 5 : partial ISO8601 date and date-time value
+799         *--------------------------------------------------------------------------*/
+800        %qc_case(desc=5 partial date and date-time DTC);
+#####QC_CASE n=5 desc=5 partial date and date-time DTC
+801        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S03' and lbtestcd='ALT' and lbdtc='2024-01',
+801      ! expect=Y, desc=C5 partial date eligible on common prefix);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+6                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+
+#####QC_PASS n=5 desc=C5 partial date eligible on common prefix
+802        %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S03' and lbtestcd='AST', expect=Y, desc=C5
+802      ! same-day date-time value eligible);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=5 desc=C5 same-day date-time value eligible
+803        
+804        /*----------------------------------------------------------------------------
+805         * CASE 6 : date-only DTC compared with a date-time RFDTC
+806         *--------------------------------------------------------------------------*/
+807        %qc_case(desc=6 date-only DTC against date-time RFDTC);
+#####QC_CASE n=6 desc=6 date-only DTC against date-time RFDTC
+808        data lb_dt;
+809          length USUBJID $10 LBTESTCD $8 LBDTC $20 LBORRES $8;
+810          USUBJID='S07'; LBTESTCD='ALT'; LBDTC='2024-01-15'; LBORRES='1'; output;
+811          USUBJID='S07'; LBTESTCD='ALT'; LBDTC='2024-01-16'; LBORRES='2'; output;
+812        run;
+
+NOTE: 数据集 WORK.LB_DT 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+813        %sdtm_lobxfl(data=work.lb_dt, out=work.lbdt_out, var=LBORRES, dtc=LBDTC,
+814                      by=LBTESTCD, blfl=LOBXFL, subject=USUBJID,
+815                      rfdtc=work.dm.rfxstdtc);
+
+NOTE: 从数据集 WORK.DM. 读取了 6 个观测
+NOTE: 从数据集 WORK.LB_DT. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 2 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 2 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 1 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 1 个观测
+NOTE: 数据集 WORK.LBDT_OUT 有 2 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+7                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+816        %qc_expect_colval(ds=work.lbdt_out, var=LOBXFL, where=lbdtc='2024-01-15', expect=Y, desc=C6 date-only on RFDTC
+816      ! date flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=6 desc=C6 date-only on RFDTC date flagged
+817        %qc_expect_colval(ds=work.lbdt_out, var=LOBXFL, where=lbdtc='2024-01-16', expect=, desc=C6 date-only after
+817      ! RFDTC date not flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=6 desc=C6 date-only after RFDTC date not flagged
+818        
+819        /*----------------------------------------------------------------------------
+820         * CASE 7 : numeric VAR missing and special missing values
+821         *--------------------------------------------------------------------------*/
+822        %qc_case(desc=7 numeric VAR missing values);
+#####QC_CASE n=7 desc=7 numeric VAR missing values
+823        data lb_num;
+824          length USUBJID $10 LBTESTCD $8 LBDTC $20;
+825          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-01'; LBSTRESN=.;   output;
+826          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-02'; LBSTRESN=.A;  output;
+827          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-03'; LBSTRESN=0;   output;
+828          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-04'; LBSTRESN=.Z;  output;
+829        run;
+
+NOTE: 数据集 WORK.LB_NUM 有 4 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+830        %sdtm_lobxfl(data=work.lb_num, out=work.lbn_out, var=LBSTRESN, dtc=LBDTC,
+831                      by=LBTESTCD, blfl=LOBXFL, subject=USUBJID,
+832                      rfdtc=work.dm.rfxstdtc);
+
+NOTE: 从数据集 WORK.DM. 读取了 6 个观测
+NOTE: 从数据集 WORK.LB_NUM. 读取了 4 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 4 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 4 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 4 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+8                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+      WHERE (LBSTRESN>.Z) and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 1 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 3 个观测
+      WHERE (LBSTRESN<=.Z) or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 1 个观测
+NOTE: 数据集 WORK.LBN_OUT 有 4 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+833        %qc_expect_colval(ds=work.lbn_out, var=LOBXFL, where=lbdtc='2024-01-01', expect=, desc=C7 numeric missing
+833      ! excluded);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=7 desc=C7 numeric missing excluded
+834        %qc_expect_colval(ds=work.lbn_out, var=LOBXFL, where=lbdtc='2024-01-02', expect=, desc=C7 special missing A
+834      ! excluded);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=7 desc=C7 special missing A excluded
+835        %qc_expect_colval(ds=work.lbn_out, var=LOBXFL, where=lbdtc='2024-01-04', expect=, desc=C7 special missing Z
+835      ! excluded);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+#####QC_PASS n=7 desc=C7 special missing Z excluded
+836        %qc_expect_colval(ds=work.lbn_out, var=LOBXFL, where=lbdtc='2024-01-03', expect=Y, desc=C7 zero is a valid
+836      ! result);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=7 desc=C7 zero is a valid result
+837        
+838        /*----------------------------------------------------------------------------
+839         * CASE 8 : an existing BLFL variable is cleared before flagging
+840         *--------------------------------------------------------------------------*/
+841        %qc_case(desc=8 existing BLFL reset);
+#####QC_CASE n=8 desc=8 existing BLFL reset
+842        data lb_exist;
+843          length USUBJID $10 LBTESTCD $8 LBDTC $20 LBORRES $8 LOBXFL $1;
+9                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+844          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBORRES='1'; LOBXFL='Y'; output;
+845          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-09'; LBORRES='2'; LOBXFL='Y'; output;
+846        run;
+
+NOTE: 数据集 WORK.LB_EXIST 有 2 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+847        %sdtm_lobxfl(data=work.lb_exist, out=work.lbe_out, var=LBORRES, dtc=LBDTC,
+848                      by=LBTESTCD, blfl=LOBXFL, subject=USUBJID,
+849                      rfdtc=work.dm.rfxstdtc);
+
+NOTE: 从数据集 WORK.DM. 读取了 6 个观测
+NOTE: 从数据集 WORK.LB_EXIST. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 2 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 2 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 2 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 2 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 0 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 2 个观测
+NOTE: 数据集 WORK.LBE_OUT 有 2 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+850        %qc_expect_colval(ds=work.lbe_out, var=LOBXFL, where=lbdtc='2024-01-05', expect=, desc=C8 old flag cleared);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=8 desc=C8 old flag cleared
+851        %qc_expect_colval(ds=work.lbe_out, var=LOBXFL, where=lbdtc='2024-01-09', expect=Y, desc=C8 new latest record
+851      ! flagged);
+10                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=8 desc=C8 new latest record flagged
+852        
+853        /*----------------------------------------------------------------------------
+854         * CASE 9 : default OUT equals DATA and writes in place
+855         *--------------------------------------------------------------------------*/
+856        %qc_case(desc=9 default OUT in place);
+#####QC_CASE n=9 desc=9 default OUT in place
+857        data lb_ip; set work.lbmain; run;
+
+NOTE: 从数据集 WORK.LBMAIN. 读取了 20 个观测
+NOTE: 数据集 WORK.LB_IP 有 20 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+858        %sdtm_lobxfl(data=work.lb_ip, var=LBORRES, dtc=LBDTC, by=LBTESTCD,
+859                      blfl=LOBXFL, subject=USUBJID, rfdtc=work.dm.rfxstdtc);
+
+NOTE: 从数据集 WORK.DM. 读取了 6 个观测
+NOTE: 从数据集 WORK.LB_IP. 读取了 20 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 20 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 20 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 20 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 10 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 10 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 10 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 10 个观测
+NOTE: 数据集 WORK.LB_IP 有 20 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+11                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+
+860        %qc_expect_nobs(ds=work.lb_ip, expect=20, desc=C9 in place row count unchanged);
+#####QC_PASS n=9 desc=C9 in place row count unchanged
+861        %qc_expect_var(ds=work.lb_ip, var=LOBXFL, type=C, desc=C9 flag added in place);
+#####QC_PASS n=9 desc=C9 flag added in place
+862        %qc_expect_colval(ds=work.lb_ip, var=LOBXFL, where=usubjid='S01' and lbtestcd='ALT' and lbdtc='2024-01-10',
+862      ! expect=Y, desc=C9 in place flag correct);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=9 desc=C9 in place flag correct
+863        
+864        /*----------------------------------------------------------------------------
+865         * CASE 10 : zero-observation input
+866         *--------------------------------------------------------------------------*/
+867        %qc_case(desc=10 zero observation input);
+#####QC_CASE n=10 desc=10 zero observation input
+868        data lb_zero; set work.lbmain(obs=0); run;
+
+NOTE: 从数据集 WORK.LBMAIN. 读取了 0 个观测
+NOTE: 数据集 WORK.LB_ZERO 有 0 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+869        %sdtm_lobxfl(data=work.lb_zero, out=work.lbz_out, var=LBORRES, dtc=LBDTC,
+870                      by=LBTESTCD, blfl=LOBXFL, subject=USUBJID,
+871                      rfdtc=work.dm.rfxstdtc);
+
+NOTE: 从数据集 WORK.LB_ZERO. 读取了 0 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 0 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 输入数据集为空。
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 0 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 0 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 0 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 0 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 0 个观测
+NOTE: 数据集 WORK.LBZ_OUT 有 0 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+12                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+872        %qc_expect_ds(ds=work.lbz_out, desc=C10 output created for empty input);
+#####QC_PASS n=10 desc=C10 output created for empty input
+873        %qc_expect_nobs(ds=work.lbz_out, expect=0, desc=C10 output has zero rows);
+#####QC_PASS n=10 desc=C10 output has zero rows
+874        %qc_expect_var(ds=work.lbz_out, var=LOBXFL, type=C, desc=C10 flag variable kept);
+#####QC_PASS n=10 desc=C10 flag variable kept
+875        
+876        /*----------------------------------------------------------------------------
+877         * CASE 11 : BY= omitted derives one flag per subject
+878         *--------------------------------------------------------------------------*/
+879        %qc_case(desc=11 BY omitted one flag per subject);
+#####QC_CASE n=11 desc=11 BY omitted one flag per subject
+880        data lb_noby;
+881          length USUBJID $10 LBTESTCD $8 LBDTC $20 LBORRES $8;
+882          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBORRES='1'; output;
+883          USUBJID='S01'; LBTESTCD='AST'; LBDTC='2024-01-08'; LBORRES='2'; output;
+884          USUBJID='S01'; LBTESTCD='BIL'; LBDTC='2024-01-06'; LBORRES='3'; output;
+885        run;
+
+NOTE: 数据集 WORK.LB_NOBY 有 3 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+886        %sdtm_lobxfl(data=work.lb_noby, out=work.lbnb_out, var=LBORRES, dtc=LBDTC,
+887                      by=, blfl=LOBXFL, subject=USUBJID, rfdtc=work.dm.rfxstdtc);
+
+NOTE: 从数据集 WORK.DM. 读取了 6 个观测
+NOTE: 从数据集 WORK.LB_NOBY. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 3 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 3 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 3 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 3 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 0 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 3 个观测
+NOTE: 数据集 WORK.LBNB_OUT 有 3 个观测和 6 个变量。
+13                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+888        %qc_expect_nobs(ds=work.lbnb_out, expect=3, desc=C11 row count equals input);
+#####QC_PASS n=11 desc=C11 row count equals input
+889        proc sql noprint;
+890          select count(*) into :_ny_nb trimmed from work.lbnb_out where LOBXFL='Y';
+891        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+892        %qc_check_eq(actual=&_ny_nb., expect=1, desc=C11 only one record flagged per subject);
+#####QC_PASS n=11 desc=C11 only one record flagged per subject
+893        %qc_expect_colval(ds=work.lbnb_out, var=LOBXFL, where=lbtestcd='AST', expect=Y, desc=C11 latest record across
+893      ! tests flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=11 desc=C11 latest record across tests flagged
+894        
+895        /*----------------------------------------------------------------------------
+896         * CASE 12 : multiple BY variables
+897         *--------------------------------------------------------------------------*/
+898        %qc_case(desc=12 multiple BY variables);
+#####QC_CASE n=12 desc=12 multiple BY variables
+899        data lb_mby;
+900          length USUBJID $10 LBTESTCD $8 VISIT $10 LBDTC $20 LBORRES $8;
+901          USUBJID='S01'; LBTESTCD='ALT'; VISIT='V1'; LBDTC='2024-01-02'; LBORRES='1'; output;
+902          USUBJID='S01'; LBTESTCD='ALT'; VISIT='V1'; LBDTC='2024-01-05'; LBORRES='2'; output;
+903          USUBJID='S01'; LBTESTCD='ALT'; VISIT='V2'; LBDTC='2024-01-08'; LBORRES='3'; output;
+904        run;
+
+NOTE: 数据集 WORK.LB_MBY 有 3 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+905        %sdtm_lobxfl(data=work.lb_mby, out=work.lbmby_out, var=LBORRES, dtc=LBDTC,
+906                      by=LBTESTCD VISIT, blfl=LOBXFL, subject=USUBJID,
+907                      rfdtc=work.dm.rfxstdtc);
+
+NOTE: 从数据集 WORK.DM. 读取了 6 个观测
+NOTE: 从数据集 WORK.LB_MBY. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 3 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 3 个观测
+14                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 3 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 3 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 3 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 0 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 3 个观测
+NOTE: 数据集 WORK.LBMBY_OUT 有 3 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+908        %qc_expect_colval(ds=work.lbmby_out, var=LOBXFL, where=visit='V1' and lbdtc='2024-01-05', expect=Y, desc=C12
+908      ! first BY combination flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+#####QC_PASS n=12 desc=C12 first BY combination flagged
+909        %qc_expect_colval(ds=work.lbmby_out, var=LOBXFL, where=visit='V1' and lbdtc='2024-01-02', expect=, desc=C12
+909      ! earlier record of first combination not flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=12 desc=C12 earlier record of first combination not flagged
+910        %qc_expect_colval(ds=work.lbmby_out, var=LOBXFL, where=visit='V2', expect=Y, desc=C12 second BY combination
+910      ! flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=12 desc=C12 second BY combination flagged
+911        
+912        /*----------------------------------------------------------------------------
+913         * CASE 13 : RFDTC one-part form is a variable of the input dataset
+914         *--------------------------------------------------------------------------*/
+915        %qc_case(desc=13 RFDTC variable of the input dataset);
+#####QC_CASE n=13 desc=13 RFDTC variable of the input dataset
+916        data lb_1p;
+917          length USUBJID $10 LBTESTCD $8 LBDTC $20 LBORRES $8 REFDTC $20;
+918          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBORRES='1'; REFDTC='2024-01-06'; output;
+15                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+919          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-09'; LBORRES='2'; REFDTC='2024-01-06'; output;
+920        run;
+
+NOTE: 数据集 WORK.LB_1P 有 2 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+921        %sdtm_lobxfl(data=work.lb_1p, out=work.lb1p_out, var=LBORRES, dtc=LBDTC,
+922                      by=LBTESTCD, blfl=LOBXFL, subject=USUBJID, rfdtc=REFDTC);
+
+NOTE: 从数据集 WORK.LB_1P. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 2 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 2 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 1 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 1 个观测
+NOTE: 数据集 WORK.LB1P_OUT 有 2 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+923        %qc_expect_colval(ds=work.lb1p_out, var=LOBXFL, where=lbdtc='2024-01-05', expect=Y, desc=C13 input variable
+923      ! reference flags the eligible record);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=13 desc=C13 input variable reference flags the eligible record
+924        %qc_expect_colval(ds=work.lb1p_out, var=LOBXFL, where=lbdtc='2024-01-09', expect=, desc=C13 input variable
+924      ! reference excludes later record);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+16                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=13 desc=C13 input variable reference excludes later record
+925        
+926        /*----------------------------------------------------------------------------
+927         * CASE 14 : RFDTC two-part form uses a WORK dataset
+928         *--------------------------------------------------------------------------*/
+929        %qc_case(desc=14 RFDTC WORK dataset form);
+#####QC_CASE n=14 desc=14 RFDTC WORK dataset form
+930        data dm2;
+931          length USUBJID $10 RFXSTDTC $20;
+932          USUBJID='S08'; RFXSTDTC='2024-01-10'; output;
+933        run;
+
+NOTE: 数据集 WORK.DM2 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+934        data lb_2p;
+935          length USUBJID $10 LBTESTCD $8 LBDTC $20 LBORRES $8;
+936          USUBJID='S08'; LBTESTCD='ALT'; LBDTC='2024-01-09'; LBORRES='1'; output;
+937          USUBJID='S08'; LBTESTCD='ALT'; LBDTC='2024-01-12'; LBORRES='2'; output;
+938        run;
+
+NOTE: 数据集 WORK.LB_2P 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+939        %sdtm_lobxfl(data=work.lb_2p, out=work.lb2p_out, var=LBORRES, dtc=LBDTC,
+940                      by=LBTESTCD, blfl=LOBXFL, subject=USUBJID, rfdtc=dm2.rfxstdtc);
+
+NOTE: 从数据集 WORK.DM2. 读取了 1 个观测
+NOTE: 从数据集 WORK.LB_2P. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 2 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 2 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 1 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 1 个观测
+NOTE: 数据集 WORK.LB2P_OUT 有 2 个观测和 6 个变量。
+17                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+941        %qc_expect_colval(ds=work.lb2p_out, var=LOBXFL, where=lbdtc='2024-01-09', expect=Y, desc=C14 two-part RFDTC
+941      ! accepts WORK dataset);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=14 desc=C14 two-part RFDTC accepts WORK dataset
+942        %qc_expect_colval(ds=work.lb2p_out, var=LOBXFL, where=lbdtc='2024-01-12', expect=, desc=C14 two-part RFDTC
+942      ! excludes later record);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=14 desc=C14 two-part RFDTC excludes later record
+943        
+944        /*----------------------------------------------------------------------------
+945         * CASE 15 : RFDTC three-part form uses a libref
+946         *--------------------------------------------------------------------------*/
+947        %qc_case(desc=15 RFDTC libref dataset form);
+#####QC_CASE n=15 desc=15 RFDTC libref dataset form
+948        libname qclib "%sysfunc(pathname(work))";
+NOTE: 逻辑库引用名 QCLIB 引用了与 WORK 相同的物理逻辑库。
+NOTE: 已成功分配逻辑库引用名“QCLIB”，如下所示: 
+       引擎:        V9 
+       物理名: .\temp\SAS Temporary Files\_TD5892_HJG251215144921_
+949        data qclib.dm3;
+950          length USUBJID $10 RFXSTDTC $20;
+951          USUBJID='S01'; RFXSTDTC='2024-01-10'; output;
+952        run;
+
+NOTE: 数据集 QCLIB.DM3 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+953        data lb_3p;
+954          length USUBJID $10 LBTESTCD $8 LBDTC $20 LBORRES $8;
+955          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-09'; LBORRES='1'; output;
+956          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-12'; LBORRES='2'; output;
+957        run;
+
+NOTE: 数据集 WORK.LB_3P 有 2 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+958        %sdtm_lobxfl(data=work.lb_3p, out=work.lb3p_out, var=LBORRES, dtc=LBDTC,
+959                      by=LBTESTCD, blfl=LOBXFL, subject=USUBJID,
+960                      rfdtc=qclib.dm3.rfxstdtc);
+18                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+
+NOTE: 从数据集 QCLIB.DM3. 读取了 1 个观测
+NOTE: 从数据集 WORK.LB_3P. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 2 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 2 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 1 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 1 个观测
+NOTE: 数据集 WORK.LB3P_OUT 有 2 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+961        %qc_expect_colval(ds=work.lb3p_out, var=LOBXFL, where=lbdtc='2024-01-09', expect=Y, desc=C15 three-part RFDTC
+961      ! accepted);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=15 desc=C15 three-part RFDTC accepted
+962        %qc_expect_colval(ds=work.lb3p_out, var=LOBXFL, where=lbdtc='2024-01-12', expect=, desc=C15 three-part RFDTC
+962      ! excludes later record);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=15 desc=C15 three-part RFDTC excludes later record
+963        libname qclib clear;
+NOTE: 已取消对逻辑库引用名 QCLIB 的分配。
+964        
+965        /*----------------------------------------------------------------------------
+966         * CASE 16 : SUBJECT= uses a custom key variable
+967         *--------------------------------------------------------------------------*/
+19                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+968        %qc_case(desc=16 custom SUBJECT variable);
+#####QC_CASE n=16 desc=16 custom SUBJECT variable
+969        data dm_s;
+970          length SUBJID $6 RFXSTDTC $20;
+971          SUBJID='001'; RFXSTDTC='2024-01-10'; output;
+972        run;
+
+NOTE: 数据集 WORK.DM_S 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+973        data lb_s;
+974          length SUBJID $6 LBTESTCD $8 LBDTC $20 LBORRES $8;
+975          SUBJID='001'; LBTESTCD='ALT'; LBDTC='2024-01-09'; LBORRES='1'; output;
+976        run;
+
+NOTE: 数据集 WORK.LB_S 有 1 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+977        %sdtm_lobxfl(data=work.lb_s, out=work.lbs_out, var=LBORRES, dtc=LBDTC,
+978                      by=LBTESTCD, blfl=LOBXFL, subject=SUBJID, rfdtc=dm_s.rfxstdtc);
+
+NOTE: 从数据集 WORK.DM_S. 读取了 1 个观测
+NOTE: 从数据集 WORK.LB_S. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 1 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 1 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 1 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 0 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 1 个观测
+NOTE: 数据集 WORK.LBS_OUT 有 1 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+20                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+979        %qc_expect_nobs(ds=work.lbs_out, expect=1, desc=C16 custom key row count);
+#####QC_PASS n=16 desc=C16 custom key row count
+980        %qc_expect_colval(ds=work.lbs_out, var=LOBXFL, where=subjid='001', expect=Y, desc=C16 custom key subject
+980      ! matched and flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=16 desc=C16 custom key subject matched and flagged
+981        
+982        /*----------------------------------------------------------------------------
+983         * CASE 17 : variable formats and labels survive the copy
+984         *--------------------------------------------------------------------------*/
+985        %qc_case(desc=17 variable attributes preserved);
+#####QC_CASE n=17 desc=17 variable attributes preserved
+986        data lb_attr;
+987          length USUBJID $10 LBTESTCD $8 LBDTC $20 LBORRES $8;
+988          label LBORRES='Result or Test';
+989          format LBDTC $20.;
+990          USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBORRES='1'; output;
+991        run;
+
+NOTE: 数据集 WORK.LB_ATTR 有 1 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+992        %sdtm_lobxfl(data=work.lb_attr, out=work.lba_out, var=LBORRES, dtc=LBDTC,
+993                      by=LBTESTCD, blfl=LOBXFL, subject=USUBJID,
+994                      rfdtc=work.dm.rfxstdtc);
+
+NOTE: 从数据集 WORK.DM. 读取了 6 个观测
+NOTE: 从数据集 WORK.LB_ATTR. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 1 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 1 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 1 个观测
+      WHERE LBORRES not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 1 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 0 个观测
+      WHERE LBORRES in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 1 个观测
+21                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: 数据集 WORK.LBA_OUT 有 1 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+995        %qc_expect_fmt(ds=work.lba_out, var=LBDTC, expect=$20., desc=C17 LBDTC format preserved);
+#####QC_PASS n=17 desc=C17 LBDTC format preserved
+996        %qc_expect_len(ds=work.lba_out, var=LBDTC, expect=20, desc=C17 LBDTC length preserved);
+#####QC_PASS n=17 desc=C17 LBDTC length preserved
+997        proc sql noprint;
+998          select label into :_lbl trimmed from dictionary.columns
+999            where libname='WORK' and memname='LBA_OUT' and upcase(name)='LBORRES';
+1000       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1001       %qc_check_eq(actual=&_lbl., expect=Result or Test, desc=C17 LBORRES label preserved);
+#####QC_PASS n=17 desc=C17 LBORRES label preserved
+1002       
+1003       /*----------------------------------------------------------------------------
+1004        * CASE 18 : tied latest DTC flags the last record in sort order
+1005        *--------------------------------------------------------------------------*/
+1006       %qc_case(desc=18 tie on the latest DTC);
+#####QC_CASE n=18 desc=18 tie on the latest DTC
+1007       %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S04' and lbtestcd='AST' and lborres='2',
+1007     ! expect=Y, desc=C18 last tied record flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=18 desc=C18 last tied record flagged
+1008       %qc_expect_colval(ds=work.lbm_out, var=LOBXFL, where=usubjid='S04' and lbtestcd='AST' and lborres='1', expect=,
+1008     !  desc=C18 first tied record not flagged);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=18 desc=C18 first tied record not flagged
+1009       
+1010       /*----------------------------------------------------------------------------
+1011        * CASE 19 : DOMAIN defaults derive VAR DTC BY and BLFL names
+1012        *--------------------------------------------------------------------------*/
+1013       %qc_case(desc=19 DOMAIN defaults);
+#####QC_CASE n=19 desc=19 DOMAIN defaults
+1014       data lb_dom;
+1015         length USUBJID $10 LBTESTCD $8 LBDTC $20 LBORRES $8;
+1016         USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-05'; LBORRES='1'; output;
+1017         USUBJID='S01'; LBTESTCD='ALT'; LBDTC='2024-01-09'; LBORRES='2'; output;
+1018         USUBJID='S01'; LBTESTCD='AST'; LBDTC='2024-01-08'; LBORRES='3'; output;
+1019       run;
+
+NOTE: 数据集 WORK.LB_DOM 有 3 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+22                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1020       %sdtm_lobxfl(data=work.lb_dom, domain=LB, rfdtc=work.dm.rfxstdtc);
+
+NOTE: 从数据集 WORK.DM. 读取了 6 个观测
+NOTE: 从数据集 WORK.LB_DOM. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 3 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_LOBXFL1 有 3 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 3 个观测
+      WHERE LBorres not in (' ', 'NA', 'ND', 'UK') and (' '<TRIM(_dtc_)) and (TRIM(_dtc_)<=:TRIM(_rfdtc_));
+NOTE: 数据集 WORK.SDTM_LOBXFL2 有 3 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_LOBXFL1. 读取了 0 个观测
+      WHERE LBorres in (' ', 'NA', 'ND', 'UK') or (' '>=TRIM(_dtc_)) or (not (TRIM(_dtc_)<=:TRIM(_rfdtc_)));
+NOTE: 从数据集 WORK.SDTM_LOBXFL2. 读取了 3 个观测
+NOTE: 数据集 WORK.LB_DOM 有 3 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_LOBXFL1 (memtype=DATA)。
+NOTE: 正在删除 WORK.SDTM_LOBXFL2 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1021       %qc_expect_var(ds=work.lb_dom, var=LBlobxfl, type=C, desc=C19 default BLFL name derived from DOMAIN);
+#####QC_PASS n=19 desc=C19 default BLFL name derived from DOMAIN
+1022       %qc_expect_colval(ds=work.lb_dom, var=LBlobxfl, where=lbtestcd='ALT' and lbdtc='2024-01-09', expect=Y, desc=C19
+1022     !  default BY and VAR derive correct flag);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=19 desc=C19 default BY and VAR derive correct flag
+1023       %qc_expect_colval(ds=work.lb_dom, var=LBlobxfl, where=lbtestcd='AST', expect=Y, desc=C19 default BY keeps test
+1023     ! level grouping);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+23                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+#####QC_PASS n=19 desc=C19 default BY keeps test level grouping
+1024       
+1025       /*----------------------------------------------------------------------------
+1026        * CASE 20 : WORK intermediates removed after the run
+1027        *--------------------------------------------------------------------------*/
+1028       %qc_case(desc=20 WORK cleanup);
+#####QC_CASE n=20 desc=20 WORK cleanup
+1029       %qc_check_eq(actual=%sysfunc(exist(work.sdtm_lobxfl1)), expect=0, desc=C20 LOBXFL1 removed);
+#####QC_PASS n=20 desc=C20 LOBXFL1 removed
+1030       %qc_check_eq(actual=%sysfunc(exist(work.sdtm_lobxfl2)), expect=0, desc=C20 LOBXFL2 removed);
+#####QC_PASS n=20 desc=C20 LOBXFL2 removed
+1031       
+1032       %qc_end;
+#####QC_RESULT prog=sdtm_lobxfl_test macro=sdtm_lobxfl STATUS=PASS ncase=20 npass=60 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.80 秒
+      CPU 时间          0.54 秒
+      

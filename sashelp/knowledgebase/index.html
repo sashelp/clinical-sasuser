@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>SASHELP - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<h2>知识库</h2>
+<hr/>
+<p class="summary">共 31 条知识，点开问题看完整解答、流程图和参考出处。</p>
+<!--#SEARCH#-->
+<div class="kb-search">
+<input type="search" id="kb-search-input" autocomplete="off" placeholder="搜索知识库：问题、结论或关键词…" aria-label="搜索知识库" />
+<span id="kb-search-status" class="kb-search-status" aria-live="polite"></span>
+</div>
+<!--/#SEARCH#-->
+
+<table class="kb-table">
+<col width="14%" />
+<col width="36%" />
+<col width="50%" />
+<thead>
+<tr>
+<th>类别</th>
+<th>问题</th>
+<th>短回答</th>
+</tr>
+</thead>
+<tbody>
+<!--#TABLE#-->
+<tr data-slug="orres_stat_empty"><td>SDTM</td><td><a href="orres_stat_empty.html">SDTM 中能允许 --ORRES 和 --STAT 同时为空的记录吗？</a></td><td>不允许。Findings 类记录要么有结果、要么有状态，两者互斥，至少得填一个。</td></tr>
+<tr data-slug="variable_labels"><td>SDTM</td><td><a href="variable_labels.html">SDTMIG 里的变量标签，必须和标准一字不差吗？</a></td><td>v3.3 起不再是符合性要求，标签含义对上就行；v3.2 及以前的提交仍然要求逐字一致，超过 40 字符的标签另有处理。</td></tr>
+<tr data-slug="add_variable"><td>SDTM</td><td><a href="add_variable.html">能不能往 SDTMIG 的数据集里加一个标准没列出的变量？</a></td><td>一般观察类可以加，但要先看这个类允许哪些 qualifier、以及 SDTM 里的 Usage Restrictions；“generally not used”只是不建议，不是禁止。</td></tr>
+<tr data-slug="qnam_domain_code"><td>SDTM</td><td><a href="qnam_domain_code.html">SUPPQUAL 里的 QNAM，要不要以域代码开头？</a></td><td>一般观察类的域建议带，DM 不必带，SV 建议带 SV 前缀；SDTMIG 原文写的是“不要求”，带上是为了以后省事。</td></tr>
+<tr data-slug="iso8601_interval"><td>SDTM</td><td><a href="iso8601_interval.html">日期格式写着“ISO 8601 datetime or interval”，这个 interval 什么时候才用？</a></td><td>很少用。事件的起止有 --STDTC 和 --ENDTC，时长有 duration；只有 --EVLINT 这种“评估区间”在结束时间不等于采集日期时才写成区间。</td></tr>
+<tr data-slug="physical_exam_performed"><td>SDTM</td><td><a href="physical_exam_performed.html">体检做没做，SDTM 里到底放 PE 还是 PR？</a></td><td>按 CDASH 的最佳实践，体检当成一次 procedure 放 PR 域，PROCCUR 记 Y/N，PRTRT 写 PHYSICAL EXAMINATION；走这条路就不建 PE 数据集。</td></tr>
+<tr data-slug="site_transfer"><td>SDTM</td><td><a href="site_transfer.html">受试者中途换中心，SDTM 里怎么记？</a></td><td>在 DS 域加一条 DSCAT=OTHER EVENT 的记录，DSTERM 写清楚、DSDECOD=TRANSFERRED、DSPARTY=SITE、DSPARTYID 填新中心号，日期放 DSSTDTC。</td></tr>
+<tr data-slug="prior_ongo_timing"><td>SDTM</td><td><a href="prior_ongo_timing.html">CDASH 里的 PRIOR / ONGO，怎么落到 SDTM 的相对时间变量上？</a></td><td>有日志的起止日期或访视，就用 --STTPT/--STRTPT 和 --ENTPT/--ENRTPT，不用 --STRF/--ENRF；没有日期才退回 --STRF/--ENRF。</td></tr>
+<tr data-slug="sdtm_and_cdash"><td>SDTM</td><td><a href="sdtm_and_cdash.html">既然最后都要交 SDTM，为什么还要先按 CDASH 采集？</a></td><td>两者目的不同：CDASH 为采集设计，问得清楚、能确认“确实没发生”；SDTM 为传输和分析设计，机器可读、按域组织。</td></tr>
+<tr data-slug="study_subject_term"><td>SDTM</td><td><a href="study_subject_term.html">都在说“参与者”了，CDISC 为什么还叫“study subject”？</a></td><td>因为 SDTM 不只用于人体试验，还有动物和真实世界数据；这些词属于元数据，改了代价大，展示层面换词就够了。</td></tr>
+
+<tr data-slug="sdtm_var_in_adam"><td>ADaM</td><td><a href="sdtm_var_in_adam.html">制作 ADaM 数据集时，哪些 SDTM 变量需要保留？</a></td><td>只要参与了 ADaM 衍生、或者能帮助追溯的 SDTM 变量，都应该保留；VSTESTCD 会映射成 PARAMCD（信息保留、列名换掉）。</td></tr>
+<tr data-slug="population_flags"><td>ADaM</td><td><a href="population_flags.html">population flags 应该放在哪，如何递交？</a></td><td>放 ADaM 的 ADSL（subject 级），别放 SDTM 或 SUPPDM；人工判定的结果做成随包递交的支持性源数据集（比如 ADPRE）。</td></tr>
+<tr data-slug="multiple_participations"><td>ADaM</td><td><a href="multiple_participations.html">同一个受试者参加了不止一次，ADaM 该怎么建数据集？</a></td><td>ADSL 仍然一人一条（选一次主要参与），参与级别的信息放 ADPL，一人多次参与就多条记录，其它数据集按 USUBJID + SUBJID 去合并 ADPL。</td></tr>
+<tr data-slug="adam_criteria_vars"><td>ADaM</td><td><a href="adam_criteria_vars.html">AyIND、CRITy、MCRITy、AVALCATy，到底该用哪个？</a></td><td>看你回答什么问题：值在不在范围内用 AyIND，满不满足一条二分类标准用 CRITy，多档结果用 MCRITy，只是把值分档用 AVALCATy。</td></tr>
+<tr data-slug="adam_documents"><td>ADaM</td><td><a href="adam_documents.html">ADaM 的文档一大堆，到底该看哪几本、怎么配？</a></td><td>先定 ADaMIG 版本，再用对应的 Release Package 一整套拿；文档之间打架时以发布日期最新的为准，示例文档不是标准。</td></tr>
+
+<tr data-slug="reproducibility"><td>临床提交</td><td><a href="reproducibility.html">药物临床试验资料递交是否要求程序文件可复现？</a></td><td>是。CDE 要的是“能直接重现出和申办方一致的统计结果”，FDA 靠“可追溯 + 交源代码”达到同样目的。</td></tr>
+<tr data-slug="external_macro"><td>临床提交</td><td><a href="external_macro.html">CDE 所说的“避免外部宏调用”怎么理解？</a></td><td>交上去的代码要自包含、能独立跑、逻辑透明，不能依赖公司内部才有的宏库。</td></tr>
+
+<tr data-slug="macro_comments"><td>SAS 编程</td><td><a href="macro_comments.html">在宏里写注释，为什么一个星号会把后面的代码也吃掉？</a></td><td>三种注释走三条不同的解析路径：斜杠星号逐字符读，星号和百分号星号都是读到分号为止。宏里只用斜杠星号，就不会出这种事。</td></tr>
+<tr data-slug="numeric_precision"><td>SAS 编程</td><td><a href="numeric_precision.html">为什么十个 0.1 加起来不等于 1？数值精度要选到哪一档？</a></td><td>因为二进制存不下 0.1 这种数，只能存一个非常接近的近似值；比较浮点数别用等号，要给容差，从外部数据库读数时还要留意 15 位这道坎。</td></tr>
+<tr data-slug="contrast_estimate"><td>SAS 编程</td><td><a href="contrast_estimate.html">CONTRAST 和 ESTIMATE 里那串 0 和 1，是怎么算出来的？</a></td><td>先把模型写出来，再把要检验的假设用模型参数表示并化简，最后按参数顺序把系数填进去；系数对不对，取决于参数化和参数顺序。</td></tr>
+<tr data-slug="interval_overlap"><td>SAS 编程</td><td><a href="interval_overlap.html">如何判定两个区间重叠？</a></td><td>两个闭区间的重叠天数 = min(两个终点) − max(两个起点) + 1；结果小于等于 0 就说明不重叠。</td></tr>
+<tr data-slug="special_symbols"><td>SAS 编程</td><td><a href="special_symbols.html">如何绘制带有特殊符号的图形？</a></td><td>五个位置、三种写法：UNICODE 行内格式到处都能用，直接写入取决于文件编码，SUP/SUB 只在 INSET 的自由文本里有效。</td></tr>
+<tr data-slug="split_200_bytes"><td>SAS 编程</td><td><a href="split_200_bytes.html">如何按 200 字节长度切分变量？</a></td><td>substr 按字节切，会把一个汉字劈成两半；改用 ksubstrb 按字节切并自动丢掉破字符，想不切断句子再用 kfindc 从右往左找标点。</td></tr>
+<tr data-slug="rtf_two_fonts"><td>SAS 编程</td><td><a href="rtf_two_fonts.html">如何同时输出宋体和新罗马字体？</a></td><td>SAS 一个单元格只能设一种字体，所以先按常规出 RTF，再把文件头的 \f1、\f2 改成宋体和 Times New Roman，并把正文的 \f1\ 换成 \f1\f2\。</td></tr>
+
+<tr data-slug="rate_ratio"><td>统计分析</td><td><a href="rate_ratio.html">“每 1000 人年 3.2 例”这种率，模型怎么建、率比怎么估？</a></td><td>用 log 链接的 Poisson 或负二项模型，把暴露量的对数做成 offset 放进模型；率比就是 exp(参数)，用 LSMEANS 的 ILINK 和 EXP 直接能出。</td></tr>
+<tr data-slug="relative_risk"><td>统计分析</td><td><a href="relative_risk.html">事件发生率不低的时候，怎么估计相对风险，而不是拿 OR 顶替？</a></td><td>OR 只在事件很罕见时才近似 RR；事件不少时，可以用 PROC FREQ 的 RELRISK、NLMeans 宏、log-binomial 模型，或者 Zou 的修正 Poisson。</td></tr>
+<tr data-slug="difference_in_differences"><td>统计分析</td><td><a href="difference_in_differences.html">干预前后两组比较，“差中之差”怎么估？交互项系数就是它吗？</a></td><td>普通线性模型里，交互项系数就是差中之差；换成 logistic 这类链接，交互项只是 log odds 尺度的差中之差，均值层面要另外算。</td></tr>
+
+<tr data-slug="hardware_tuning"><td>性能与调优</td><td><a href="hardware_tuning.html">SAS 跑得慢，硬件和系统层面该从哪几层看？</a></td><td>按操作系统、文件系统、I/O 与存储、Grid、虚拟化与云、高可用这六层分开查，每一层 SAS 都有对应的调优文档。</td></tr>
+<tr data-slug="performance_monitoring"><td>性能与调优</td><td><a href="performance_monitoring.html">性能问题怎么查？先量什么、用什么工具量？</a></td><td>先把“慢在哪”量出来——I/O 吞吐、系统资源、SAS 自己的日志，再谈调优；没有数据的调优都是猜。</td></tr>
+<tr data-slug="mixed_glimmix_memory"><td>性能与调优</td><td><a href="mixed_glimmix_memory.html">PROC MIXED / GLIMMIX 报内存不足或者跑几个小时，先改哪里？</a></td><td>先给足内存并按 subject 处理模型，再简化 DDFM 和协方差结构，最后才考虑换 HPMIXED。</td></tr>
+
+<tr data-slug="eg_dual_monitor"><td>客户端</td><td><a href="eg_dual_monitor.html">Enterprise Guide 在双屏下“卡死”了，是程序挂了还是窗口跑到屏幕外了？</a></td><td>多半是窗口被挪到了看不见的位置；按 Alt+Space 再按 M，用方向键把它拉回来，8.1 和 8.2 还可以直接重置布局。</td></tr>
+
+<!--/#TABLE#-->
+</tbody>
+</table>
+</div>
+
+<script src="../assets/kb-search-index.js"></script>
+<script src="../assets/kb-search.js"></script>
+</body>
+</html>

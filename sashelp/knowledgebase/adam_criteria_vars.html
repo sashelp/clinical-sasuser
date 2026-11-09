@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>准则变量怎么选 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html" class="current">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / ADaM</p>
+<h2>AyIND、CRITy、MCRITy、AVALCATy，到底该用哪个？</h2>
+<p class="subtitle">看你回答什么问题：值在不在范围内用 AyIND，满不满足一条二分类标准用 CRITy，多档结果用 MCRITy，只是把值分档用 AVALCATy。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>这四组变量看着都在“给记录打标记”，但判断依据完全不同。记住一句话就够：<b>AyIND 只比 AVAL 和范围；CRITy、MCRITy 可以看整行的任何变量；AVALCATy 只看 AVAL 或 AVALC 本身</b>。先想清楚你的标记依赖哪些信息，答案就出来了。</p>
+</div>
+
+<h3 id="four">四组变量各管什么</h3>
+<table class="kb-table">
+<col width="16%" />
+<col width="34%" />
+<col width="22%" />
+<col width="28%" />
+<thead>
+<tr><th>变量</th><th>判断依据</th><th>输出</th><th>典型用途</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>AyIND / ByIND</td>
+<td>AVAL 与预设范围（AyLO、AyHI）比较</td>
+<td>指示值：L / N / H</td>
+<td>检验值相对参考范围偏高、正常、偏低</td>
+</tr>
+<tr>
+<td>CRITy</td>
+<td>一条二分类标准，可用本行任意变量组合判断</td>
+<td>CRITyFL：Y / N / 空</td>
+<td>“钙 &gt; 10 吗”“是否达到缓解”</td>
+</tr>
+<tr>
+<td>MCRITy</td>
+<td>多条互斥的预设标准，可用本行任意变量组合判断</td>
+<td>MCRITyML（文字）+ MCRITyMN（数值）</td>
+<td>毒性分级升高了几级</td>
+</tr>
+<tr>
+<td>AVALCATy</td>
+<td>只看 AVAL 或 AVALC 本身</td>
+<td>分类值</td>
+<td>把 0–10 的疼痛评分分成无痛、轻度、重度</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="ayind">AyIND：只和范围有关</h3>
+<p><code>AyLO</code> 和 <code>AyHI</code> 通常是常数，但也可以随受试者和参数变化。要注意 <code>AyIND</code> 只看 <code>AVAL</code> 和这两个界限，<b>不看相对基线的变化</b>，也不看别的变量。</p>
+<p>如果分析里要算 AVAL 与范围的比值（<code>R2AyLO</code>、<code>R2AyHI</code>），<code>AyLO</code>/<code>AyHI</code> 就是必填的，不能省。</p>
+
+<h3 id="crity">CRITy：一条二分类标准</h3>
+<p>一个参数下可以有好几条预设标准，编号 CRIT1、CRIT2…… <code>CRITyFL</code> 的取值有两种常见做法：</p>
+<ul class="notes">
+<li><b>Y / N / 空</b>：需要区分“不满足”和“没评”时用。</li>
+<li><b>Y / 空</b>：只关心“满足”的时候用，不满足就留空。</li>
+</ul>
+<p>判断依据可以是单个 <code>AVAL</code>，也可以是本行的 <code>AVAL</code> 加上人口学、基线值、相对基线的变化等。同一个数据集里，不同参数的 CRITy 定义可以完全不同。</p>
+
+<h3 id="mcrity">MCRITy：结果不止两档</h3>
+<p>和 CRITy 一样是参数内预设的标准，但结果有多个可能值。既然不止两档，就没有“标志变量”这回事——所以<b>没有 MCRITyFL</b>，只有 <code>MCRITyML</code>（文字描述）和 <code>MCRITyMN</code>（对应的数值）。</p>
+
+<h3 id="avalcat">AVALCATy：只是把值分档</h3>
+<p>它不比较、不判断，只是把 <code>AVAL</code>/<code>AVALC</code> 映射成一个类别。比如疼痛评分 0 是无痛、1–2 是轻度、9–10 是最痛。</p>
+<p>关键区别：同一个 <code>AVAL</code> 值只能对应一个 <code>AVALCATy</code> 值，但一个 <code>AVALCATy</code> 值可以对应多个 <code>AVAL</code> 值。而且它<b>不能</b>用本行其它变量来定档——比如不能写“因为受试者是老年人，所以分到高危档”。</p>
+
+<h3 id="example">一个检验值把四种都用上</h3>
+<p>以血钙为例。研究预期治疗会影响钙值，所以分析范围随病史和用药时长变化，<code>A1LO</code>/<code>A1HI</code> 在同一个受试者体内也会变：</p>
+
+<table class="kb-table">
+<col width="10%" />
+<col width="12%" />
+<col width="8%" />
+<col width="12%" />
+<col width="8%" />
+<col width="10%" />
+<col width="12%" />
+<col width="20%" />
+<thead>
+<tr><th>VISIT</th><th>AVAL</th><th>A1LO</th><th>A1HI</th><th>A1IND</th><th>CRIT1FL</th><th>MCRIT1MN</th><th>MCRIT1ML</th></tr>
+</thead>
+<tbody>
+<tr><td>Baseline</td><td>9.5</td><td>8</td><td>11.3</td><td>N</td><td>N</td><td>0</td><td>No Grade Increase</td></tr>
+<tr><td>Week 1</td><td>9.5</td><td>8</td><td>11.3</td><td>N</td><td>N</td><td>0</td><td>No Grade Increase</td></tr>
+<tr><td>Week 3</td><td>11.4</td><td>8</td><td>11.3</td><td>H</td><td>Y</td><td>1</td><td>Increase of 1 Grade</td></tr>
+<tr><td>Week 5</td><td>11.4</td><td>8</td><td>11.3</td><td>H</td><td>Y</td><td>2</td><td>Increase of 2 Grades</td></tr>
+</tbody>
+</table>
+
+<p>同一行里同时出现了三种标记，各说各的事：</p>
+<ul class="notes">
+<li><code>A1IND = "H"</code>：11.4 超出了这次分析用的上限 11.3。</li>
+<li><code>CRIT1FL = "Y"</code>：满足“钙 &gt; 10”这条二分类标准。</li>
+<li><code>MCRIT1MN = 2</code>：相对基线的毒性分级升了 2 级。</li>
+<li>如果再加一个 <code>AVALCAT1</code>，可以按绝对值分档，比如“正常 / 偏高 / 显著偏高”，只看 AVAL 落在哪一段。</li>
+</ul>
+<p>注意 Week 5 那一行：<code>A1IND</code> 和 <code>CRIT1FL</code> 跟 Week 3 一样，但 <code>MCRIT1MN</code> 从 1 变成 2，因为它比的是基线，不是范围。</p>
+
+<h3 id="rules">几条容易踩的规则</h3>
+<ul class="notes">
+<li><b>除了 AyIND/ByIND，其余三组的定义必须在同一 PARAM 内保持不变。</b>不能 Week 1 用一条标准、Week 5 换一条。</li>
+<li><b>AVALCATy 不能跨变量判断。</b>想用“年龄 + 值”定档，那属于 CRITy 或 MCRITy。</li>
+<li><b>MCRITy 没有 FL。</b>看到有人写 MCRIT1FL，那是错的。</li>
+<li><b>AyIND 不看基线。</b>“相对基线升高”这类判断不属于范围指示，要用 CRITy 或 MCRITy。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>CDISC, <a href="https://www.cdisc.org/kb/articles/cdisc-published/ayind-byind-and-crity-vs-mcrity-vs-avalcaty" target="_blank" rel="noopener"><i>AyIND, ByIND, and CRITy vs. MCRITy vs. AVALCATy</i></a>（CDISC 知识库文章，cdisc.org/kb）。<span class="src">四组变量的定义与区别、钙值的完整示例、CRITyFL 的取值约定。</span></li>
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/adam/adamig-v1-3" target="_blank" rel="noopener"><i>ADaMIG v1.3</i></a>，Section 3.3.7、4.7.1、4.7.2。<span class="src">AyIND/ByIND、CRITy、MCRITy、AVALCATy 的规范定义。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

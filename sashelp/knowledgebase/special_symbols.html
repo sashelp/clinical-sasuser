@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>特殊符号怎么画 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html" class="current">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SAS 编程</p>
+<h2>如何绘制带有特殊符号的图形？</h2>
+<p class="subtitle">五个位置、三种写法：UNICODE 行内格式到处都能用，直接写入取决于文件编码，SUP/SUB 只在 INSET 的自由文本里有效。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>特殊符号（≥ ≤ ≈ ≠、上下标、♀ ♂ ☀ 这类）在图形里有<b>五个位置</b>可以出现：自由文本、图形文本、图例、轴标签、轴刻度值。写法有<b>三种</b>：直接写入、<code>SUP</code>/<code>SUB</code> 行内格式、<code>UNICODE</code> 行内格式。核心规矩只有一条：<b><code>SUP</code>/<code>SUB</code> 只对 INSET 的自由文本有效</b>，其余四个位置写了也不认，会原样印出一串 <code>SUP(*ESC*){sup '2'}</code>。<code>UNICODE</code> 行内格式五个位置通吃，是最稳的写法。</p>
+</div>
+
+<h3 id="three">先记住三种写法</h3>
+<p>以平方符号 ² 为例：</p>
+
+<table class="kb-table">
+<col width="26%" />
+<col width="38%" />
+<col width="36%" />
+<thead>
+<tr><th>写法</th><th>怎么写</th><th>适用</th></tr>
+</thead>
+<tbody>
+<tr><td>直接写入</td><td>把 ² 当普通字符打进字符串</td><td>五个位置都行，但受文件编码影响，最不稳</td></tr>
+<tr><td>SUP / SUB 行内格式</td><td><code>(*ESC*){sup '2'}</code></td><td>只在 INSET 里有效</td></tr>
+<tr><td>UNICODE 行内格式</td><td><code>(*ESC*){unicode '00b2'x}</code></td><td>五个位置都行，纯 ASCII 书写，最稳</td></tr>
+</tbody>
+</table>
+
+<p><code>(*ESC*)</code> 是 SAS 的转义符，它告诉 SAS 后面不是普通文字，而是一段带效果的指令。上标用 <code>{sup '…'}</code>，下标用 <code>{sub '…'}</code>，特殊字符用 <code>{unicode 'xxxx'x}</code>，xxxx 是这个字符的十六进制 Unicode 编码。</p>
+
+<h3 id="matrix">五个位置，三种写法能不能用</h3>
+<table class="kb-table">
+<col width="30%" />
+<col width="18%" />
+<col width="20%" />
+<col width="32%" />
+<thead>
+<tr><th>位置</th><th>直接写入</th><th>SUP / SUB</th><th>UNICODE</th></tr>
+</thead>
+<tbody>
+<tr><td>自由文本（INSET）</td><td>可以</td><td>可以</td><td>可以</td></tr>
+<tr><td>图形文本（TEXT、SCATTER 的 datalabel=）</td><td>可以</td><td>不行</td><td>可以</td></tr>
+<tr><td>图例（KEYLEGEND）</td><td>可以</td><td>不行</td><td>可以</td></tr>
+<tr><td>轴标签（label=）</td><td>可以</td><td>不行</td><td>可以</td></tr>
+<tr><td>轴刻度值（values=）</td><td>可以</td><td>不行</td><td>可以</td></tr>
+</tbody>
+</table>
+
+<p>这张表我在 SAS 9.4 上逐个跑图确认过：<code>SUP</code> 在 TEXT、图例、轴标签、刻度值四处都会原样打成 <code>SUP__SUP_2_SUP_</code> 这样的字面量，日志里不报错，所以不看图根本发现不了。</p>
+
+<h3 id="font">不管用哪种写法，字体一定要指定</h3>
+<p>图形输出到结果窗口（HTML）时，默认字体未必包含你要的符号，缺字形就显示成 □。<code>TEXTATTRS=</code>、<code>VALUEATTRS=</code>、<code>LABELATTRS=</code> 里用 <code>family=</code> 指定一个覆盖范围大的字体，比如：</p>
+
+<pre class="code">textattrs=(family="微软雅黑")</pre>
+
+<h3 id="inset">位置一：自由文本（INSET）</h3>
+<p>INSET 是画在画布任意位置的说明文字，不受坐标约束，所以三种写法都能用。</p>
+
+<pre class="code">proc sgplot data=fig1 noborder noautolegend;
+  series x=x y=y;
+  inset
+    "直接写入²"
+    "SUP(*ESC*){sup '2'}"
+    "UNICODE(*ESC*){unicode '00b2'x}"
+    /noborder position=topright textattrs=(family="微软雅黑");
+  xaxis offsetmin=0.2 offsetmax=0.2;
+  yaxis offsetmin=0.2 offsetmax=0.2;
+run;</pre>
+
+<p>三段文字分别用三种写法，输出都是 ²。<code>noborder</code> 去掉边框，<code>position=topright</code> 放右上角。</p>
+
+<h3 id="text">位置二：图形文本（TEXT / SCATTER）</h3>
+<p>图形文本按坐标画，用 <code>TEXT</code> 语句，或者 <code>SCATTER</code> 的 <code>datalabel=</code>。这里有个 SAS 特有的做法：文字不直接写在数据里，而是用 <b>format</b> 把文本“格式化”上去，业内叫 TrafficLighting 技巧。</p>
+
+<pre class="code">proc format;
+  value glab
+  1="直接写入²"
+  2="SUP(*ESC*){sup '2'}"
+  3="UNICODE(*ESC*){unicode '00b2'x}"
+  ;
+run;
+
+proc sgplot data=fig2 noborder noautolegend;
+  series x=x y=y/markers markerattrs=(size=7pt);
+  text x=x y=y text=glab/textattrs=(family="微软雅黑");
+  xaxis offsetmin=0.2 offsetmax=0.2;
+  yaxis offsetmin=0.2 offsetmax=0.2;
+  format glab glab.;
+run;</pre>
+
+<p>跑出来只有第一段和第三段正常，第二段印出的是 <code>SUP</code> 开头的原始字符串。换成 <code>SCATTER</code> 的 <code>datalabel=</code> 也一样。</p>
+
+<p>这两种画法还有个位置差异，实测能看到：<code>TEXT</code> 默认把文字放在坐标点的<b>左侧</b>，而它量不出 SUP 字符串的真实长度，文字就会盖住那个点；<code>SCATTER</code> 的 <code>datalabel=</code> 会主动绕开坐标点，把标签放到旁边，量长度也更准。要标注散点，优先用 <code>datalabel=</code>。</p>
+
+<h3 id="legend">位置三：图例（KEYLEGEND）</h3>
+<pre class="code">proc sgplot data=fig2 noborder;
+  series x=x y=y;
+  scatter x=x y=y/group=glab name="sca" nomissinggroup;
+  xaxis offsetmin=0.2 offsetmax=0.2;
+  yaxis offsetmin=0.2 offsetmax=0.2;
+  keylegend "sca"/valueattrs=(family="微软雅黑");
+  format glab glab.;
+run;</pre>
+
+<p>要点是三步：<code>group=</code> 把散点分组，<code>name=</code> 给这条语句起个引用名，<code>KEYLEGEND "sca"</code> 再把它画进图例。<code>nomissinggroup</code> 表示不画缺失组别的那一项。</p>
+
+<h3 id="axislabel">位置四：轴标签（label=）</h3>
+<pre class="code">proc sgplot data=fig2 noborder noautolegend;
+  series x=x y=y;
+  scatter x=x y=y/x2axis;
+  xaxis offsetmin=0.2 offsetmax=0.2 label="直接写入²" labelattrs=(family="微软雅黑");
+  x2axis offsetmin=0.2 offsetmax=0.2 label="SUP(*ESC*){sup '2'}" labelattrs=(family="微软雅黑");
+  yaxis offsetmin=0.2 offsetmax=0.2 label="UNICODE(*ESC*){unicode '00b2'x}" labelattrs=(family="微软雅黑");
+run;</pre>
+
+<p>顺便演示了第二条 X 轴：<code>SCATTER</code> 加 <code>x2axis</code> 选项就用上轴画图，再用 <code>X2AXIS</code> 给上轴设标签。这里 SUP 同样失效。</p>
+
+<h3 id="tick">位置五：轴刻度值（values=）</h3>
+<p>刻度值默认由 SAS 决定画哪些，也可以自己指定。只给 <code>values=</code> 时按值列表显示；同时给 <code>values=</code> 和 <code>valuesdisplay=</code> 时，前者管画哪些刻度、后者管每个刻度显示什么文字。</p>
+
+<pre class="code">proc format;
+  value glab
+  -0.4="直接写入²"
+  0="SUP(*ESC*){sup '2'}"
+  0.4="UNICODE(*ESC*){unicode '00b2'x}"
+  ;
+run;
+
+proc sgplot data=fig2 noborder noautolegend;
+  series x=x y=y;
+  xaxis offsetmin=0.2 offsetmax=0.2 values=(-0.4,0,0.4)
+        valueattrs=(family="微软雅黑") fitpolicy=rotate;
+  yaxis offsetmin=0.2 offsetmax=0.2;
+  format x glab.;
+run;</pre>
+
+<p><code>fitpolicy=rotate</code> 让刻度文字在横向放不下时倾斜 45° 排，图窄的时候很有用。同样，SUP 在这一格也不认。</p>
+
+<h3 id="anno">实在找不到字符时：注释数据集</h3>
+<p>有些符号没有合适的上下标字符。比如要在轴标签里写 AUC<sub>0-∞</sub>，∞ 没有下标形式，Unicode 里找不到对应编码。这时可以画两段文字拼出来：用内置宏 <code>%sgtext</code> 建一张注释数据集，把 “AUC” 和 “0-∞” 用不同字号、不同位置分别画，再把原轴标签留空。</p>
+
+<pre class="code">data anno;
+  %sganno;
+  %sgtext(label="AUC",x1=51,y1=3,textsize=11,justify="center");
+  %sgtext(label="0-∞",x1=56.5,y1=2,textsize=8,justify="center");
+run;
+
+proc sgplot data=fig2 noborder noautolegend sganno=anno;
+  series x=x y=y;
+  scatter x=x y=y;
+  xaxis offsetmin=0.2 offsetmax=0.2 label=" ";
+  yaxis offsetmin=0.2 offsetmax=0.2;
+run;</pre>
+
+<p><code>sganno=</code> 指定注释数据集，<code>label=" "</code> 一个空格把原标签清掉，腾出位置。字号和偏移量要反复试，比较费手工。</p>
+<p>还有一条更轻的路子：改用 GTL 绘图，把轴标签留空，用 <code>ENTRY</code> 语句在同样位置画文本。思路上的变通，比调注释数据集省事。</p>
+
+<h3 id="pitfalls">几个容易踩的坑</h3>
+<ul class="notes">
+<li><b>SUP/SUB 只在 INSET 有效。</b>这一条最值钱。在 TEXT、图例、轴标签、刻度值里写 <code>{sup}</code>，SAS 不报错，只是把它当普通字符串印出来。</li>
+<li><b>直接写入会被文件编码坑。</b>我实测时用 UTF-8 存程序、在 EUC-CN 的会话里跑，² 直接变成了乱码；把程序文件转成 GBK 再跑就正常。所以同一段程序换台机器、换个编码就可能坏掉，UNICODE 写法只用 ASCII，最抗折腾。</li>
+<li><b>图形文本、图例、刻度值要借助 FORMAT。</b>不是把符号直接写进数据集，而是用 <code>PROC FORMAT</code> 定义好文本，再套在变量上。</li>
+<li><b>别忘了 family=。</b>漏了字体设置，符号可能显示成 □，看起来像“没生效”，其实是字体缺字形。</li>
+<li><b>TEXT 会压住坐标点。</b>它默认把文字放左侧，遇到量不准长度的字符串就盖上去；标注散点用 <code>SCATTER</code> 的 <code>datalabel=</code> 更稳。</li>
+<li><b>注释数据集是最后的兜底。</b>位置和字号要手工调，图形尺寸一改还得重调，能用字符解决就别用它。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS骆豪, <a href="https://www.bilibili.com/opus/970959258037256192" target="_blank" rel="noopener"><i>绘制带有特殊符号的图形</i></a>，哔哩哔哩，2024 年 8 月 29 日。<span class="src">五个绘制位置、三种写法的对比表与全部示例程序，SUP 在图形文本/图例/轴标签/刻度值失效的观察，TrafficLighting 技巧，注释数据集绘制下标 ∞。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/documentation/onlinedoc/stat/" target="_blank" rel="noopener"><i>SAS/STAT User's Guide</i></a>：PROC SGPLOT 章节。<span class="src">INSET、TEXT、SCATTER、KEYLEGEND、XAXIS/YAXIS 语句的选项说明；SUP、SUB、UNICODE 行内格式。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

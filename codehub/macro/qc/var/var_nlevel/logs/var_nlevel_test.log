@@ -1,0 +1,588 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.17 秒
+      
+1          /*===============================================================================
+2           * var_nlevel_test.sas - Positive (functional) acceptance tests
+3           *===============================================================================
+4           * Macro under test : %var_nlevel
+5           * File under test   : dev/var/var_nlevel.sas
+6           * Dependencies      : %var_exist
+7           * Coverage          : default and explicit INCLUDEMISSING=N, INCLUDEMISSING=Y
+8           *                     for character and numeric variables including special
+9           *                     missing values, empty and all-missing input, single and
+10          *                     many levels, trailing and leading blanks, case sensitivity,
+11          *                     special characters, formats, library-qualified input,
+12          *                     DATA= member options, use in %if, input preservation.
+13          * Run               : qc/run_all.ps1  (or standalone batch, see README)
+14          *============================================================================*/
+15         
+16         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+17         %let _qcboot_=%sysfunc(getoption(sysin));
+18         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+19         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+20         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+21         %include "&_qcboot_.\_framework\qc_env.sas";
+86         %let _qcboot_=;
+87         /*----------------------------------------------------------------------------*/
+88         
+89         %include "&_QCFW_.";
+382        %include "&_QCQC_.\_framework\qc_sandbox.sas";
+482        %include "&_QCDEV_VAR_.\var_exist.sas";
+533        %include "&_QCDEV_VAR_.\var_nlevel.sas";
+617        %qc_sandbox_reset;
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\f1.txt" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\f1.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时06分33秒,
+      创建时间=2026年11月09日 14时06分33秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\f1.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\f2.sas" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\f2.sas,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时06分33秒,
+      创建时间=2026年11月09日 14时06分33秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\f2.sas" 中。
+      最小记录长度是 15。
+      最大记录长度是 15。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\sub1\f3.txt" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\sub1\f3.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时06分33秒,
+      创建时间=2026年11月09日 14时06分33秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\sub1\f3.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\sub1\f4.log" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\sub1\f4.log,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时06分33秒,
+      创建时间=2026年11月09日 14时06分33秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\sub1\f4.log" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\sub2\f5.csv" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\sub2\f5.csv,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时06分33秒,
+      创建时间=2026年11月09日 14时06分33秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d1\sub2\f5.csv" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d2\f6.txt" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d2\f6.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时06分33秒,
+      创建时间=2026年11月09日 14时06分33秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\d2\f6.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+618        
+619        %qc_begin(prog=var_nlevel_test, macro=var_nlevel);
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+#####QC_BEGIN prog=var_nlevel_test macro=var_nlevel
+620        
+621        data nl1;
+622          length c1 $10;
+623          c1='A'; n1=1; output;
+624          c1='B'; n1=2; output;
+625          c1='A'; n1=2; output;
+626          c1='C'; n1=3; output;
+627          c1=''; n1=.; output;
+628        run;
+
+NOTE: 数据集 WORK.NL1 有 5 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+629        
+630        /*----------------------------------------------------------------------------
+631         * CASE 1 : default INCLUDEMISSING=N excludes missing values
+632         *--------------------------------------------------------------------------*/
+633        %qc_case(desc=1 default excludes missing);
+#####QC_CASE n=1 desc=1 default excludes missing
+634        %let _r=%var_nlevel(data=nl1,var=c1);
+635        %qc_check_eq(actual=&_r., expect=3, desc=C1 char 3 non-missing levels);
+#####QC_PASS n=1 desc=C1 char 3 non-missing levels
+636        %let _r=%var_nlevel(data=nl1,var=n1);
+637        %qc_check_eq(actual=&_r., expect=3, desc=C1 num 3 non-missing levels);
+#####QC_PASS n=1 desc=C1 num 3 non-missing levels
+638        
+639        /*----------------------------------------------------------------------------
+640         * CASE 2 : explicit INCLUDEMISSING=N and lowercase value
+641         *--------------------------------------------------------------------------*/
+642        %qc_case(desc=2 explicit N and lowercase);
+#####QC_CASE n=2 desc=2 explicit N and lowercase
+643        %let _r=%var_nlevel(data=nl1,var=c1,includemissing=N);
+644        %qc_check_eq(actual=&_r., expect=3, desc=C2 explicit N char);
+#####QC_PASS n=2 desc=C2 explicit N char
+645        %let _r=%var_nlevel(data=nl1,var=n1,includemissing=n);
+646        %qc_check_eq(actual=&_r., expect=3, desc=C2 lowercase n num);
+#####QC_PASS n=2 desc=C2 lowercase n num
+647        
+648        /*----------------------------------------------------------------------------
+649         * CASE 3 : INCLUDEMISSING=Y counts character missing as one level
+650         *--------------------------------------------------------------------------*/
+651        %qc_case(desc=3 char missing included);
+#####QC_CASE n=3 desc=3 char missing included
+652        %let _r=%var_nlevel(data=nl1,var=c1,includemissing=Y);
+653        %qc_check_eq(actual=&_r., expect=4, desc=C3 char 3 levels plus missing);
+#####QC_PASS n=3 desc=C3 char 3 levels plus missing
+654        data nl3;
+655          length c1 $5;
+656          c1=''; output;
+657          c1=' '; output;
+658        run;
+
+NOTE: 数据集 WORK.NL3 有 2 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+659        %let _r=%var_nlevel(data=nl3,var=c1,includemissing=N);
+660        %qc_check_eq(actual=&_r., expect=0, desc=C3 all-missing char excluded);
+#####QC_PASS n=3 desc=C3 all-missing char excluded
+661        %let _r=%var_nlevel(data=nl3,var=c1,includemissing=Y);
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+662        %qc_check_eq(actual=&_r., expect=1, desc=C3 all-missing char one level);
+#####QC_PASS n=3 desc=C3 all-missing char one level
+663        
+664        /*----------------------------------------------------------------------------
+665         * CASE 4 : INCLUDEMISSING=Y counts numeric missing codes separately
+666         *--------------------------------------------------------------------------*/
+667        %qc_case(desc=4 num missing codes included);
+#####QC_CASE n=4 desc=4 num missing codes included
+668        data nl4;
+669          n1=1; output;
+670          n1=1.0; output;
+671          n1=.; output;
+672          n1=.A; output;
+673          n1=.A; output;
+674          n1=._; output;
+675          n1=.Z; output;
+676          n1=2; output;
+677        run;
+
+NOTE: 数据集 WORK.NL4 有 8 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+678        %let _r=%var_nlevel(data=nl4,var=n1,includemissing=N);
+679        %qc_check_eq(actual=&_r., expect=2, desc=C4 num non-missing levels);
+#####QC_PASS n=4 desc=C4 num non-missing levels
+680        %let _r=%var_nlevel(data=nl4,var=n1,includemissing=Y);
+681        %qc_check_eq(actual=&_r., expect=6, desc=C4 num missing codes as levels);
+#####QC_PASS n=4 desc=C4 num missing codes as levels
+682        
+683        /*----------------------------------------------------------------------------
+684         * CASE 5 : empty input returns 0
+685         *--------------------------------------------------------------------------*/
+686        %qc_case(desc=5 empty dataset);
+#####QC_CASE n=5 desc=5 empty dataset
+687        data nl5;
+688          if 0;
+689          length c1 $5;
+690          x=1;
+691        run;
+
+NOTE: 变量 c1 未初始化。
+NOTE: 数据集 WORK.NL5 有 0 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+692        %let _r=%var_nlevel(data=nl5,var=x);
+693        %qc_check_eq(actual=&_r., expect=0, desc=C5 empty num returns 0);
+#####QC_PASS n=5 desc=C5 empty num returns 0
+694        %let _r=%var_nlevel(data=nl5,var=c1,includemissing=Y);
+695        %qc_check_eq(actual=&_r., expect=0, desc=C5 empty char with Y returns 0);
+#####QC_PASS n=5 desc=C5 empty char with Y returns 0
+696        
+697        /*----------------------------------------------------------------------------
+698         * CASE 6 : single level
+699         *--------------------------------------------------------------------------*/
+700        %qc_case(desc=6 single level);
+#####QC_CASE n=6 desc=6 single level
+701        data nl6;
+702          x=5; output;
+703          x=5.0; output;
+704        run;
+6                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+NOTE: 数据集 WORK.NL6 有 2 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+705        %let _r=%var_nlevel(data=nl6,var=x);
+706        %qc_check_eq(actual=&_r., expect=1, desc=C6 single numeric level);
+#####QC_PASS n=6 desc=C6 single numeric level
+707        
+708        /*----------------------------------------------------------------------------
+709         * CASE 7 : trailing blanks are ignored and leading blanks are significant
+710         *--------------------------------------------------------------------------*/
+711        %qc_case(desc=7 blanks and case);
+#####QC_CASE n=7 desc=7 blanks and case
+712        data nl7;
+713          length c1 $10;
+714          c1='A'; output;
+715          c1='A '; output;
+716          c1='A  '; output;
+717          c1=' A'; output;
+718          c1='a'; output;
+719        run;
+
+NOTE: 数据集 WORK.NL7 有 5 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+720        %let _r=%var_nlevel(data=nl7,var=c1);
+721        %qc_check_eq(actual=&_r., expect=3, desc=C7 trailing blanks merged leading kept);
+#####QC_PASS n=7 desc=C7 trailing blanks merged leading kept
+722        
+723        /*----------------------------------------------------------------------------
+724         * CASE 8 : special characters are compared as plain text
+725         *--------------------------------------------------------------------------*/
+726        %qc_case(desc=8 special characters);
+#####QC_CASE n=8 desc=8 special characters
+727        data nl8;
+728          length c1 $20;
+729          c1='A|B'; output;
+730          c1='A'||byte(37)||'B'; output;
+731          c1='A'||byte(38)||'B'; output;
+732          c1="A'B"; output;
+733          c1='A"B'; output;
+734          c1='#M#A'; output;
+735          c1=byte(37); output;
+736          c1=byte(38); output;
+737          c1="'"; output;
+738          c1='"'; output;
+739        run;
+
+NOTE: 数据集 WORK.NL8 有 10 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+740        %let _r=%var_nlevel(data=nl8,var=c1);
+741        %qc_check_eq(actual=&_r., expect=10, desc=C8 ten distinct special values);
+#####QC_PASS n=8 desc=C8 ten distinct special values
+742        
+743        /*----------------------------------------------------------------------------
+744         * CASE 9 : formats do not affect the level count
+7                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+745         *--------------------------------------------------------------------------*/
+746        %qc_case(desc=9 formats ignored);
+#####QC_CASE n=9 desc=9 formats ignored
+747        data nl9;
+748          n1=1; output;
+749          n1=2; output;
+750          n1=3; output;
+751        run;
+
+NOTE: 数据集 WORK.NL9 有 3 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+752        proc format;
+753          value nl9fmt
+754            low-<2 = 'L'
+755            2-high = 'H';
+NOTE: 输出格式 NL9FMT 已输出。
+756        run;
+
+NOTE: “PROCEDURE FORMAT”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+757        data nl9;
+758          set nl9;
+759          format n1 nl9fmt.;
+760        run;
+
+NOTE: 从数据集 WORK.NL9. 读取了 3 个观测
+NOTE: 数据集 WORK.NL9 有 3 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+761        %let _r=%var_nlevel(data=nl9,var=n1);
+762        %qc_check_eq(actual=&_r., expect=3, desc=C9 formatted num 3 raw levels);
+#####QC_PASS n=9 desc=C9 formatted num 3 raw levels
+763        proc format;
+764          value $nl9cfmt
+765            'A','B' = 'X'
+766            other   = 'Y';
+NOTE: 输出格式 $NL9CFMT 已输出。
+767        run;
+
+NOTE: “PROCEDURE FORMAT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+768        data nl9c;
+769          length c1 $1;
+770          c1='A'; output;
+771          c1='B'; output;
+772          c1='C'; output;
+773          format c1 $nl9cfmt.;
+774        run;
+
+NOTE: 数据集 WORK.NL9C 有 3 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+8                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+      
+
+775        %let _r=%var_nlevel(data=nl9c,var=c1);
+776        %qc_check_eq(actual=&_r., expect=3, desc=C9 formatted char 3 raw levels);
+#####QC_PASS n=9 desc=C9 formatted char 3 raw levels
+777        
+778        /*----------------------------------------------------------------------------
+779         * CASE 10 : many levels
+780         *--------------------------------------------------------------------------*/
+781        %qc_case(desc=10 many levels);
+#####QC_CASE n=10 desc=10 many levels
+782        data nl10;
+783          do i=1 to 50;
+784            x=i;
+785            output;
+786          end;
+787        run;
+
+NOTE: 数据集 WORK.NL10 有 50 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+788        %let _r=%var_nlevel(data=nl10,var=x);
+789        %qc_check_eq(actual=&_r., expect=50, desc=C10 fifty levels);
+#####QC_PASS n=10 desc=C10 fifty levels
+790        
+791        /*----------------------------------------------------------------------------
+792         * CASE 11 : library-qualified input and DATA= member options
+793         *--------------------------------------------------------------------------*/
+794        %qc_case(desc=11 library and dataset options);
+#####QC_CASE n=11 desc=11 library and dataset options
+795        %let _qclibdir_=&_QCSB_.\_var_nlevel_lib;
+796        %_qc_sb_del(path=&_qclibdir_.);
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+797        data _null_;
+798          rc=dcreate("_var_nlevel_lib","&_QCSB_.\");
+799        run;
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+800        libname qcnl "&_qclibdir_.";
+NOTE: 已成功分配逻辑库引用名“QCNL”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_sandbox_tmp\var_nlevel_test_9984\_var_nlevel_lib
+801        data qcnl.nl11;
+802          do i=1 to 4;
+803            c1='L'||put(i,1.);
+804            output;
+805          end;
+806        run;
+
+NOTE: 数据集 QCNL.NL11 有 4 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+9                                                       SAS 系统       2026年11月 9日 星期一 下午02时06分00秒
+
+
+807        %let _r=%var_nlevel(data=qcnl.nl11,var=c1);
+808        %qc_check_eq(actual=&_r., expect=4, desc=C11 libname qualified levels);
+#####QC_PASS n=11 desc=C11 libname qualified levels
+809        libname qcnl clear;
+NOTE: 已取消对逻辑库引用名 QCNL 的分配。
+810        %let _qclibdir_=;
+811        %let _r=%var_nlevel(data=nl1(keep=c1),var=c1);
+812        %qc_check_eq(actual=&_r., expect=3, desc=C11 dataset keep option levels);
+#####QC_PASS n=11 desc=C11 dataset keep option levels
+813        
+814        /*----------------------------------------------------------------------------
+815         * CASE 12 : usable inside a macro %if and as a %let value
+816         *--------------------------------------------------------------------------*/
+817        %qc_case(desc=12 usable in macro conditional);
+#####QC_CASE n=12 desc=12 usable in macro conditional
+818        %macro _qc_use_nlevel(ds=,var=,cut=,expect_branch=);
+819          %if %var_nlevel(data=&ds.,var=&var.) > &cut. %then %let branch=THEN;
+820          %else %let branch=ELSE;
+821          %qc_check_eq(actual=&branch., expect=&expect_branch., desc=C12 branch chosen);
+822        %mend _qc_use_nlevel;
+823        %_qc_use_nlevel(ds=nl1,var=c1,cut=2,expect_branch=THEN);
+#####QC_PASS n=12 desc=C12 branch chosen
+824        %_qc_use_nlevel(ds=nl6,var=x,cut=1,expect_branch=ELSE);
+#####QC_PASS n=12 desc=C12 branch chosen
+825        
+826        /*----------------------------------------------------------------------------
+827         * CASE 13 : input dataset is not modified
+828         *--------------------------------------------------------------------------*/
+829        %qc_case(desc=13 input preserved);
+#####QC_CASE n=13 desc=13 input preserved
+830        %qc_expect_nobs(ds=nl1, expect=5, desc=C13 input nobs unchanged);
+#####QC_PASS n=13 desc=C13 input nobs unchanged
+831        
+832        %qc_end;
+#####QC_RESULT prog=var_nlevel_test macro=var_nlevel STATUS=PASS ncase=13 npass=22 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.33 秒
+      CPU 时间          0.26 秒
+      

@@ -1,0 +1,427 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>stat_summaryn - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html" class="current">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / 统计分析</p>
+<h2>stat_summaryn</h2>
+<p class="subtitle">对定量变量计算描述性统计量及假设检验</p>
+<p class="dependency">依赖: <a href="var_exist.html">var_exist</a>, <a href="var_coexist.html">var_coexist</a>, <a href="ds_attr.html">ds_attr</a></p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>stat_summaryn</code></p>
+
+<h3 id="brief">简介</h3>
+<p>对定量变量按 <code>CLASS=</code> 分组计算描述性统计量，并可通过 <code>BY=</code> 产生分组结果；<code>STATIS=</code> 控制要输出的统计量及其顺序。输出为长表：每个 BY 组、分析变量、统计量一行，分组水平转置为 <code>TRT&lt;index&gt;</code> 列，合计组为 <code>TRT&lt;TOTCLASSID&gt;</code>；<code>_TESTV_</code>、<code>_TESTP_</code>、<code>_TESTM_</code> 存放假设检验统计量、P 值与检验方法。宏不返回值，结果写入 <code>OUT=</code> 数据集。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%stat_summaryn(data=&lt;dataset&gt;, var=&lt;variables&gt;)</pre>
+<p>该宏为过程式宏，结果写入 <code>OUT=</code> 数据集，不返回值。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr><th>名称</th><th>类型</th><th>默认值</th><th>描述</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>DATA=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>输入数据集名，仅支持数据集。</td>
+</tr>
+<tr>
+<td>OUT=</td>
+<td>可选参数</td>
+<td>_DATA_</td>
+<td>输出数据集名。</td>
+</tr>
+<tr>
+<td>BY=</td>
+<td>可选参数</td>
+<td>无</td>
+<td>BY 分组变量，可指定多个变量（空格分隔），每个 BY 组单独输出结果。</td>
+</tr>
+<tr>
+<td>CLASS=</td>
+<td>可选参数</td>
+<td>无</td>
+<td>定义分组与比较的变量，仅支持一个；不指定时所有观测作为一个总体分析。</td>
+</tr>
+<tr>
+<td>VAR=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>分析变量列表，多个变量以空格分隔；输出顺序与书写顺序一致，变量必须为数值型。</td>
+</tr>
+<tr>
+<td>STATIS=</td>
+<td>可选参数</td>
+<td>N_NMISS MEAN_STD MEDIAN Q1_Q3 MIN_MAX</td>
+<td>要显示的统计量及其输出顺序。有效值：<br/>
+N、NMISS、N_NMISS、MEAN、LCLM、UCLM、CLM、MEDIAN、Q1、Q3、MIN、MAX、RANGE、MIN_MAX、SUM、STDDEV、STDERR、VAR、CV、MEAN_STD、Q1_Q3、MED_Q1_Q3、GM、GM_LCLM、GM_UCLM、GM_CLM、GM_STD、GM_STDDEV、GM_CV。</td>
+</tr>
+<tr>
+<td>CI_ALPHA=</td>
+<td>可选参数</td>
+<td>0.05</td>
+<td>LCLM、UCLM、CLM 的置信水平，取值 0 至 1。</td>
+</tr>
+<tr>
+<td>MAXDEC=</td>
+<td>可选参数</td>
+<td>4</td>
+<td>统计量的最大小数位数，取值 0 至 9。</td>
+</tr>
+<tr>
+<td>TEST=</td>
+<td>可选参数</td>
+<td>NONE</td>
+<td>组间假设检验方法。<br/>
+NONE：不检验。<br/>
+AUTO：先检验正态性，再按变量选择 PAR 或 NPAR。<br/>
+PAR：参数检验，两组用 t 检验，多组用 ANOVA。<br/>
+NPAR：非参数检验，两组用 Wilcoxon，多组用 Kruskal-Wallis。</td>
+</tr>
+<tr>
+<td>TEST_ALPHA=</td>
+<td>可选参数</td>
+<td>0.05</td>
+<td>假设检验的显著性水平，同时用于 TEST=AUTO 的正态性判断，取值 0 至 1。</td>
+</tr>
+<tr>
+<td>TOTCLASSID=</td>
+<td>可选参数</td>
+<td>0</td>
+<td>合计组的数字索引，作为 TRT 列的后缀。</td>
+</tr>
+<tr>
+<td>TOTCLASSLAB=</td>
+<td>可选参数</td>
+<td>Total</td>
+<td>合计组的列标签。</td>
+</tr>
+<tr>
+<td>RAWDECSOURCE=</td>
+<td>可选参数</td>
+<td>OVERALL</td>
+<td>原始小数位数的计算方式。<br/>
+OVERALL：所有数据共用一个最大原始小数位数。<br/>
+BY：每个 BY 组分别计算最大原始小数位数。</td>
+</tr>
+<tr>
+<td>MINMAXFMT=</td>
+<td>可选参数</td>
+<td>无</td>
+<td>MIN、MAX、SUM 的显示格式；留空时按 MAXDEC 指定的小数位四舍五入。</td>
+</tr>
+<tr>
+<td>POSFMT=</td>
+<td>可选参数</td>
+<td>无</td>
+<td>位置统计量（均值、中位数、四分位数、置信限）的显示格式；留空时为 24.d，d 为最大原始小数位且不超过 MAXDEC。</td>
+</tr>
+<tr>
+<td>SCAFMT=</td>
+<td>可选参数</td>
+<td>无</td>
+<td>尺度统计量（标准差、标准误）的显示格式；留空时为 24.d，d 为最大原始小数位且不超过 MAXDEC。</td>
+</tr>
+<tr>
+<td>CVFMT=</td>
+<td>可选参数</td>
+<td>16.2</td>
+<td>变异系数的显示格式。</td>
+</tr>
+<tr>
+<td>SHOWDENOM=</td>
+<td>可选参数</td>
+<td>Y</td>
+<td>是否在分类变量标签后显示 (N=#)，# 为 n+nmiss，取 Y 或 N。</td>
+</tr>
+<tr>
+<td>DENOMDLM=</td>
+<td>可选参数</td>
+<td>@</td>
+<td>分类标签与 (N=#) 文本之间的分隔字符。</td>
+</tr>
+<tr>
+<td>DEBUG=</td>
+<td>可选参数</td>
+<td>0</td>
+<td>是否保留中间数据集。<br/>
+0：结束时删除中间数据集。<br/>
+1：保留中间数据集以便排查。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：默认统计量（不分组）</h4>
+<pre class="code">%stat_summaryn(data=sashelp.class,out=work.sum1,var=age height)
+
+proc print data=work.sum1(keep=_varnam_ _statnam_ _statlab_ trt0);
+run;</pre>
+<p class="result-label">运行结果（WORK.SUM1，节选列）：</p>
+<table class="macro-table result-table">
+<col width="12%" />
+<col width="14%" />
+<col width="14%" />
+<col width="22%" />
+<thead>
+<tr><th>_varnam_</th><th>_statnam_</th><th>_statlab_</th><th>trt0</th></tr>
+</thead>
+<tbody>
+<tr><td>AGE</td><td>N_NMISS</td><td>n(miss)</td><td>19(0)</td></tr>
+<tr><td>AGE</td><td>MEAN_STD</td><td>Mean(SD)</td><td>13.3(1.49)</td></tr>
+<tr><td>AGE</td><td>MEDIAN</td><td>Median</td><td>13.0</td></tr>
+<tr><td>AGE</td><td>Q1_Q3</td><td>Q1,Q3</td><td>12.0, 15.0</td></tr>
+<tr><td>AGE</td><td>MIN_MAX</td><td>Min,Max</td><td>11, 16</td></tr>
+<tr><td>HEIGHT</td><td>N_NMISS</td><td>n(miss)</td><td>19(0)</td></tr>
+<tr><td>HEIGHT</td><td>MEAN_STD</td><td>Mean(SD)</td><td>62.34(5.127)</td></tr>
+<tr><td>HEIGHT</td><td>MEDIAN</td><td>Median</td><td>62.80</td></tr>
+<tr><td>HEIGHT</td><td>Q1_Q3</td><td>Q1,Q3</td><td>57.50, 66.50</td></tr>
+<tr><td>HEIGHT</td><td>MIN_MAX</td><td>Min,Max</td><td>51.3, 72</td></tr>
+</tbody>
+</table>
+<p>默认 <code>STATIS=</code> 输出 <code>N_NMISS</code>、<code>MEAN_STD</code>、<code>MEDIAN</code>、<code>Q1_Q3</code>、<code>MIN_MAX</code> 五种统计量；未指定 <code>CLASS=</code> 时全部观测作为一个总体，<code>TEST=</code> 被强制为 <code>NONE</code>。每个分析变量生成 5 行，<code>trt0</code> 为 <code>TOTCLASSID=0</code> 的合计列。输出中同时存在总体水平列 <code>trt1</code> 与合计列 <code>trt0</code>，两者数值相同，本表只展示 <code>trt0</code>。</p>
+
+<h4>示例 2：分组并执行参数检验</h4>
+<pre class="code">%stat_summaryn(data=sashelp.class,out=work.sum2,var=age,class=sex,test=PAR,
+               statis=n_nmiss mean_std median q1_q3)
+
+proc print data=work.sum2(keep=_varnam_ _statnam_ _testv_ _testp_ _testm_
+                          trt0 trt1 trt2);
+run;</pre>
+<p class="result-label">运行结果（WORK.SUM2）：</p>
+<table class="macro-table result-table">
+<col width="10%" />
+<col width="12%" />
+<col width="12%" />
+<col width="12%" />
+<col width="12%" />
+<col width="12%" />
+<col width="13%" />
+<col width="13%" />
+<thead>
+<tr><th>_varnam_</th><th>_statnam_</th><th>_testv_</th><th>_testp_</th><th>_testm_</th><th>trt0</th><th>trt1</th><th>trt2</th></tr>
+</thead>
+<tbody>
+<tr><td>AGE</td><td>N_NMISS</td><td>-0.25238</td><td>0.80377</td><td>t test</td><td>19(0)</td><td>9(0)</td><td>10(0)</td></tr>
+<tr><td>AGE</td><td>MEAN_STD</td><td>.</td><td>.</td><td></td><td>13.3(1.49)</td><td>13.2(1.39)</td><td>13.4(1.65)</td></tr>
+<tr><td>AGE</td><td>MEDIAN</td><td>.</td><td>.</td><td></td><td>13.0</td><td>13.0</td><td>13.5</td></tr>
+<tr><td>AGE</td><td>Q1_Q3</td><td>.</td><td>.</td><td></td><td>12.0, 15.0</td><td>12.0, 14.0</td><td>12.0, 15.0</td></tr>
+</tbody>
+</table>
+<p><code>CLASS=SEX</code> 将数据分为 F 与 M 两组，分别对应 <code>trt1</code>、<code>trt2</code>，<code>trt0</code> 为合计；<code>TEST=PAR</code> 在两组时执行 t 检验，<code>_TESTV_</code>、<code>_TESTP_</code>、<code>_TESTM_</code> 记录 t 统计量、P 值与检验方法，只写在该分析变量的第一条观测上，其余统计量行的检验列为缺失值。</p>
+
+<h4>示例 3：执行非参数检验</h4>
+<pre class="code">data work.np;
+  do grp='A','B';
+    do i=1 to 10;
+      if grp='A' then y=i;
+      else y=i**2;
+      output;
+    end;
+  end;
+run;
+
+%stat_summaryn(data=work.np,out=work.sum3,var=y,class=grp,test=NPAR,
+               statis=n_nmiss median q1_q3 min_max)
+
+proc print data=work.sum3(keep=_varnam_ _statnam_ _testv_ _testp_ _testm_
+                          trt0 trt1 trt2);
+run;</pre>
+<p class="result-label">运行结果（WORK.SUM3）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="12%" />
+<col width="12%" />
+<col width="12%" />
+<col width="14%" />
+<col width="12%" />
+<col width="12%" />
+<col width="14%" />
+<thead>
+<tr><th>_varnam_</th><th>_statnam_</th><th>_testv_</th><th>_testp_</th><th>_testm_</th><th>trt0</th><th>trt1</th><th>trt2</th></tr>
+</thead>
+<tbody>
+<tr><td>Y</td><td>N_NMISS</td><td>-2.42171</td><td>0.015448</td><td>Wilcoxon</td><td>20(0)</td><td>10(0)</td><td>10(0)</td></tr>
+<tr><td>Y</td><td>MEDIAN</td><td>.</td><td>.</td><td></td><td>8.5</td><td>5.5</td><td>30.5</td></tr>
+<tr><td>Y</td><td>Q1_Q3</td><td>.</td><td>.</td><td></td><td>4.0, 30.5</td><td>3.0, 8.0</td><td>9.0, 64.0</td></tr>
+<tr><td>Y</td><td>MIN_MAX</td><td>.</td><td>.</td><td></td><td>1, 100</td><td>1, 10</td><td>1, 100</td></tr>
+</tbody>
+</table>
+<p><code>work.np</code> 中 A 组为 1～10，B 组为 1～100 的平方；<code>TEST=NPAR</code> 在两组时执行 Wilcoxon 检验，<code>_TESTM_</code> 返回 <code>Wilcoxon</code>，检验统计量与 P 值写在第一条观测上。<code>trt1</code>、<code>trt2</code>、<code>trt0</code> 分别为 A、B、合计。</p>
+
+<h4>示例 4：控制小数位并选择统计量</h4>
+<pre class="code">%stat_summaryn(data=sashelp.class,out=work.sum4,var=height weight,class=sex,
+               test=NONE,maxdec=2,statis=mean clm median q1_q3 min_max)
+
+proc print data=work.sum4(keep=_varnam_ _statnam_ trt0 trt1 trt2);
+run;</pre>
+<p class="result-label">运行结果（WORK.SUM4，节选列）：</p>
+<table class="macro-table result-table">
+<col width="12%" />
+<col width="12%" />
+<col width="18%" />
+<col width="18%" />
+<col width="18%" />
+<thead>
+<tr><th>_varnam_</th><th>_statnam_</th><th>trt0</th><th>trt1</th><th>trt2</th></tr>
+</thead>
+<tbody>
+<tr><td>HEIGHT</td><td>MEAN</td><td>62.34</td><td>60.59</td><td>63.91</td></tr>
+<tr><td>HEIGHT</td><td>CLM</td><td>59.87, 64.81</td><td>56.73, 64.45</td><td>60.38, 67.44</td></tr>
+<tr><td>HEIGHT</td><td>MEDIAN</td><td>62.80</td><td>62.50</td><td>64.15</td></tr>
+<tr><td>HEIGHT</td><td>Q1_Q3</td><td>57.50, 66.50</td><td>56.50, 64.30</td><td>59.00, 67.00</td></tr>
+<tr><td>HEIGHT</td><td>MIN_MAX</td><td>51.3, 72</td><td>51.3, 66.5</td><td>57.3, 72</td></tr>
+<tr><td>WEIGHT</td><td>MEAN</td><td>100.03</td><td>90.11</td><td>108.95</td></tr>
+<tr><td>WEIGHT</td><td>CLM</td><td>89.05, 111.00</td><td>75.21, 105.01</td><td>92.69, 125.21</td></tr>
+<tr><td>WEIGHT</td><td>MEDIAN</td><td>99.50</td><td>90.00</td><td>107.25</td></tr>
+<tr><td>WEIGHT</td><td>Q1_Q3</td><td>84.00, 112.50</td><td>84.00, 102.50</td><td>85.00, 128.00</td></tr>
+<tr><td>WEIGHT</td><td>MIN_MAX</td><td>50.5, 150</td><td>50.5, 112.5</td><td>83, 150</td></tr>
+</tbody>
+</table>
+<p><code>MAXDEC=2</code> 将统计量的小数位限制为 2 位；<code>STATIS=MEAN CLM MEDIAN Q1_Q3 MIN_MAX</code> 依次输出均值、95% 置信区间、中位数、四分位数以及最小/最大值。<code>CLM</code> 的置信水平由 <code>CI_ALPHA</code> 控制，默认 0.05 对应 95% CI；<code>trt1</code>、<code>trt2</code>、<code>trt0</code> 分别为 F、M、合计。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+<li><code>CLASS=</code> 仅支持一个变量；未指定 <code>CLASS=</code> 时所有观测作为一个总体分析，<code>TEST=</code> 被强制为 <code>NONE</code>。</li>
+<li>合计组自动生成；<code>TOTCLASSID=</code> 不能与各分组水平的数字索引冲突。</li>
+<li>几何统计量（<code>GM*</code>）仅在 <code>STATIS=</code> 请求时计算；非正值不参与对数变换。</li>
+<li><code>TEST=AUTO</code> 按每个分析变量的最小正态性 P 值是否大于或等于 <code>TEST_ALPHA=</code>，分别选择参数检验或非参数检验。</li>
+<li>输出每个 BY 组、分析变量、统计量一行；分组水平转置为 <code>TRT&lt;index&gt;</code> 列，合计组为 <code>TRT&lt;TOTCLASSID&gt;</code>；<code>SHOWDENOM=Y</code> 时列标签附加 <code>(N=#)</code>。</li>
+<li>检验统计量、P 值与检验方法只写在各分析变量的第一条观测上；无法计算的统计量显示为 <code>N/A</code>。</li>
+<li>ANOVA 通过 <code>PROC NPAR1WAY</code> 的 ANOVA 选项完成，结果与 <code>PROC ANOVA</code> 相同，但运行更快。</li>
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<p>以下列出当前版本的使用约束与冲突风险。</p>
+
+<h4>1. 对输入参数的强假设</h4>
+<ul class="notes">
+<li><code>CLASS=</code> 仅支持一个变量；未指定 <code>CLASS=</code> 或仅有一个非缺失水平时，所有观测作为一个总体分析，且 <code>TEST=</code> 被强制为 <code>NONE</code>。</li>
+<li><code>TOTCLASSID=</code> 不得与各分组水平的数字索引重复；取值冲突时合计组的 <code>TRT</code> 列会与某个分组列同名，导致列冲突或结果被错误归并。</li>
+<li>几何统计量（<code>GM*</code>）仅使用大于 0 的观测做对数变换，0 与负值被自动排除。请求几何统计量时，其样本量与 N、均值等统计量不一致，且排除过程不产生提示。</li>
+</ul>
+
+<h4>2. 临时变量与临时数据集冲突风险</h4>
+<ul class="notes">
+<li>宏会创建并覆盖固定名称的中间数据集（名称以 <code>STAT_SUMMARYN_</code> 开头），并在 <code>DEBUG=0</code> 时删除 WORK 中所有以 <code>STAT_SUMMARYN_</code> 开头的数据集；WORK 中该前缀的自有数据集会被覆盖或误删。</li>
+<li>未指定 <code>CLASS=</code> 时，宏用临时变量 <code>_CLASS_</code> 承担分组，并用 <code>_BYIDX_</code>、<code>_VARIDX_</code>、<code>_VARVAL_</code>、<code>_DECLEN_</code> 记录分组、变量与取值。若输入数据集已含这些同名变量，其原值会在处理中被覆盖，导致分组或变量归属错乱。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/stat/stat_summaryn.sas" download>stat_summaryn.sas</a></p>
+<p class="download"><a href="../assets/macropackages/stat_summaryn.zip" download>stat_summaryn and its dependencies.zip</a></p>
+
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr><th>日期</th><th>修订人</th><th>修订内容</th></tr>
+</thead>
+<tbody>
+<tr><td>2026-11-07</td><td>Luo Hao</td><td>原始版本。</td></tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

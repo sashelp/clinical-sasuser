@@ -1,0 +1,1308 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.13 秒
+      CPU 时间          0.12 秒
+      
+1          /*===============================================================================
+2           * sdtm_fulldomain_test.sas - Positive (functional) acceptance tests
+3           *===============================================================================
+4           * Macro under test : %sdtm_fulldomain
+5           * File under test   : dev/cdisc/sdtm_fulldomain.sas
+6           * Coverage          : merge parent domain with SUPP qualifiers (numeric IDVAR),
+7           *                     parent-level qualifier (blank IDVAR), parent copied when
+8           *                     SUPP is empty / missing / a view / 0 obs / all subject
+9           *                     values missing, SUBJECT= parameter (default USUBJID,
+10          *                     SUBJID, multiple key variables), default parameter names
+11          *                     (PARENT=sdtm.&DOMAIN., SUPP=sdtm.supp&DOMAIN.,
+12          *                     OUT=&DOMAIN.), OUT= in another library, PARENT/SUPP
+13          *                     dataset options, in-place merge, QVAL length propagation,
+14          *                     variable labels, WORK cleanup.
+15          * Run               : qc/run_all.ps1  (or standalone batch, see README)
+16          *============================================================================*/
+17         
+18         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+19         %let _qcboot_=%sysfunc(getoption(sysin));
+20         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+21         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+22         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+23         %include "&_qcboot_.\_framework\qc_env.sas";
+88         %let _qcboot_=;
+89         /*----------------------------------------------------------------------------*/
+90         
+91         %include "&_QCFW_.";
+384        %include "&_QCQC_.\_framework\qc_sandbox.sas";
+484        %include "&_QCDEV_VAR_.\var_exist.sas";
+535        %include "&_QCDEV_VAR_.\var_attr.sas";
+591        %include "&_QCDEV_VAR_.\var_coexist.sas";
+657        %include "&_QCDEV_CDISC_.\sdtm_fulldomain.sas";
+751        
+752        /* CASE 7 / 8 assign librefs under &_QCSB_., so the sandbox must exist first */
+753        %qc_sandbox_reset;
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\f1.txt" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\f1.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时04分28秒,
+      创建时间=2026年11月09日 14时04分28秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\f1.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\f2.sas" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\f2.sas,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时04分28秒,
+      创建时间=2026年11月09日 14时04分28秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\f2.sas" 中。
+      最小记录长度是 15。
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      最大记录长度是 15。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\sub1\f3.txt" 
+      是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\sub1\f3.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时04分28秒,
+      创建时间=2026年11月09日 14时04分28秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\sub1\f3.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\sub1\f4.log" 
+      是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\sub1\f4.log,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时04分28秒,
+      创建时间=2026年11月09日 14时04分28秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\sub1\f4.log" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\sub2\f5.csv" 
+      是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\sub2\f5.csv,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时04分28秒,
+      创建时间=2026年11月09日 14时04分28秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d1\sub2\f5.csv" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d2\f6.txt" 是:
+      文件名=.\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d2\f6.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时04分28秒,
+      创建时间=2026年11月09日 14时04分28秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\d2\f6.txt" 中。
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+754        
+755        %qc_begin(prog=sdtm_fulldomain_test, macro=sdtm_fulldomain);
+#####QC_BEGIN prog=sdtm_fulldomain_test macro=sdtm_fulldomain
+756        
+757        /*----------------------------------------------------------------------------
+758         * Test data
+759         *   sdq_lb   : parent domain LB, sorted by USUBJID LBSEQ (documented contract)
+760         *   sdq_supp : SDTM.SUPPLB with a labeled QVAL, numeric IDVAR=LBSEQ
+761         * Note: QVAL carries a label here to exercise QLABEL -> variable label
+762         *       propagation.  The unlabeled-QVAL regression is covered separately by
+763         *       sdtm_fulldomain_bug_nolabel.sas.
+764         *--------------------------------------------------------------------------*/
+765        data sdq_lb;
+766          length usubjid $10 lbcat $8 lbtestcd $8 lborres $10;
+767          usubjid='S01'; lbseq=1; lbcat='CHEM'; lbtestcd='ALT'; lborres='10'; output;
+768          usubjid='S01'; lbseq=2; lbcat='CHEM'; lbtestcd='AST'; lborres='20'; output;
+769          usubjid='S02'; lbseq=1; lbcat='HEMA'; lbtestcd='HGB'; lborres='13'; output;
+770        run;
+
+NOTE: 数据集 WORK.SDQ_LB 有 3 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+771        
+772        data sdq_supp;
+773          length usubjid $10 idvar $8 idvarval $8 qnam $8 qlabel $40 qval $20;
+774          label qval='Result or Finding in Original Units';
+775          usubjid='S01'; idvar='LBSEQ'; idvarval='1'; qnam='LBFAST'; qlabel='Fasting Status'; qval='Y'; output;
+776          usubjid='S01'; idvar='LBSEQ'; idvarval='1'; qnam='LBMETHOD'; qlabel='Method'; qval='ELISA'; output;
+777          usubjid='S01'; idvar='LBSEQ'; idvarval='2'; qnam='LBFAST'; qlabel='Fasting Status'; qval='N'; output;
+778          usubjid='S02'; idvar='LBSEQ'; idvarval='1'; qnam='LBFAST'; qlabel='Fasting Status'; qval='Y'; output;
+779        run;
+
+NOTE: 数据集 WORK.SDQ_SUPP 有 4 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+780        
+781        /*----------------------------------------------------------------------------
+782         * CASE 1 : basic merge, numeric IDVAR (LBSEQ), several QNAM values
+783         *--------------------------------------------------------------------------*/
+784        %qc_case(desc=1 merge numeric IDVAR LBSEQ);
+#####QC_CASE n=1 desc=1 merge numeric IDVAR LBSEQ
+785        %sdtm_fulldomain(domain=lb, parent=work.sdq_lb, supp=work.sdq_supp, out=work.sdq_full1);
+
+NOTE: 从数据集 WORK.SDQ_SUPP. 读取了 4 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 7 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 3 个观测
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDQ_FULL1 有 3 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.03 秒
+      
+
+786        %qc_expect_ds(ds=work.sdq_full1, desc=C1 output dataset created);
+#####QC_PASS n=1 desc=C1 output dataset created
+787        %qc_expect_nobs(ds=work.sdq_full1, expect=3, desc=C1 row count equals parent);
+#####QC_PASS n=1 desc=C1 row count equals parent
+788        %qc_expect_var(ds=work.sdq_full1, var=LBFAST, type=C, desc=C1 LBFAST created as char);
+#####QC_PASS n=1 desc=C1 LBFAST created as char
+789        %qc_expect_var(ds=work.sdq_full1, var=LBMETHOD, type=C, desc=C1 LBMETHOD created as char);
+#####QC_PASS n=1 desc=C1 LBMETHOD created as char
+790        %qc_expect_len(ds=work.sdq_full1, var=LBFAST, expect=20, desc=C1 qualifier length = QVAL length);
+#####QC_PASS n=1 desc=C1 qualifier length = QVAL length
+791        %qc_expect_len(ds=work.sdq_full1, var=usubjid, expect=10, desc=C1 parent length untouched);
+#####QC_PASS n=1 desc=C1 parent length untouched
+792        
+793        proc sql noprint;
+794          select lborres into :_c1_lb1 trimmed from work.sdq_full1 where usubjid='S01' and lbseq=2;
+795          select lbfast  into :_c1_bf1 trimmed from work.sdq_full1 where usubjid='S01' and lbseq=1;
+796          select lbfast  into :_c1_bf2 trimmed from work.sdq_full1 where usubjid='S01' and lbseq=2;
+797          select lbfast  into :_c1_bf3 trimmed from work.sdq_full1 where usubjid='S02' and lbseq=1;
+798          select lbmethod into :_c1_m1 trimmed from work.sdq_full1 where usubjid='S01' and lbseq=2;
+799          select count(*) into :_c1_nm from work.sdq_full1 where lbmethod is not missing;
+800        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+801        %qc_check_eq(actual=&_c1_lb1., expect=20, desc=C1 parent value preserved);
+#####QC_PASS n=1 desc=C1 parent value preserved
+802        %qc_check_eq(actual=&_c1_bf1., expect=Y, desc=C1 S01/1 LBFAST=Y);
+#####QC_PASS n=1 desc=C1 S01/1 LBFAST=Y
+803        %qc_check_eq(actual=&_c1_bf2., expect=N, desc=C1 S01/2 LBFAST=N);
+#####QC_PASS n=1 desc=C1 S01/2 LBFAST=N
+6                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+804        %qc_check_eq(actual=&_c1_bf3., expect=Y, desc=C1 S02/1 LBFAST=Y);
+#####QC_PASS n=1 desc=C1 S02/1 LBFAST=Y
+805        %qc_check_eq(actual=&_c1_m1., expect=, desc=C1 S01/2 LBMETHOD missing);
+#####QC_PASS n=1 desc=C1 S01/2 LBMETHOD missing
+806        %qc_check_eq(actual=&_c1_nm., expect=1, desc=C1 only one LBMETHOD non-missing);
+#####QC_PASS n=1 desc=C1 only one LBMETHOD non-missing
+807        
+808        /* variable label comes from QLABEL via IDLABEL */
+809        %let _did=%sysfunc(open(work.sdq_full1));
+810        %let _pos=%sysfunc(varnum(&_did.,LBFAST));
+811        %let _lab=%sysfunc(varlabel(&_did.,&_pos.));
+812        %let _rc=%sysfunc(close(&_did.));
+813        %qc_check_eq(actual=&_lab., expect=Fasting Status, desc=C1 QLABEL becomes variable label);
+#####QC_PASS n=1 desc=C1 QLABEL becomes variable label
+814        
+815        /* WORK intermediate must be removed */
+816        %qc_check_eq(actual=%sysfunc(exist(work.sdtm_fulldomain1)), expect=0, desc=C1 intermediate WORK dataset
+816      ! removed);
+#####QC_PASS n=1 desc=C1 intermediate WORK dataset removed
+817        
+818        /*----------------------------------------------------------------------------
+819         * CASE 2 : parent-level qualifier, IDVAR blank -> merge on USUBJID only
+820         *--------------------------------------------------------------------------*/
+821        %qc_case(desc=2 blank IDVAR parent-level qualifier);
+#####QC_CASE n=2 desc=2 blank IDVAR parent-level qualifier
+822        data sdq_suppblank;
+823          length usubjid $10 idvar $8 idvarval $8 qnam $8 qlabel $40 qval $20;
+824          label qval='Result or Finding in Original Units';
+825          usubjid='S01'; idvar=''; idvarval=''; qnam='LBCLSIG'; qlabel='Clinical Significance'; qval='N'; output;
+826          usubjid='S02'; idvar=''; idvarval=''; qnam='LBCLSIG'; qlabel='Clinical Significance'; qval='Y'; output;
+827        run;
+
+NOTE: 数据集 WORK.SDQ_SUPPBLANK 有 2 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+828        %sdtm_fulldomain(domain=lb, parent=work.sdq_lb, supp=work.sdq_suppblank, out=work.sdq_full2);
+
+NOTE: 从数据集 WORK.SDQ_SUPPBLANK. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 2 个观测和 6 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 3 个观测
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDQ_FULL2 有 3 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+7                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      
+
+829        %qc_expect_nobs(ds=work.sdq_full2, expect=3, desc=C2 row count unchanged);
+#####QC_PASS n=2 desc=C2 row count unchanged
+830        %qc_expect_var(ds=work.sdq_full2, var=LBCLSIG, type=C, desc=C2 LBCLSIG created);
+#####QC_PASS n=2 desc=C2 LBCLSIG created
+831        proc sql noprint;
+832          select count(*) into :_c2_n from work.sdq_full2 where usubjid='S01' and lbclsig='N';
+833          select count(*) into :_c2_y from work.sdq_full2 where usubjid='S02' and lbclsig='Y';
+834        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+835        %qc_check_eq(actual=&_c2_n., expect=2, desc=C2 S01 both rows get qualifier);
+#####QC_PASS n=2 desc=C2 S01 both rows get qualifier
+836        %qc_check_eq(actual=&_c2_y., expect=1, desc=C2 S02 row gets qualifier);
+#####QC_PASS n=2 desc=C2 S02 row gets qualifier
+837        
+838        /*----------------------------------------------------------------------------
+839         * CASE 3 : SUPP exists but has 0 observations -> parent copied
+840         *--------------------------------------------------------------------------*/
+841        %qc_case(desc=3 SUPP with 0 observations copies parent);
+#####QC_CASE n=3 desc=3 SUPP with 0 observations copies parent
+842        data sdq_suppzero; set work.sdq_supp(obs=0); run;
+
+NOTE: 从数据集 WORK.SDQ_SUPP. 读取了 0 个观测
+NOTE: 数据集 WORK.SDQ_SUPPZERO 有 0 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+843        %sdtm_fulldomain(domain=lb, parent=work.sdq_lb, supp=work.sdq_suppzero, out=work.sdq_full3);
+
+NOTE: 从数据集 WORK.SDQ_SUPPZERO. 读取了 0 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 0 个观测和 5 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 3 个观测
+NOTE: 数据集 WORK.SDQ_FULL3 有 3 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+844        %qc_expect_nobs(ds=work.sdq_full3, expect=3, desc=C3 row count equals parent);
+#####QC_PASS n=3 desc=C3 row count equals parent
+845        /* output structure must be identical to the parent: no IDVAR/IDVARVAL leak */
+846        %let _did=%sysfunc(open(work.sdq_lb));
+847        %let _c3_pn=%sysfunc(attrn(&_did.,nvars));
+848        %let _rc=%sysfunc(close(&_did.));
+849        %let _did=%sysfunc(open(work.sdq_full3));
+850        %let _c3_on=%sysfunc(attrn(&_did.,nvars));
+8                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+851        %let _pos=%sysfunc(varnum(&_did.,LBFAST));
+852        %let _c3_posid=%sysfunc(varnum(&_did.,IDVAR));
+853        %let _c3_posval=%sysfunc(varnum(&_did.,IDVARVAL));
+854        %let _rc=%sysfunc(close(&_did.));
+855        %qc_check_eq(actual=&_c3_on., expect=&_c3_pn., desc=C3 variable count equals parent);
+#####QC_PASS n=3 desc=C3 variable count equals parent
+856        %qc_check_eq(actual=&_pos., expect=0, desc=C3 no qualifier variable added);
+#####QC_PASS n=3 desc=C3 no qualifier variable added
+857        %qc_check_eq(actual=&_c3_posid., expect=0, desc=C3 IDVAR not added);
+#####QC_PASS n=3 desc=C3 IDVAR not added
+858        %qc_check_eq(actual=&_c3_posval., expect=0, desc=C3 IDVARVAL not added);
+#####QC_PASS n=3 desc=C3 IDVARVAL not added
+859        proc sql noprint;
+860          select lbtestcd into :_c3_v trimmed from work.sdq_full3 where usubjid='S01' and lbseq=1;
+861        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+862        %qc_check_eq(actual=&_c3_v., expect=ALT, desc=C3 parent values preserved);
+#####QC_PASS n=3 desc=C3 parent values preserved
+863        
+864        /*----------------------------------------------------------------------------
+865         * CASE 4 : SUPP parameter empty -> parent copied
+866         *--------------------------------------------------------------------------*/
+867        %qc_case(desc=4 empty SUPP parameter copies parent);
+#####QC_CASE n=4 desc=4 empty SUPP parameter copies parent
+868        %sdtm_fulldomain(domain=lb, parent=work.sdq_lb, supp=, out=work.sdq_full4);
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 3 个观测
+NOTE: 数据集 WORK.SDQ_FULL4 有 3 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+869        %qc_expect_nobs(ds=work.sdq_full4, expect=3, desc=C4 row count equals parent);
+#####QC_PASS n=4 desc=C4 row count equals parent
+870        %qc_expect_var(ds=work.sdq_full4, var=lborres, desc=C4 parent variables present);
+#####QC_PASS n=4 desc=C4 parent variables present
+871        %let _did=%sysfunc(open(work.sdq_full4));
+872        %let _pos=%sysfunc(varnum(&_did.,LBFAST));
+873        %let _rc=%sysfunc(close(&_did.));
+874        %qc_check_eq(actual=&_pos., expect=0, desc=C4 no qualifier variable added);
+#####QC_PASS n=4 desc=C4 no qualifier variable added
+875        
+876        /*----------------------------------------------------------------------------
+877         * CASE 5 : SUBJECT=SUBJID instead of the default USUBJID
+878         *--------------------------------------------------------------------------*/
+879        %qc_case(desc=5 SUBJECT=SUBJID key);
+#####QC_CASE n=5 desc=5 SUBJECT=SUBJID key
+880        data sdq_lb_subjid;
+881          length subjid $10 lbcat $8 lbtestcd $8 lborres $10;
+882          subjid='001'; lbseq=1; lbcat='CHEM'; lbtestcd='ALT'; lborres='10'; output;
+883          subjid='001'; lbseq=2; lbcat='CHEM'; lbtestcd='AST'; lborres='20'; output;
+884          subjid='002'; lbseq=1; lbcat='HEMA'; lbtestcd='HGB'; lborres='13'; output;
+885        run;
+
+NOTE: 数据集 WORK.SDQ_LB_SUBJID 有 3 个观测和 5 个变量。
+9                                                       SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+886        data sdq_supp_subjid;
+887          length subjid $10 idvar $8 idvarval $8 qnam $8 qlabel $40 qval $20;
+888          label qval='Result or Finding in Original Units';
+889          subjid='001'; idvar='LBSEQ'; idvarval='2'; qnam='LBFAST'; qlabel='Fasting Status'; qval='N'; output;
+890          subjid='002'; idvar='LBSEQ'; idvarval='1'; qnam='LBFAST'; qlabel='Fasting Status'; qval='Y'; output;
+891        run;
+
+NOTE: 数据集 WORK.SDQ_SUPP_SUBJID 有 2 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+892        %sdtm_fulldomain(domain=lb, parent=work.sdq_lb_subjid, subject=subjid,
+893                         supp=work.sdq_supp_subjid, out=work.sdq_full5);
+
+NOTE: 从数据集 WORK.SDQ_SUPP_SUBJID. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 2 个观测和 6 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 2 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 2 个观测和 7 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDQ_LB_SUBJID. 读取了 3 个观测
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDQ_FULL5 有 3 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+894        %qc_expect_nobs(ds=work.sdq_full5, expect=3, desc=C5 row count equals parent);
+10                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+#####QC_PASS n=5 desc=C5 row count equals parent
+895        %qc_expect_var(ds=work.sdq_full5, var=LBFAST, type=C, desc=C5 qualifier variable created);
+#####QC_PASS n=5 desc=C5 qualifier variable created
+896        %qc_expect_var(ds=work.sdq_full5, var=SUBJID, type=C, desc=C5 SUBJID retained);
+#####QC_PASS n=5 desc=C5 SUBJID retained
+897        %let _did=%sysfunc(open(work.sdq_full5));
+898        %let _pos=%sysfunc(varnum(&_did.,USUBJID));
+899        %let _rc=%sysfunc(close(&_did.));
+900        %qc_check_eq(actual=&_pos., expect=0, desc=C5 USUBJID not required when SUBJECT=SUBJID);
+#####QC_PASS n=5 desc=C5 USUBJID not required when SUBJECT=SUBJID
+901        proc sql noprint;
+902          select lbfast into :_c5_v1 trimmed from work.sdq_full5 where subjid='001' and lbseq=2;
+903          select lbfast into :_c5_v2 trimmed from work.sdq_full5 where subjid='002' and lbseq=1;
+904        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+905        %qc_check_eq(actual=&_c5_v1., expect=N, desc=C5 value matched on SUBJID+LBSEQ);
+#####QC_PASS n=5 desc=C5 value matched on SUBJID+LBSEQ
+906        %qc_check_eq(actual=&_c5_v2., expect=Y, desc=C5 second subject matched);
+#####QC_PASS n=5 desc=C5 second subject matched
+907        
+908        /*----------------------------------------------------------------------------
+909         * CASE 6 : all SUPP USUBJID missing -> nothing to merge, parent copied
+910         *--------------------------------------------------------------------------*/
+911        %qc_case(desc=6 all SUPP USUBJID missing copies parent);
+#####QC_CASE n=6 desc=6 all SUPP USUBJID missing copies parent
+912        data sdq_suppmiss;
+913          length usubjid $10 idvar $8 idvarval $8 qnam $8 qlabel $40 qval $20;
+914          label qval='Result or Finding in Original Units';
+915          usubjid=''; idvar='LBSEQ'; idvarval='1'; qnam='LBFAST'; qlabel='Fasting Status'; qval='Y'; output;
+916        run;
+
+NOTE: 数据集 WORK.SDQ_SUPPMISS 有 1 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+917        %sdtm_fulldomain(domain=lb, parent=work.sdq_lb, supp=work.sdq_suppmiss, out=work.sdq_full6);
+
+NOTE: 从数据集 WORK.SDQ_SUPPMISS. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 0 个观测和 6 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 3 个观测
+NOTE: 数据集 WORK.SDQ_FULL6 有 3 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+918        %qc_expect_nobs(ds=work.sdq_full6, expect=3, desc=C6 row count equals parent);
+11                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+#####QC_PASS n=6 desc=C6 row count equals parent
+919        %qc_expect_var(ds=work.sdq_full6, var=usubjid, type=C, desc=C6 parent structure kept);
+#####QC_PASS n=6 desc=C6 parent structure kept
+920        %let _did=%sysfunc(open(work.sdq_full6));
+921        %let _pos=%sysfunc(varnum(&_did.,LBFAST));
+922        %let _rc=%sysfunc(close(&_did.));
+923        %qc_check_eq(actual=&_pos., expect=0, desc=C6 no qualifier variable added);
+#####QC_PASS n=6 desc=C6 no qualifier variable added
+924        
+925        /*----------------------------------------------------------------------------
+926         * CASE 7 : default parameter names, PARENT=sdtm.&DOMAIN.,
+927         *          SUPP=sdtm.supp&DOMAIN., OUT=&DOMAIN.
+928         *--------------------------------------------------------------------------*/
+929        %qc_case(desc=7 default parameter names via SDTM libref);
+#####QC_CASE n=7 desc=7 default parameter names via SDTM libref
+930        options dlcreatedir;
+931        libname sdtm "&_QCSB_LIB_.";
+NOTE: 已成功分配逻辑库引用名“SDTM”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\lib
+932        data sdtm.lb;     set work.sdq_lb;   run;
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 3 个观测
+NOTE: 数据集 SDTM.LB 有 3 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+933        data sdtm.supplb; set work.sdq_supp; run;
+
+NOTE: 从数据集 WORK.SDQ_SUPP. 读取了 4 个观测
+NOTE: 数据集 SDTM.SUPPLB 有 4 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+934        %sdtm_fulldomain(domain=lb);
+
+NOTE: 从数据集 SDTM.SUPPLB. 读取了 4 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 7 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+12                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      
+
+
+NOTE: 从数据集 SDTM.LB. 读取了 3 个观测
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.LB 有 3 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+935        %qc_expect_ds(ds=work.lb, desc=C7 default OUT=WORK.lb created);
+#####QC_PASS n=7 desc=C7 default OUT=WORK.lb created
+936        %qc_expect_nobs(ds=work.lb, expect=3, desc=C7 row count equals parent);
+#####QC_PASS n=7 desc=C7 row count equals parent
+937        %qc_expect_var(ds=work.lb, var=LBFAST, type=C, desc=C7 default SUPP was merged);
+#####QC_PASS n=7 desc=C7 default SUPP was merged
+938        proc sql noprint;
+939          select lbfast into :_c7_v trimmed from work.lb where usubjid='S01' and lbseq=2;
+940        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+941        %qc_check_eq(actual=&_c7_v., expect=N, desc=C7 value from default SUPP);
+#####QC_PASS n=7 desc=C7 value from default SUPP
+942        libname sdtm clear;
+NOTE: 已取消对逻辑库引用名 SDTM 的分配。
+943        
+944        /*----------------------------------------------------------------------------
+945         * CASE 8 : OUT= dataset in another library
+946         *--------------------------------------------------------------------------*/
+947        %qc_case(desc=8 OUT in another library);
+#####QC_CASE n=8 desc=8 OUT in another library
+948        options dlcreatedir;
+949        libname sdq2 "&_QCSB_LIB2_.";
+NOTE: 已成功分配逻辑库引用名“SDQ2”，如下所示: 
+       引擎:        V9 
+       物理名: .\codehub\macro\qc\_sandbox_tmp\sdtm_fulldomain_test_22536\lib2
+950        %sdtm_fulldomain(domain=lb, parent=work.sdq_lb, supp=work.sdq_supp, out=sdq2.full8);
+
+NOTE: 从数据集 WORK.SDQ_SUPP. 读取了 4 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 7 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+13                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 3 个观测
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 SDQ2.FULL8 有 3 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+951        %qc_expect_ds(ds=sdq2.full8, desc=C8 output created in SDQ2);
+#####QC_PASS n=8 desc=C8 output created in SDQ2
+952        %qc_expect_nobs(ds=sdq2.full8, expect=3, desc=C8 row count equals parent);
+#####QC_PASS n=8 desc=C8 row count equals parent
+953        %qc_expect_var(ds=sdq2.full8, var=LBMETHOD, type=C, desc=C8 qualifier variable present);
+#####QC_PASS n=8 desc=C8 qualifier variable present
+954        %qc_check_eq(actual=%sysfunc(exist(work.sdtm_fulldomain1)), expect=0, desc=C8 intermediate removed);
+#####QC_PASS n=8 desc=C8 intermediate removed
+955        libname sdq2 clear;
+NOTE: 已取消对逻辑库引用名 SDQ2 的分配。
+956        
+957        /*----------------------------------------------------------------------------
+958         * CASE 9 : all QNAM variables take the QVAL length; longer values preserved
+959         *--------------------------------------------------------------------------*/
+960        %qc_case(desc=9 QVAL length propagation);
+#####QC_CASE n=9 desc=9 QVAL length propagation
+961        data sdq_supplen;
+962          length usubjid $10 idvar $8 idvarval $8 qnam $8 qlabel $40 qval $50;
+963          label qval='Result or Finding in Original Units';
+964          usubjid='S01'; idvar='LBSEQ'; idvarval='1'; qnam='LBFAST'; qlabel='Fasting Status'; qval='Y'; output;
+965          usubjid='S01'; idvar='LBSEQ'; idvarval='1'; qnam='LBCOMM'; qlabel='Comment'; qval='sample comment text';
+965      ! output;
+966          usubjid='S01'; idvar='LBSEQ'; idvarval='2'; qnam='LBFAST'; qlabel='Fasting Status'; qval='N'; output;
+967        run;
+
+NOTE: 数据集 WORK.SDQ_SUPPLEN 有 3 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+968        %sdtm_fulldomain(domain=lb, parent=work.sdq_lb, supp=work.sdq_supplen, out=work.sdq_full9);
+
+NOTE: 从数据集 WORK.SDQ_SUPPLEN. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 2 个观测和 7 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+14                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 2 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 2 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 3 个观测
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 2 个观测
+NOTE: 数据集 WORK.SDQ_FULL9 有 3 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+969        %qc_expect_len(ds=work.sdq_full9, var=LBFAST, expect=50, desc=C9 all QNAM vars use QVAL length);
+#####QC_PASS n=9 desc=C9 all QNAM vars use QVAL length
+970        %qc_expect_len(ds=work.sdq_full9, var=LBCOMM, expect=50, desc=C9 new QNAM var length);
+#####QC_PASS n=9 desc=C9 new QNAM var length
+971        proc sql noprint;
+972          select lbcomm into :_c9_v trimmed from work.sdq_full9 where usubjid='S01' and lbseq=1;
+973        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+974        %qc_check_eq(actual=&_c9_v., expect=sample comment text, desc=C9 long QVAL value preserved);
+#####QC_PASS n=9 desc=C9 long QVAL value preserved
+975        
+976        /*----------------------------------------------------------------------------
+977         * CASE 10 : PARENT= and SUPP= passed with dataset options (where=)
+978         *           Also exercises the new %var_coexist/%var_attr validation on a
+979         *           data set name that carries options.
+980         *--------------------------------------------------------------------------*/
+981        %qc_case(desc=10 PARENT and SUPP dataset options);
+#####QC_CASE n=10 desc=10 PARENT and SUPP dataset options
+982        %sdtm_fulldomain(domain=lb, parent=work.sdq_lb(where=(lbseq=1)),
+983                         supp=work.sdq_supp(where=(usubjid='S01' and idvarval='1')), out=work.sdq_full10);
+
+NOTE: 从数据集 WORK.SDQ_SUPP. 读取了 2 个观测
+      WHERE (usubjid='S01') and (idvarval='1');
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 1 个观测和 7 个变量。
+15                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 1 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 1 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 1 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 2 个观测
+      WHERE lbseq=1;
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 1 个观测
+NOTE: 数据集 WORK.SDQ_FULL10 有 2 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+984        %qc_expect_nobs(ds=work.sdq_full10, expect=2, desc=C10 row count equals filtered parent);
+#####QC_PASS n=10 desc=C10 row count equals filtered parent
+985        proc sql noprint;
+986          select lbfast into :_c10_1 trimmed from work.sdq_full10 where usubjid='S01' and lbseq=1;
+987          select lbmethod into :_c10_2 trimmed from work.sdq_full10 where usubjid='S01' and lbseq=1;
+988          select count(*) into :_c10_s02 from work.sdq_full10 where usubjid='S02' and lbfast is not missing;
+989        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+990        %qc_check_eq(actual=&_c10_1., expect=Y, desc=C10 filtered SUPP applied with dataset option);
+#####QC_PASS n=10 desc=C10 filtered SUPP applied with dataset option
+991        %qc_check_eq(actual=&_c10_2., expect=ELISA, desc=C10 second qualifier applied);
+#####QC_PASS n=10 desc=C10 second qualifier applied
+992        %qc_check_eq(actual=&_c10_s02., expect=0, desc=C10 filtered-out subject has no qualifier);
+#####QC_PASS n=10 desc=C10 filtered-out subject has no qualifier
+993        
+994        /*----------------------------------------------------------------------------
+995         * CASE 11 : in-place merge, OUT= equals PARENT=
+996         *--------------------------------------------------------------------------*/
+997        %qc_case(desc=11 in-place merge OUT=PARENT);
+16                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+#####QC_CASE n=11 desc=11 in-place merge OUT=PARENT
+998        data sdq_inplace; set work.sdq_lb; run;
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 3 个观测
+NOTE: 数据集 WORK.SDQ_INPLACE 有 3 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+999        %sdtm_fulldomain(domain=lb, parent=work.sdq_inplace, supp=work.sdq_supp, out=work.sdq_inplace);
+
+NOTE: 从数据集 WORK.SDQ_SUPP. 读取了 4 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 7 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDQ_INPLACE. 读取了 3 个观测
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDQ_INPLACE 有 3 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1000       %qc_expect_nobs(ds=work.sdq_inplace, expect=3, desc=C11 row count unchanged);
+#####QC_PASS n=11 desc=C11 row count unchanged
+1001       %qc_expect_var(ds=work.sdq_inplace, var=LBFAST, type=C, desc=C11 qualifier added in place);
+#####QC_PASS n=11 desc=C11 qualifier added in place
+1002       proc sql noprint;
+1003         select lbfast into :_c11_v trimmed from work.sdq_inplace where usubjid='S01' and lbseq=1;
+1004       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+17                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+      
+
+1005       %qc_check_eq(actual=&_c11_v., expect=Y, desc=C11 in-place value correct);
+#####QC_PASS n=11 desc=C11 in-place value correct
+1006       
+1007       /*----------------------------------------------------------------------------
+1008        * CASE 12 : multiple SUBJECT= key variables (USUBJID SUBJID)
+1009        *           Records whose first SUBJECT variable is missing are filtered out
+1010        *           by the transposed SUPP view.
+1011        *--------------------------------------------------------------------------*/
+1012       %qc_case(desc=12 multiple SUBJECT variables);
+#####QC_CASE n=12 desc=12 multiple SUBJECT variables
+1013       data sdq_lb_2key;
+1014         length usubjid $10 subjid $10 lbcat $8 lbtestcd $8 lborres $10;
+1015         usubjid='S01'; subjid='001'; lbseq=1; lbcat='CHEM'; lbtestcd='ALT'; lborres='10'; output;
+1016         usubjid='S01'; subjid='001'; lbseq=2; lbcat='CHEM'; lbtestcd='AST'; lborres='20'; output;
+1017         usubjid='S02'; subjid='002'; lbseq=1; lbcat='HEMA'; lbtestcd='HGB'; lborres='13'; output;
+1018       run;
+
+NOTE: 数据集 WORK.SDQ_LB_2KEY 有 3 个观测和 6 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1019       data sdq_supp_2key;
+1020         length usubjid $10 subjid $10 idvar $8 idvarval $8 qnam $8 qlabel $40 qval $20;
+1021         label qval='Result or Finding in Original Units';
+1022         usubjid='';    subjid='003'; idvar='LBSEQ'; idvarval='1'; qnam='LBFAST'; qlabel='Fasting Status'; qval='Y';
+1022     ! output;
+1023         usubjid='S01'; subjid='001'; idvar='LBSEQ'; idvarval='1'; qnam='LBFAST'; qlabel='Fasting Status'; qval='Y';
+1023     ! output;
+1024         usubjid='S01'; subjid='001'; idvar='LBSEQ'; idvarval='2'; qnam='LBFAST'; qlabel='Fasting Status'; qval='N';
+1024     ! output;
+1025         usubjid='S02'; subjid='002'; idvar='LBSEQ'; idvarval='1'; qnam='LBFAST'; qlabel='Fasting Status'; qval='Y';
+1025     ! output;
+1026       run;
+
+NOTE: 数据集 WORK.SDQ_SUPP_2KEY 有 4 个观测和 7 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1027       %sdtm_fulldomain(domain=lb, parent=work.sdq_lb_2key, subject=USUBJID SUBJID,
+1028                        supp=work.sdq_supp_2key, out=work.sdq_full12);
+
+NOTE: 从数据集 WORK.SDQ_SUPP_2KEY. 读取了 4 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 7 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 8 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+18                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+
+
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_FULLDOMAIN1 有 3 个观测和 8 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDQ_LB_2KEY. 读取了 3 个观测
+NOTE: 从数据集 WORK.SDTM_FULLDOMAIN1. 读取了 3 个观测
+NOTE: 数据集 WORK.SDQ_FULL12 有 3 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_FULLDOMAIN1 (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1029       %qc_expect_nobs(ds=work.sdq_full12, expect=3, desc=C12 row count equals parent);
+#####QC_PASS n=12 desc=C12 row count equals parent
+1030       %qc_expect_var(ds=work.sdq_full12, var=LBFAST, type=C, desc=C12 qualifier variable created);
+#####QC_PASS n=12 desc=C12 qualifier variable created
+1031       %qc_expect_var(ds=work.sdq_full12, var=SUBJID, type=C, desc=C12 second key variable retained);
+#####QC_PASS n=12 desc=C12 second key variable retained
+1032       proc sql noprint;
+1033         select lbfast into :_c12_1 trimmed from work.sdq_full12 where usubjid='S01' and subjid='001' and lbseq=1;
+1034         select lbfast into :_c12_2 trimmed from work.sdq_full12 where usubjid='S01' and subjid='001' and lbseq=2;
+1035         select lbfast into :_c12_3 trimmed from work.sdq_full12 where usubjid='S02' and subjid='002' and lbseq=1;
+1036         select count(*) into :_c12_orphan from work.sdq_full12 where subjid='003';
+1037       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+1038       %qc_check_eq(actual=&_c12_1., expect=Y, desc=C12 first subject value);
+#####QC_PASS n=12 desc=C12 first subject value
+1039       %qc_check_eq(actual=&_c12_2., expect=N, desc=C12 first subject second record);
+#####QC_PASS n=12 desc=C12 first subject second record
+1040       %qc_check_eq(actual=&_c12_3., expect=Y, desc=C12 second subject value);
+#####QC_PASS n=12 desc=C12 second subject value
+1041       %qc_check_eq(actual=&_c12_orphan., expect=0, desc=C12 missing first SUBJECT value filtered out);
+#####QC_PASS n=12 desc=C12 missing first SUBJECT value filtered out
+1042       
+1043       /*----------------------------------------------------------------------------
+1044        * CASE 13 : SUPP= points to a dataset that does not exist
+1045        *           Expected behaviour: the parent domain is copied to OUT.
+1046        *--------------------------------------------------------------------------*/
+1047       %qc_case(desc=13 non-existing SUPP copies parent);
+#####QC_CASE n=13 desc=13 non-existing SUPP copies parent
+1048       %sdtm_fulldomain(domain=lb, parent=work.sdq_lb, supp=work.sdq_no_such_supp, out=work.sdq_full13);
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 3 个观测
+NOTE: 数据集 WORK.SDQ_FULL13 有 3 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+19                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1049       %qc_expect_ds(ds=work.sdq_full13, desc=C13 output dataset created);
+#####QC_PASS n=13 desc=C13 output dataset created
+1050       %qc_expect_nobs(ds=work.sdq_full13, expect=3, desc=C13 row count equals parent);
+#####QC_PASS n=13 desc=C13 row count equals parent
+1051       %qc_expect_var(ds=work.sdq_full13, var=lbtestcd, desc=C13 parent structure kept);
+#####QC_PASS n=13 desc=C13 parent structure kept
+1052       %let _did=%sysfunc(open(work.sdq_full13));
+1053       %let _pos=%sysfunc(varnum(&_did.,LBFAST));
+1054       %let _rc=%sysfunc(close(&_did.));
+1055       %qc_check_eq(actual=&_pos., expect=0, desc=C13 no qualifier variable added);
+#####QC_PASS n=13 desc=C13 no qualifier variable added
+1056       %qc_check_eq(actual=%sysfunc(exist(work.sdtm_fulldomain1)), expect=0, desc=C13 intermediate removed);
+#####QC_PASS n=13 desc=C13 intermediate removed
+1057       proc sql noprint;
+1058         select lborres into :_c13_v trimmed from work.sdq_full13 where usubjid='S01' and lbseq=2;
+1059       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1060       %qc_check_eq(actual=&_c13_v., expect=20, desc=C13 parent value preserved);
+#####QC_PASS n=13 desc=C13 parent value preserved
+1061       
+1062       /*----------------------------------------------------------------------------
+1063        * CASE 14 : SUPP= is a VIEW.  EXIST() returns 0 for views, so it follows the
+1064        *           same "SUPP not available" path and the parent is copied.
+1065        *--------------------------------------------------------------------------*/
+1066       %qc_case(desc=14 SUPP as view copies parent);
+#####QC_CASE n=14 desc=14 SUPP as view copies parent
+1067       proc sql;
+1068         create view work.sdq_suppview as select * from work.sdq_supp;
+NOTE: SQL 视图 WORK.SDQ_SUPPVIEW 已定义。
+1069       quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1070       %sdtm_fulldomain(domain=lb, parent=work.sdq_lb, supp=work.sdq_suppview, out=work.sdq_full14);
+
+NOTE: 从数据集 WORK.SDQ_LB. 读取了 3 个观测
+NOTE: 数据集 WORK.SDQ_FULL14 有 3 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+1071       %qc_expect_nobs(ds=work.sdq_full14, expect=3, desc=C14 row count equals parent);
+#####QC_PASS n=14 desc=C14 row count equals parent
+1072       %qc_expect_var(ds=work.sdq_full14, var=lborres, desc=C14 parent variables present);
+#####QC_PASS n=14 desc=C14 parent variables present
+1073       %let _did=%sysfunc(open(work.sdq_full14));
+1074       %let _pos=%sysfunc(varnum(&_did.,LBFAST));
+20                                                      SAS 系统       2026年11月 9日 星期一 下午02时04分00秒
+
+1075       %let _rc=%sysfunc(close(&_did.));
+1076       %qc_check_eq(actual=&_pos., expect=0, desc=C14 view SUPP not merged);
+#####QC_PASS n=14 desc=C14 view SUPP not merged
+1077       %qc_check_eq(actual=%sysfunc(exist(work.sdtm_fulldomain1)), expect=0, desc=C14 intermediate removed);
+#####QC_PASS n=14 desc=C14 intermediate removed
+1078       
+1079       %qc_end;
+#####QC_RESULT prog=sdtm_fulldomain_test macro=sdtm_fulldomain STATUS=PASS ncase=14 npass=71 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.72 秒
+      CPU 时间          0.49 秒
+      

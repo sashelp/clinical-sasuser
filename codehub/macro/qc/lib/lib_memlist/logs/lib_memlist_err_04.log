@@ -1,0 +1,72 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.21 秒
+      
+1          /*===============================================================================
+2           * lib_memlist_err_04.sas - Negative test: PATTERN= invalid regular expression
+3           *===============================================================================
+4           * Macro under test : %lib_memlist
+5           * Expected         : abort cancel with "invalid regular expression"
+6           * Note             : TYPE= is intentionally left empty so that the PATTERN
+7           *                    validation branch is actually reached (see
+8           *                    lib_memlist_bug_typepattern.sas for the TYPE+PATTERN bug).
+9           *============================================================================*/
+10         
+11         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+12         %let _qcboot_=%sysfunc(getoption(sysin));
+13         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+14         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+15         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+16         %include "&_qcboot_.\_framework\qc_env.sas";
+81         %let _qcboot_=;
+82         /*----------------------------------------------------------------------------*/
+83         
+84         %include "&_QCFW_.";
+377        %include "&_QCDEV_LIB_.\lib_memlist.sas";
+434        %qc_begin(prog=lib_memlist_err_04, macro=lib_memlist);
+#####QC_BEGIN prog=lib_memlist_err_04 macro=lib_memlist
+435        %qc_case(desc=1 PATTERN= invalid regex must abort);
+#####QC_CASE n=1 desc=1 PATTERN= invalid regex must abort
+436        *EXPECTED_ERROR: invalid regular expression;
+437        %qc_abort_marker;
+#####QC_ABORT_MARKER n=1
+438        %let _badpat=%nrstr(/[a-/);
+439        %lib_memlist(library=work,pattern=%superq(_badpat));
+ERROR: Unmatched [ before HERE mark in regex m/[ << HERE a-/.
+
+ERROR: The regular expression passed to the function PRXPARSE contains a syntax error.
+WARNING: %SYSFUNC 或 %QSYSFUNC 宏函数所引用的参数 1（函数 PRXPARSE）超出范围。
+NOTE: 执行 %SYSFUNC 函数时无法执行数学运算。运算结果已设为缺失值。
+ERROR: Parameter PATTERN= specified invalid regular expression.
+ERROR: 已通过 %ABORT CANCEL 语句取消执行。
+NOTE: 由于收到 CANCEL 请求，SAS 系统已停止处理。
+ERROR: 打印以下页时出错: 1.
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.16 秒
+      CPU 时间          0.23 秒
+      

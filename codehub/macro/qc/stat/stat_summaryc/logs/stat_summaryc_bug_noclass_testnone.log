@@ -1,0 +1,417 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.14 秒
+      CPU 时间          0.12 秒
+      
+1          /*==============================================================================
+2           * stat_summaryc_bug_noclass_testnone.sas - Bug regression: TEST= not forced to NONE when CLASS= identifies a
+2        ! single group
+3           *==============================================================================
+4           * Macro under test : %stat_summaryc
+5           * Expected         : when CLASS= is not specified, or no CLASS= value is
+6           *                    nonmissing, all observations form one overall group, so
+7           *                    TEST= is forced to NONE and the output carries no
+8           *                    _TESTV_ / _TESTP_ / _TESTM_ columns
+9           * Status           : OPEN 2026-11-01
+10          * Original defect  : the forcing block is gated by "%if &class.^=" (line 124),
+11          *                    therefore an empty or all-missing CLASS= skips it and TEST=
+12          *                    stays active; PROC FREQ produces no test statistics, so
+13          *                    every analysis variable shows .N / .N / N/A
+14          * Fix              : apply the single-group check after CLASS= is empty or
+15          *                    classallmissing=1 is set, not only inside the &class.^= gate
+16          * Test passes when  the defect is fixed (run_all then reports FIXED)
+17          *============================================================================*/
+18         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+19         %let _qcboot_=%sysfunc(getoption(sysin));
+20         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+21         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+22         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+23         %include "&_qcboot_.\_framework\qc_env.sas";
+88         %let _qcboot_=;
+89         /*----------------------------------------------------------------------------*/
+90         %include "&_QCFW_.";
+383        %include "&_QCDEV_VAR_.\var_exist.sas";
+434        %include "&_QCDEV_VAR_.\var_coexist.sas";
+500        %include "&_QCDEV_DS_.\ds_attr.sas";
+552        %include "&_QCDEV_STAT_.\stat_summaryc.sas";
+912        
+913        %qc_begin(prog=stat_summaryc_bug_noclass_testnone, macro=stat_summaryc);
+#####QC_BEGIN prog=stat_summaryc_bug_noclass_testnone macro=stat_summaryc
+914        
+915        %macro _qc_rows(ds=, where=, expect=1, desc=);
+916          %local rc;
+917          proc sql noprint;
+918            select count(*) into :rc from &ds. where &where.;
+919          quit;
+920          %qc_check_eq(actual=&rc., expect=&expect., desc=&desc.);
+921        %mend _qc_rows;
+922        
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+923        %macro _qc_colabs(ds=, var=, mac=);
+924          %global &mac.;
+925          %let _did_=%sysfunc(open(&ds.));
+926          %if &_did_.^=0 %then %do;
+927            %let &mac.=%sysfunc(varnum(&_did_,&var.));
+928            %let _did_=%sysfunc(close(&_did_));
+929          %end;
+930          %else %let &mac.=-1;
+931        %mend _qc_colabs;
+932        
+933        /* 5 records, no CLASS= : F=3 M=2 */
+934        data sc_noclass;
+935          length trt $1 sex $1;
+936          input trt $ sex $;
+937          datalines;
+
+NOTE: 数据集 WORK.SC_NOCLASS 有 5 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+943        ;
+944        run;
+945        
+946        /* every CLASS= value missing : F=2 M=2 */
+947        data sc_allmiss;
+948          length trt $1 sex $1;
+949          input trt $ sex $;
+950          datalines;
+
+NOTE: 数据集 WORK.SC_ALLMISS 有 4 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+955        ;
+956        run;
+957        
+958        %qc_case(desc=1 chisq forced to none when class is not specified);
+#####QC_CASE n=1 desc=1 chisq forced to none when class is not specified
+959        
+960        %stat_summaryc(data=sc_noclass, out=b1, var=sex, test=chisq);
+WARNING: Only one overall group is analysed, thus TEST= option will be forced to NONE
+
+NOTE: 从数据集 WORK.SC_NOCLASS. 读取了 5 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_DSIN 有 5 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYC_CONTENTS 有 2 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.03 秒
+      CPU 时间          0.03 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_DSIN. 读取了 5 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_WEIGHT 有 4 个观测和 5 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYC_FREQS 有 6 个观测和 11 个变量。
+NOTE: 从数据集 WORK.STAT_SUMMARYC_WEIGHT. 读取了 2 个观测
+      WHERE MISSING(_CLASS_)=0;
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_FREQS. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_WEIGHT. 读取了 0 个观测
+      WHERE CMISS(SEX)=1;
+NOTE: 数据集 WORK.STAT_SUMMARYC_NMISS 有 0 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_FREQS. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_RESULT 有 6 个观测和 25 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_RESULT. 读取了 6 个观测
+NOTE: 已更新数据集 WORK.STAT_SUMMARYC_RESULT。重写了 6 个观测，添加了 0 个观测，
+      删除了 0 个观测。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_RESULT. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_RESULT 有 6 个观测和 25 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_RESULT. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_FINAL_TRANS 有 3 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_FINAL_TRANS. 读取了 3 个观测
+NOTE: 数据集 WORK.B1 有 3 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYC_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_FREQS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_NMISS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_RESULT (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_WEIGHT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+961        
+962        %qc_expect_ds(ds=b1, desc=B1 output dataset exists);
+#####QC_PASS n=1 desc=B1 output dataset exists
+963        %qc_expect_nobs(ds=b1, expect=3, desc=B1 one row per level plus total);
+#####QC_PASS n=1 desc=B1 one row per level plus total
+964        %_qc_rows(ds=b1, where=_varlvl_='F' and trt1='3(60.0)' and trt0='3(60.0)', expect=1, desc=B1 overall F count
+964      ! kept);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=B1 overall F count kept
+965        %_qc_rows(ds=b1, where=_varlvl_='Total' and trt1='5(0)' and trt0='5(0)', expect=1, desc=B1 overall total row
+965      ! kept);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=1 desc=B1 overall total row kept
+966        %_qc_colabs(ds=b1, var=_testm_, mac=_b1m);
+967        %qc_check_eq(actual=&_b1m., expect=0, desc=B1 test method column must be absent);
+#####QC_PASS n=1 desc=B1 test method column must be absent
+968        %_qc_colabs(ds=b1, var=_testv_, mac=_b1v);
+969        %qc_check_eq(actual=&_b1v., expect=0, desc=B1 test statistic column must be absent);
+#####QC_PASS n=1 desc=B1 test statistic column must be absent
+970        %_qc_colabs(ds=b1, var=_testp_, mac=_b1p);
+971        %qc_check_eq(actual=&_b1p., expect=0, desc=B1 p value column must be absent);
+#####QC_PASS n=1 desc=B1 p value column must be absent
+972        
+973        %qc_case(desc=2 chisq forced to none when all class values are missing);
+#####QC_CASE n=2 desc=2 chisq forced to none when all class values are missing
+974        
+975        %stat_summaryc(data=sc_allmiss, out=b2, class=trt, var=sex, test=chisq);
+NOTE: WHERE 子句已扩充。
+
+NOTE: 没有从数据集 WORK.SC_ALLMISS 中选择观测。
+NOTE: 从数据集 WORK.SC_ALLMISS. 读取了 0 个观测
+      WHERE MISSING(TRT)=0;
+NOTE: 数据集 WORK.STAT_SUMMARYC_CLASS 有 0 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      CPU 时间          0.01 秒
+      
+
+WARNING: Only one overall group is analysed, thus TEST= option will be forced to NONE
+
+NOTE: 从数据集 WORK.SC_ALLMISS. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_DSIN 有 4 个观测和 3 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYC_CONTENTS 有 2 个观测和 41 个变量。
+NOTE: “PROCEDURE CONTENTS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+NOTE: 没有选择任何行。
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_DSIN. 读取了 4 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_WEIGHT 有 4 个观测和 5 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 数据集 WORK.STAT_SUMMARYC_FREQS 有 6 个观测和 11 个变量。
+NOTE: 从数据集 WORK.STAT_SUMMARYC_WEIGHT. 读取了 2 个观测
+      WHERE MISSING(_CLASS_)=0;
+NOTE: “PROCEDURE FREQ”所用时间（总处理时间）:
+      实际时间          0.02 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_FREQS. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_CLASS 有 2 个观测和 3 个变量。
+NOTE: “PROCEDURE SUMMARY”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_WEIGHT. 读取了 0 个观测
+      WHERE CMISS(SEX)=1;
+NOTE: 数据集 WORK.STAT_SUMMARYC_NMISS 有 0 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_FREQS. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_RESULT 有 6 个观测和 25 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+6                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_RESULT. 读取了 6 个观测
+NOTE: 已更新数据集 WORK.STAT_SUMMARYC_RESULT。重写了 6 个观测，添加了 0 个观测，
+      删除了 0 个观测。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_RESULT. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_RESULT 有 6 个观测和 25 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_RESULT. 读取了 6 个观测
+NOTE: 数据集 WORK.STAT_SUMMARYC_FINAL_TRANS 有 3 个观测和 9 个变量。
+NOTE: “PROCEDURE TRANSPOSE”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.STAT_SUMMARYC_FINAL_TRANS. 读取了 3 个观测
+NOTE: 数据集 WORK.B2 有 3 个观测和 9 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 正在删除 WORK.STAT_SUMMARYC_CLASS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_CONTENTS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_DSIN (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_FINAL_TRANS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_FREQS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_NMISS (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_RESULT (memtype=DATA)。
+NOTE: 正在删除 WORK.STAT_SUMMARYC_WEIGHT (memtype=DATA)。
+NOTE: “PROCEDURE DATASETS”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+976        
+977        %qc_expect_ds(ds=b2, desc=B2 output dataset exists);
+#####QC_PASS n=2 desc=B2 output dataset exists
+978        %qc_expect_nobs(ds=b2, expect=3, desc=B2 one row per level plus total);
+#####QC_PASS n=2 desc=B2 one row per level plus total
+979        %_qc_rows(ds=b2, where=_varlvl_='F' and trt1='2(50.0)' and trt0='2(50.0)', expect=1, desc=B2 overall F count
+979      ! kept);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+#####QC_PASS n=2 desc=B2 overall F count kept
+980        %_qc_colabs(ds=b2, var=_testm_, mac=_b2m);
+981        %qc_check_eq(actual=&_b2m., expect=0, desc=B2 test method column must be absent);
+#####QC_PASS n=2 desc=B2 test method column must be absent
+982        
+983        %qc_end;
+7                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+#####QC_RESULT prog=stat_summaryc_bug_noclass_testnone macro=stat_summaryc STATUS=PASS ncase=2 npass=11 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.46 秒
+      CPU 时间          0.34 秒
+      

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>转中心怎么记 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html" class="current">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SDTM</p>
+<h2>受试者中途换中心，SDTM 里怎么记？</h2>
+<p class="subtitle">在 DS 域加一条 DSCAT=OTHER EVENT 的记录，DSTERM 写清楚、DSDECOD=TRANSFERRED、DSPARTY=SITE、DSPARTYID 填新中心号，日期放 DSSTDTC。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>用 <b>DS（Disposition）</b>域，加一条处置记录，<code>DSCAT = "OTHER EVENT"</code>，<code>DSDECOD = "TRANSFERRED"</code>，转移对象写在 <code>DSPARTY = "SITE"</code>，转到哪个中心写在 <code>DSPARTYID</code>，日期放 <code>DSSTDTC</code>。这套做法最早是为 COVID 研究整理的，但任何研究的受试者换中心都能用。</p>
+</div>
+
+<h3 id="why">为什么放 DS 而不是 DM</h3>
+<p>DM 里只有一个 <code>SITEID</code>，一个受试者一条记录，装不下“什么时候从哪转到哪”。而转中心本质是一个事件，有发生时间、有前后对象，正好是 DS 域的表达范围。</p>
+<p>用 DS 还有一个好处：<code>DSSTDTC</code> 把时间点记下来了。这一点很关键，因为只在 DM 里加个补充限定符是表示不了时间的。</p>
+
+<h3 id="vars">变量怎么填</h3>
+<table class="kb-table">
+<col width="18%" />
+<col width="34%" />
+<col width="48%" />
+<thead>
+<tr><th>变量</th><th>填什么</th><th>说明</th></tr>
+</thead>
+<tbody>
+<tr><td>DSCAT</td><td>OTHER EVENT</td><td>不属于研究阶段结束、不良事件等常规类别</td></tr>
+<tr><td>DSTERM</td><td>描述性文字</td><td>比如“受试者因原中心关闭转至其他中心”</td></tr>
+<tr><td>DSDECOD</td><td>TRANSFERRED</td><td>标准化的处置结果</td></tr>
+<tr><td>DSPARTY</td><td>SITE</td><td>转移涉及的“一方”是中心</td></tr>
+<tr><td>DSPARTYID</td><td>中心编号</td><td>转移结束时负责的中心，也就是新中心</td></tr>
+<tr><td>DSSTDTC</td><td>转移日期</td><td>ISO 8601</td></tr>
+<tr><td>DSEPCHGI</td><td>Y / 空</td><td>是否由疫情导致；v3.4 起是标准变量</td></tr>
+</tbody>
+</table>
+
+<p><code>--PARTY</code> 和 <code>--PRTYID</code> 这两个变量容易被误解成器械专用。它们确实最早是在器械研究的 DT（Device Tracking and Disposition）域里用起来的，但从 SDTM v1.4 起就存在于模型中，也不限定只能用在器械研究或某些域。这里是“受试者”从一个中心转到另一个中心，所以 <code>DSPARTY</code> 填 SITE、<code>DSPARTYID</code> 填中心号，逻辑是一样的。</p>
+
+<h3 id="example">长什么样</h3>
+<table class="kb-table">
+<col width="8%" />
+<col width="30%" />
+<col width="12%" />
+<col width="12%" />
+<col width="10%" />
+<col width="10%" />
+<col width="18%" />
+<thead>
+<tr><th>ROW</th><th>DSTERM</th><th>DSDECOD</th><th>DSCAT</th><th>DSEPCHGI</th><th>DSPARTY</th><th>DSPARTYID</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Subject moved and was transferred to a site in Florida</td><td>TRANSFERRED</td><td>OTHER EVENT</td><td></td><td>SITE</td><td>21</td></tr>
+<tr><td>2</td><td>Subject transferred when original site was closed due to COVID-19</td><td>TRANSFERRED</td><td>OTHER EVENT</td><td>Y</td><td>SITE</td><td>16</td></tr>
+</tbody>
+</table>
+
+<p>示例里只放了转中心的记录，<code>DSSEQ</code> 故意跳着编，暗示每个受试者还有别的处置记录。真实数据里 DS 域当然要包含全部处置事件，转中心只是其中一条。</p>
+
+<h3 id="dm">DM 里的 SITEID 怎么处理</h3>
+<p>受试者转中心后，DM 只有一个 <code>SITEID</code> 位置，有两种写法：</p>
+<ul class="notes">
+<li><b>加补充限定符</b>：<code>SITEID</code> 填原中心，另加 <code>SITEID1</code>（SUPPQUAL）填新中心。</li>
+<li><b>标记为多中心</b>：<code>SITEID = "MULTIPLE"</code>，然后把包括原中心在内的所有中心都放进 SUPPQUAL。</li>
+</ul>
+<p>转多次就加 <code>SITEID2</code>、<code>SITEID3</code>，两种写法都能扩展。到底哪种更合适，不同监管机构的偏好可能不一样，有疑问就直接问。</p>
+<div class="callout">
+<p>注意：在 DM 里用补充限定符表示多个中心，<b>表示不了转中心发生的时间</b>。要时间，还是得看 DS 里的 DSSTDTC。</p>
+</div>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>CDISC, <a href="https://www.cdisc.org/kb/articles/study-subject-site-transfers-example" target="_blank" rel="noopener"><i>Study Subject Site Transfers Example</i></a>（CDISC 知识库文章，cdisc.org/kb）。<span class="src">DS 域的记录方式、--PARTY/--PRTYID 的来源与用法、DSEPCHGI、DM 中 SITEID 的两种处理。</span></li>
+<li>CDISC, <a href="https://www.cdisc.org/standards/therapeutic-areas/covid-19/covid-19-therapeutic-area-user-guide-v1-0" target="_blank" rel="noopener"><i>Guidance for Ongoing Studies Disrupted by COVID-19 v1.0</i></a>。<span class="src">转中心示例的最初版本（基于 SDTM v1.7）。</span></li>
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/sdtmig/sdtmig-v3-4" target="_blank" rel="noopener"><i>SDTMIG v3.4</i></a>。<span class="src">DSEPCHGI 成为标准变量。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

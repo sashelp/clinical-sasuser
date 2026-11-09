@@ -1,0 +1,323 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>sdtm_fulldomain - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html" class="current">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / CDISC 标准</p>
+<h2>sdtm_fulldomain</h2>
+<p class="subtitle">合并父域与补充域（SUPP）数据集生成完整域数据集</p>
+<p class="dependency">依赖: <a href="var_coexist.html">var_coexist</a>, <a href="var_attr.html">var_attr</a></p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>sdtm_fulldomain</code></p>
+
+<h3 id="brief">简介</h3>
+<p>将父域数据集与 SUPP 数据集按受试者标识及 <code>IDVAR</code>/<code>IDVARVAL</code> 合并，把 SUPP 中的 <code>QNAM</code> 转置为列（列标签取 <code>QLABEL</code>），生成包含补充信息的完整域数据集。宏不返回值，结果写入 <code>OUT=</code> 数据集。若 <code>SUPP=</code> 为空、数据集不存在、观测数为 0 或所有 <code>SUBJECT=</code> 变量值均缺失，则直接复制父域数据集。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%sdtm_fulldomain(domain=&lt;domain&gt;)</pre>
+<p>该宏为过程式宏，结果写入 <code>OUT=</code> 数据集，不返回值。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DOMAIN=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>域名称，例如 <code>AE</code>、<code>CM</code>，用于生成默认的父域、SUPP 与输出数据集名。</td>
+</tr>
+<tr>
+<td>PARENT=</td>
+<td>可选参数</td>
+<td>SDTM.&amp;DOMAIN.</td>
+<td>父域数据集名，默认使用 <code>SDTM.&lt;DOMAIN&gt;</code>。</td>
+</tr>
+<tr>
+<td>SUBJECT=</td>
+<td>可选参数</td>
+<td>USUBJID</td>
+<td>受试者标识变量，可指定多个变量；默认为 <code>USUBJID</code>，也可使用 <code>SUBJID</code>。</td>
+</tr>
+<tr>
+<td>SUPP=</td>
+<td>可选参数</td>
+<td>SDTM.SUPP&amp;DOMAIN.</td>
+<td>补充域数据集名，默认使用 <code>SDTM.SUPP&lt;DOMAIN&gt;</code>。留空表示不需要合并 SUPP。</td>
+</tr>
+<tr>
+<td>OUT=</td>
+<td>可选参数</td>
+<td>&amp;DOMAIN.</td>
+<td>输出数据集名，默认为 <code>&amp;DOMAIN.</code>。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：合并父域与 SUPP 数据集</h4>
+<pre class="code">data work.ae;
+  length usubjid $8 aeterm $20;
+  usubjid='S01'; aeseq=1; aeterm='Headache'; output;
+  usubjid='S01'; aeseq=2; aeterm='Nausea';   output;
+  usubjid='S02'; aeseq=1; aeterm='Fever';    output;
+run;
+
+data work.suppae;
+  length usubjid $8 idvar $8 idvarval $8 qnam $8 qlabel $40 qval $20;
+  usubjid='S01'; idvar='AESEQ'; idvarval='1'; qnam='AESEV'; qlabel='Severity'; qval='MILD';     output;
+  usubjid='S01'; idvar='AESEQ'; idvarval='1'; qnam='AESER'; qlabel='Serious';  qval='N';        output;
+  usubjid='S01'; idvar='AESEQ'; idvarval='2'; qnam='AESEV'; qlabel='Severity'; qval='MODERATE'; output;
+run;
+
+%sdtm_fulldomain(domain=AE,parent=work.ae,supp=work.suppae,out=work.ae_full)
+
+proc print data=work.ae_full;
+run;</pre>
+<p class="result-label">运行结果（WORK.AE_FULL）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="10%" />
+<col width="14%" />
+<col width="8%" />
+<col width="10%" />
+<col width="10%" />
+<col width="14%" />
+<col width="10%" />
+<thead>
+<tr><th>观测</th><th>usubjid</th><th>aeterm</th><th>aeseq</th><th>idvar</th><th>idvarval</th><th>AESEV</th><th>AESER</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>S01</td><td>Headache</td><td>1</td><td>AESEQ</td><td>1</td><td>MILD</td><td>N</td></tr>
+<tr><td>2</td><td>S01</td><td>Nausea</td><td>2</td><td>AESEQ</td><td>2</td><td>MODERATE</td><td></td></tr>
+<tr><td>3</td><td>S02</td><td>Fever</td><td>1</td><td></td><td></td><td></td><td></td></tr>
+</tbody>
+</table>
+<p><code>SUPPAE</code> 中的 <code>QNAM</code> 被转置为列：<code>AESEV</code> 与 <code>AESER</code>，列标签取自 <code>QLABEL</code>；<code>IDVAR</code> 与 <code>IDVARVAL</code> 保留在输出中用于关联。父域中 <code>S02</code> 没有对应的 SUPP 记录，因此补充变量为空。</p>
+
+<h4>示例 2：使用 SUBJID 作为受试者标识</h4>
+<pre class="code">data work.ae2;
+  length subjid $8 aeterm $20;
+  subjid='S01'; aeseq=1; aeterm='Headache'; output;
+  subjid='S02'; aeseq=1; aeterm='Fever';    output;
+run;
+
+data work.suppae2;
+  length subjid $8 idvar $8 idvarval $8 qnam $8 qlabel $40 qval $20;
+  subjid='S01'; idvar='AESEQ'; idvarval='1'; qnam='AESEV'; qlabel='Severity'; qval='MILD'; output;
+run;
+
+%sdtm_fulldomain(domain=AE,parent=work.ae2,supp=work.suppae2,
+                 subject=subjid,out=work.ae2_full)
+
+proc print data=work.ae2_full;
+run;</pre>
+<p class="result-label">运行结果（WORK.AE2_FULL）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="10%" />
+<col width="14%" />
+<col width="8%" />
+<col width="10%" />
+<col width="10%" />
+<col width="14%" />
+<thead>
+<tr><th>观测</th><th>subjid</th><th>aeterm</th><th>aeseq</th><th>idvar</th><th>idvarval</th><th>AESEV</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>S01</td><td>Headache</td><td>1</td><td>AESEQ</td><td>1</td><td>MILD</td></tr>
+<tr><td>2</td><td>S02</td><td>Fever</td><td>1</td><td></td><td></td><td></td></tr>
+</tbody>
+</table>
+<p><code>SUBJECT=SUBJID</code> 指定受试者标识变量后，合并键改为 <code>SUBJID</code> 与 ID 变量，输出中不再出现 <code>USUBJID</code>。</p>
+
+<h4>示例 3：不合并 SUPP 数据集</h4>
+<pre class="code">data work.ae3;
+  length usubjid $8 aeterm $20;
+  usubjid='S01'; aeseq=1; aeterm='Headache'; output;
+  usubjid='S02'; aeseq=1; aeterm='Fever';    output;
+run;
+
+%sdtm_fulldomain(domain=AE,parent=work.ae3,supp=,out=work.ae3_full)
+
+proc print data=work.ae3_full;
+run;</pre>
+<p class="result-label">运行结果（WORK.AE3_FULL）：</p>
+<table class="macro-table result-table">
+<col width="10%" />
+<col width="14%" />
+<col width="20%" />
+<col width="12%" />
+<thead>
+<tr><th>观测</th><th>usubjid</th><th>aeterm</th><th>aeseq</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>S01</td><td>Headache</td><td>1</td></tr>
+<tr><td>2</td><td>S02</td><td>Fever</td><td>1</td></tr>
+</tbody>
+</table>
+<p><code>SUPP=</code> 留空时，宏直接将父域数据集复制为输出数据集，不生成补充变量。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+
+<li><code>SUPP=</code> 未指定、SUPP 数据集不存在、观测数为 0 或所有 <code>SUBJECT=</code> 变量值均缺失时，宏直接复制父域数据集。</li>
+<li>父域数据集须按 <code>SUBJECT=</code> 变量与 ID 变量排序，ID 变量为 SUPP 数据集中 <code>IDVAR</code> 的取值。</li>
+<li>SUPP 数据集须按 <code>SUBJECT=</code>、<code>IDVAR</code>、<code>IDVARVAL</code> 排序。</li>
+<li>依赖宏 <code>%var_coexist</code> 与 <code>%var_attr</code>。</li>
+
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<p>以下列出当前版本的使用约束与冲突风险。</p>
+
+<h4>1. 对输入参数的强假设</h4>
+<ul class="notes">
+<li>父域须按 <code>SUBJECT=</code> 变量与 ID 变量排序，SUPP 须按 <code>SUBJECT=</code>、<code>IDVAR</code>、<code>IDVARVAL</code> 排序。任一数据集未按上述键排序时，合并会失败中止或产生错行的结果。</li>
+<li>SUPP 中 <code>IDVAR</code> 只能有一个不同取值，且该取值必须是父域中实际存在的变量；<code>IDVARVAL</code> 须能按父域 ID 变量的类型解析。出现多个 <code>IDVAR</code>、父域缺少对应 ID 变量或 <code>IDVARVAL</code> 无法转换时，SUPP 记录无法关联到正确的父域记录，部分补充变量会丢失。</li>
+</ul>
+
+<h4>2. 临时变量与临时数据集冲突风险</h4>
+<ul class="notes">
+<li>宏会创建固定名称的中间数据集 <code>WORK.SDTM_FULLDOMAIN1</code>，并在宏运行结束时删除；WORK 中已有的同名数据集会被覆盖并删除，原数据丢失。</li>
+<li>SUPP 的 <code>QNAM</code> 会转成同名变量与父域横向合并。若 <code>QNAM</code> 与父域已有变量同名，父域原值会被 SUPP 值覆盖，且不产生提示。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/cdisc/sdtm_fulldomain.sas" download>sdtm_fulldomain.sas</a></p>
+<p class="download"><a href="../assets/macropackages/sdtm_fulldomain.zip" download>sdtm_fulldomain and its dependencies.zip</a></p>
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr>
+<th>日期</th>
+<th>修订人</th>
+<th>修订内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-11-07</td>
+<td>Luo Hao</td>
+<td>新增 <code>SUBJECT=</code> 参数以支持 <code>USUBJID</code> 与 <code>SUBJID</code>；为 ID 变量增加字符型分支处理。</td>
+</tr>
+<tr>
+<td>2026-09-15</td>
+<td>Luo Hao</td>
+<td>使用 <code>PROC DATASETS</code> 替代 <code>PROC DELETE</code>，通过 <code>NOWARN</code> 选项压缩无中间数据集时的警告信息。</td>
+</tr>
+<tr>
+<td>2026-07-08</td>
+<td>Luo Hao</td>
+<td>原始版本。</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

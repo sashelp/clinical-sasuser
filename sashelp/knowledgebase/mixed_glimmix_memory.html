@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>MIXED / GLIMMIX 内存与耗时 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html" class="current">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / 性能与调优</p>
+<h2>PROC MIXED / GLIMMIX 报内存不足或者跑几个小时，先改哪里？</h2>
+<p class="subtitle">先给足内存并按 subject 处理模型，再简化 DDFM 和协方差结构，最后才考虑换 HPMIXED。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>按顺序动四个地方：<b>运行环境</b>（memsize、关掉没用的程序、结果不进 Results 窗口、走 batch）、<b>让过程按 subject 处理</b>（这是最有效的一步）、<b>换更省的选项</b>（DDFM、协方差结构、少要输出）、<b>换过程</b>（HPMIXED）。多数情况下走到第二步就能看到明显改善，不要一上来就怀疑机器不够。</p>
+</div>
+
+<h3 id="why">为什么会吃这么多资源</h3>
+<p>MIXED 和 GLIMMIX 是迭代算法，代价主要来自三处：数据量大、CLASS 变量水平数多、以及 PROC / MODEL / RANDOM / REPEATED 语句里选了耗费资源的选项。最典型的例子是随机效应水平特别多——比如每个受试者一个随机截距，几千个受试者，G 矩阵就几千维，如果过程没有按 subject 分块处理，就要一次性求一个巨大的矩阵。</p>
+
+<h3 id="env">第一步：把运行环境放开</h3>
+<p>先确认当前的 memsize 是多少，以及配置文件在哪：</p>
+
+<pre class="code">proc options option=memsize value;
+run;</pre>
+
+<p>日志会告诉你当前值和 <code>sasv9.cfg</code> 的路径。用文本编辑器（以管理员身份打开）改这一行，比如改成 <code>memsize 16g</code>，或者 <code>memsize 0</code> 用满可用内存。存盘之后必须<b>新开一个 SAS 会话</b>才生效，改完接着跑是不管用的。</p>
+<p>另外三件顺手就能做的事：</p>
+<ul class="notes">
+<li>跑之前把没用的程序关掉，把内存让出来。</li>
+<li>如果程序会产生大量结果表（比如几千个 BY 组，或者宏里循环调用过程），加 <code>ods noresults;</code>，不让 Results 窗口去跟踪这些对象。</li>
+<li>改用 batch 模式提交，不要交互式跑。交互式会话要维护界面和结果树，本身就吃内存。</li>
+</ul>
+
+<h3 id="subject">第二步：让过程按 subject 处理</h3>
+<p>这一步最见效。下面这种写法，B 的水平一多就容易崩：</p>
+
+<pre class="code">proc mixed;
+   class a b;
+   model y=a;
+   random b;
+run;</pre>
+
+<p>统计上等价但数值上高效得多的写法是把它变成 subject 效应：</p>
+
+<pre class="code">proc mixed;
+   class a b;
+   model y=a;
+   random intercept / subject=b;
+run;</pre>
+
+<p>这样 G 矩阵变成按 subject 分块的对角结构，过程可以逐个 subject 处理，内存和时间的增长从“水平数的平方”变成“水平数”。还能再进一步：如果 B 是数值变量（或者能方便地转成数值），先按 B 排序，再把 B 从 CLASS 里拿掉，效率更高：</p>
+
+<pre class="code">proc sort;
+   by b;
+run;
+
+proc mixed;
+   class a;
+   model y=a;
+   random intercept / subject=b;
+run;</pre>
+
+<p>如果模型能换成等价的 REPEATED 写法，也值得换。REPEATED 比 RANDOM 省内存，subject 水平多的时候尤其明显：</p>
+
+<pre class="code">proc mixed;
+   class a b;
+   model y=a;
+   repeated / subject=b type=cs;
+run;</pre>
+
+<p>GLIMMIX 里同样的道理。下面两段，第二段把三个随机效应里都出现的 C 提出来当 subject，G 矩阵变成块对角，快很多：</p>
+
+<pre class="code">proc glimmix;
+   class a b c;
+   model y=a b / ddfm=satterth;
+   random c a*c b*c;
+run;
+
+proc glimmix;
+   class a b c;
+   model y=a b / ddfm=satterth;
+   random int a b / subject=c;
+run;</pre>
+
+<p>有几个 RANDOM 语句时还要注意：只有每个 RANDOM 都有 <code>SUBJECT=</code>，而且这些 subject 效应互相嵌套，过程才会按 subject 处理。条件不满足就退回整体计算。所以尽量让所有 RANDOM 和 REPEATED 用同一个、或者互相嵌套的 subject。</p>
+
+<h3 id="options">第三步：换更省的选项</h3>
+<table class="kb-table">
+<col width="26%" />
+<col width="74%" />
+<thead>
+<tr><th>选项</th><th>怎么省</th></tr>
+</thead>
+<tbody>
+<tr><td><code>DDFM=RESIDUAL</code> 或 <code>DDFM=BW</code></td><td>比 <code>KR</code> 省很多内存；<code>SATTERTH</code>、<code>BW</code> 通常比 <code>CONTAINMENT</code> 快</td></tr>
+<tr><td><code>TYPE=</code> 换简单结构</td><td><code>UN</code> 和空间结构最贵；重复测量次数多时改用 <code>TOEP</code>，随机系数模型改用 <code>VC</code></td></tr>
+<tr><td>去掉 <code>NOBOUND</code></td><td>出现负方差分量时算法会变复杂，资源消耗明显上升</td></tr>
+<tr><td><code>NOCLPRINT</code></td><td>不打印 CLASS 水平信息表，水平特别多时省内存也省时间</td></tr>
+<tr><td>先不加 <code>SOLUTION</code>、<code>OUTP=</code>、<code>OUTPM=</code>、<code>INFLUENCE</code>、<code>OUTPUT</code></td><td>这些都要额外存储和计算。先用最简模型把模型跑通，确认没问题再逐个加回来</td></tr>
+<tr><td>关掉 ODS Graphics</td><td>画图本身也很吃资源，调模型阶段可以先不画</td></tr>
+</tbody>
+</table>
+
+<h3 id="switch">第四步：换过程</h3>
+<ul class="notes">
+<li><b>PROC HPMIXED</b>：固定效应或随机效应有成千上万个水平，或者分层嵌套每层都有几百上千水平时用它。它专门为高维稀疏矩阵设计，代价是部分功能不支持。</li>
+<li><b>Viya 的 PROC LMIXED</b>：支持多线程和并行，数值上也更高效。</li>
+</ul>
+
+<div class="flow">
+<p class="flow-title">模型跑不动时的排查顺序</p>
+<svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="mm-ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <rect x="190" y="8" width="300" height="44" rx="4" fill="#0070C0" stroke="#005a9e"/>
+  <text x="340" y="35" text-anchor="middle" fill="#ffffff" font-size="14">模型报内存不足 / 跑太久</text>
+
+  <line x1="340" y1="52" x2="340" y2="80" stroke="#8a8a8a" marker-end="url(#mm-ar)"/>
+
+  <rect x="60" y="80" width="560" height="56" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="103" text-anchor="middle" fill="#e6e6e6" font-size="13">1. 环境：memsize 调大、关掉多余程序、加 ODS NORESULTS</text>
+  <text x="340" y="122" text-anchor="middle" fill="#8a8a8a" font-size="11">改完 cfg 必须新开会话</text>
+
+  <line x1="340" y1="136" x2="340" y2="164" stroke="#8a8a8a" marker-end="url(#mm-ar)"/>
+
+  <rect x="60" y="164" width="560" height="56" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="187" text-anchor="middle" fill="#e6e6e6" font-size="13">2. 按 subject 处理：random intercept / subject=、REPEATED 代替 RANDOM</text>
+  <text x="340" y="206" text-anchor="middle" fill="#8a8a8a" font-size="11">把公共效应提出来当 subject，G 矩阵变成块对角</text>
+
+  <line x1="340" y1="220" x2="340" y2="248" stroke="#8a8a8a" marker-end="url(#mm-ar)"/>
+
+  <rect x="60" y="248" width="560" height="56" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="271" text-anchor="middle" fill="#e6e6e6" font-size="13">3. 换选项：DDFM=、简单协方差结构、先不要 SOLUTION / OUTPUT / 图形</text>
+  <text x="340" y="290" text-anchor="middle" fill="#8a8a8a" font-size="11">先把模型跑通，再逐个把选项加回来</text>
+
+  <line x1="340" y1="304" x2="340" y2="332" stroke="#8a8a8a" marker-end="url(#mm-ar)"/>
+
+  <rect x="60" y="332" width="560" height="56" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="355" text-anchor="middle" fill="#e6e6e6" font-size="13">4. 换过程：PROC HPMIXED，或 Viya 的 PROC LMIXED</text>
+  <text x="340" y="374" text-anchor="middle" fill="#8a8a8a" font-size="11">水平数上万时的最后手段</text>
+
+  <line x1="340" y1="388" x2="340" y2="412" stroke="#8a8a8a" marker-end="url(#mm-ar)"/>
+
+  <rect x="150" y="412" width="380" height="44" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="340" y="440" text-anchor="middle" fill="#ffffff" font-size="13">多数情况到第二步就有明显改善</text>
+</svg>
+</div>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS Support, <a href="https://sas.service-now.com/csm/en/how-to-fix-an-out-of-memory-condition-or-reduce-execution-time-in-proc?id=kb_article_view&sysparm_article=KB0057263" target="_blank" rel="noopener"><i>How to fix an Out of Memory condition or reduce execution time in PROC MIXED or PROC GLIMMIX</i></a>（SAS 知识库文章，sas.service-now.com，KB0057263）。<span class="src">memsize 调整、按 subject 处理的全部写法、DDFM 与协方差结构的取舍、HPMIXED 的适用场景。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/documentation/onlinedoc/stat/" target="_blank" rel="noopener"><i>SAS/STAT User's Guide</i></a>：PROC MIXED、PROC GLIMMIX、PROC HPMIXED 章节。<span class="src">“Processing by Subjects”一节，以及各 DDFM 方法的计算代价。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

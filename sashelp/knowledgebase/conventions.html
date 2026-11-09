@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>开发约定 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+<body>
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div><div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div><div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / 开发约定</p>
+<h2>开发约定</h2>
+<hr/>
+<div class="detail doc">
+<p>本文约定知识条目的内容标准：写什么、怎么核实、怎么组织、怎么引用。版式与发布由站点构建流程负责，不在本文讨论。</p>
+
+<h3>1. 选题</h3>
+
+<p>适合收进知识库的题目，通常同时满足：</p>
+
+<ul>
+<li>是实际工作中反复被问到的问题，而不是教科书式的概念罗列；
+</li>
+<li>有相对明确的答案，或至少有可操作的判断路径；
+</li>
+<li>能落到权威依据（标准原文、法规、厂商文档、官方示例）；
+</li>
+<li>答案对做项目的人有直接帮助：能改代码、能改数据集、能避免一次返工。
+</li>
+</ul>
+
+<p>不适合的题目：纯个人偏好、没有来源的经验之谈、只能回答"看情况"而没有判断依据的问题。</p>
+
+<h3>2. 核实</h3>
+
+<ul>
+<li>优先查原始文档：CDISC 的 IG / 实施指南、FDA / CDE 的技术指南、SAS 官方文档、产品手册。
+</li>
+<li>写清楚版本：SDTMIG 3.2 与 3.3 的结论可能不同，ADaMIG、SAS 版本同理。
+</li>
+<li>文档之间冲突时，以发布日期更新、层级更高的为准，并在正文里说明冲突点。
+</li>
+<li>引用示例数据集的结论时，先确认示例本身是不是标准要求（示例文档不是标准）。
+</li>
+<li>拿不准的地方宁可写"这里没有强制规定，常见做法是……"，不要编一个确定结论。
+</li>
+</ul>
+
+<h3>3. 结构</h3>
+
+<p>一条知识按固定顺序组织：</p>
+
+<ol>
+<li>
+</li>
+<li>
+</li>
+<li>
+</li>
+<li>
+</li>
+<li>
+</li>
+</ol>
+
+<p>篇幅控制：一件事讲透即可，不把相邻主题塞进同一篇；确实相关时在末尾加"相关条目"链接，而不是大段复述。</p>
+
+<h3>4. 写作风格</h3>
+
+<ul>
+<li>像当面跟同事解释：先说结论，再说原因，少用"其归属是""由此推出""该规则确立了"这类书面套话。
+</li>
+<li>句子短，一段一个意思；能用主动句就不用被动句。
+</li>
+<li>行业通用缩写直接用：SDTM、ADaM、SAFFL、ORRES、null flavor，不做中英对照，也不在每个词后面加括号注释。
+</li>
+<li>不堆砌限定词。确实有例外时，把例外单独写成一段，而不是在主句里塞满"一般情况下、通常、可能"。
+</li>
+<li>不确定的地方明确标注不确定，不要用模糊措辞掩盖。
+</li>
+</ul>
+
+<h3>5. 术语与格式</h3>
+
+<ul>
+<li>变量名、数据集名、选项名用大写并加代码格式，例如 <code>--ORRES</code>、<code>ADSL</code>、<code>DDFM=KR</code>。
+</li>
+<li>日期、时间按 ISO 8601 写；涉及不完整日期时说明允许的精度。
+</li>
+<li>标准名称写全称加版本，例如 "SDTMIG 3.3"，不要只写 "IG"。
+</li>
+<li>中文与英文、数字之间不留空格；标点用中文全角，代码与变量名内部保持原样。
+</li>
+</ul>
+
+<h3>6. 示例</h3>
+
+<ul>
+<li>示例要能直接运行：自带数据、自带逻辑库、不依赖本机路径。
+</li>
+<li>只保留说明问题所需的最少代码，不要贴一整段生产程序。
+</li>
+<li>每个示例给出实际运行结果（日志关键行或结果表），并说明结果说明了什么。
+</li>
+<li>示例里的数据要能体现结论：如果结论是"某情形不允许"，示例就要把这个情形构造出来。
+</li>
+</ul>
+
+<h3>7. 参考出处</h3>
+
+<ul>
+<li>每条知识末尾必须有"参考出处"。
+</li>
+<li>每条出处写清：文档名称、版本、章节或页码、可访问链接。
+</li>
+<li>引用网页时优先给官方稳定链接，不要给搜索结果页或转载页。
+</li>
+<li>正文里的关键结论要与出处一一对应，读者能顺藤摸瓜查到原文。
+</li>
+</ul>
+
+<h3>8. 常见问题</h3>
+
+<ul>
+<li><strong>只给结论不给依据</strong>：读者无法判断结论是否还适用于自己的版本。
+</li>
+<li><strong>把示例当标准</strong>：示例数据集、示例程序只是演示，不构成符合性要求。
+</li>
+<li><strong>版本混用</strong>：把 3.2 的要求写成通用要求，或把新版本的放宽当成一直如此。
+</li>
+<li><strong>过度概括</strong>：把"某个域的做法"写成"SDTM 的通用规则"。
+</li>
+<li><strong>中英混排堆括号</strong>：一个词后面跟三四种叫法，反而增加阅读负担。
+</li>
+<li><strong>把站点操作写进正文</strong>：文件命名、页面结构、构建命令属于发布流程，不写进知识条目。
+</li>
+</ul>
+
+<h3>9. 交付前检查</h3>
+
+<ul>
+<li>[ ] 结论在第一段就能看到，且明确回答被问的问题
+</li>
+<li>[ ] 关键结论都能对应到参考出处的具体章节
+</li>
+<li>[ ] 版本、适用范围、例外情况写清楚
+</li>
+<li>[ ] 有分支时给出了判断路径（流程图或表格）
+</li>
+<li>[ ] 示例可独立运行，并附实际结果
+</li>
+<li>[ ] 文风口语化，无套话、无过度括号注释
+</li>
+<li>[ ] 参考出处齐全，链接指向官方原文
+</li>
+<li>[ ] 通篇没有与站点设计、文件布局相关的内容
+</li>
+</ul>
+</div>
+</div>
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

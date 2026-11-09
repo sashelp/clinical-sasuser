@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>SDTM 变量保留 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html" class="current">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / ADaM</p>
+<h2>制作 ADaM 数据集时，哪些 SDTM 变量需要保留？</h2>
+<p class="subtitle">只要参与了 ADaM 衍生、或者能帮助追溯的 SDTM 变量，都应该保留；VSTESTCD 会映射成 PARAMCD（信息保留、列名换掉）。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">先给结论</h3>
+<table class="kb-table">
+<col width="34%" />
+<col width="66%" />
+<thead>
+<tr><th>问题</th><th>结论</th></tr>
+</thead>
+<tbody>
+<tr><td>VSTESTCD 这个原始列名要不要保留？</td><td><b>不需要</b>，把它映射成 PARAMCD（信息保留、列名换掉）</td></tr>
+<tr><td>VSSEQ 要不要保留下来增强可追溯性？</td><td><b>不是必需，但保留有价值</b>，属于“推荐”而非“必须”</td></tr>
+<tr><td>什么样的 SDTM 变量不需要保留？</td><td>对分析<b>无意义、纯技术性/内部管理性</b>的变量</td></tr>
+</tbody>
+</table>
+
+<h3 id="principle">判断的基准</h3>
+<p>FDA 的《Study Data Technical Conformance Guide》在 ADaM 章节有两句话，就是我们判断“留不留”的尺子：</p>
+<div class="callout">
+<p>“To ensure traceability, <b>all SDTM variables utilized for variable derivations in ADaM should be included in the ADaM datasets when practical</b>.”——为了保证能追溯，凡用来做 ADaM 变量衍生的 SDTM 变量，只要可行，都应该带进 ADaM。</p>
+<p>“For traceability purposes, <b>SDTM character dates formatted as ISO 8601 should also be included in the ADaM datasets</b>.”——为了能追溯，SDTM 里 ISO 8601 格式的字符型日期也要一起带进 ADaM。</p>
+</div>
+<p>这两句话给了同一个标准：<b>判断“留不留”不是看变量好不好看，而是看它有没有参与衍生、有没有帮助追溯。</b></p>
+
+<h3 id="flow">判断顺序</h3>
+<div class="flow">
+<p class="flow-title">拿到一个 SDTM 变量，这么判断留不留</p>
+<svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <rect x="240" y="14" width="200" height="44" rx="4" fill="#0070C0" stroke="#005a9e"/>
+  <text x="340" y="41" text-anchor="middle" fill="#ffffff" font-size="14">某个 SDTM 变量</text>
+
+  <line x1="340" y1="58" x2="340" y2="96" stroke="#8a8a8a" marker-end="url(#ar2)"/>
+
+  <rect x="150" y="98" width="380" height="48" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="340" y="127" text-anchor="middle" fill="#e6e6e6" font-size="14">是否参与 ADaM 衍生 或 支撑追溯？</text>
+
+  <line x1="150" y1="122" x2="132" y2="122" stroke="#8a8a8a" marker-end="url(#ar2)"/>
+  <text x="141" y="116" text-anchor="middle" fill="#70AD47" font-size="12">是</text>
+  <rect x="18" y="98" width="112" height="48" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="74" y="127" text-anchor="middle" fill="#ffffff" font-size="14">保留</text>
+
+  <line x1="340" y1="146" x2="340" y2="182" stroke="#8a8a8a" marker-end="url(#ar2)"/>
+  <text x="354" y="168" fill="#8a8a8a" font-size="12">否</text>
+  <rect x="210" y="182" width="260" height="48" rx="4" fill="#333333" stroke="#555555"/>
+  <text x="340" y="206" text-anchor="middle" fill="#e6e6e6" font-size="13">纯技术 / 与分析和追溯无关</text>
+  <text x="340" y="222" text-anchor="middle" fill="#8a8a8a" font-size="11">→ 可不保留</text>
+
+  <rect x="40" y="254" width="600" height="40" rx="4" fill="#1a1a1a" stroke="#00B0F0"/>
+  <text x="340" y="278" text-anchor="middle" fill="#00B0F0" font-size="12">例外：ISO 8601 格式的字符型日期（如 VSDTC、AEDTC）建议保留，便于核对数值日期怎么导出的</text>
+</svg>
+</div>
+
+<h3 id="answers">逐条说清楚</h3>
+
+<h4>1. VSTESTCD 要不要保留？</h4>
+<p><b>原始列名不用留，把它映射成 PARAMCD 就行。</b>原因是：</p>
+<ul class="notes">
+<li>它在 ADaM 里已经有了标准对应变量——VSTEST/VSTESTCD 映射成 PARAM/PARAMCD，信息已经带过来了，没必要再留一个重复的 VSTESTCD 列。</li>
+<li>跨域没法统一：ADaM 常常合并多个 SDTM 域，要是用原始列名 VSTESTCD，合并别的域时这列就没有了；PARAMCD 才是所有结果类数据集通用的必需变量。</li>
+<li>可追溯性不是靠“保留原列名”实现的，靠的是两样：PARAMCD 和 VSTESTCD 的<b>取值对应关系</b>（写进 Define-XML），再加上 <code>SRCDOM</code>/<code>SRCSEQ</code>/<code>SRCVAR</code> 这套溯源变量。</li>
+</ul>
+<p>一句话：<b>保留的是信息（参数代码），换掉的是列名（VSTESTCD 变成 PARAMCD）。</b></p>
+
+<h4>2. VSSEQ 有没有必要保留？</h4>
+<p><b>不是必需，但留了有好处，属于“推荐但不强制”。</b></p>
+<ul class="notes">
+<li><code>--SEQ</code>（比如 VSSEQ）在 SDTM 里是记录序号，是给每条记录的唯一内部标识，本身不是临床分析变量。</li>
+<li>ADaMIG 把 <code>--SEQ</code> 定位成 permissible，不是 required。</li>
+<li>但留它有实实在在的好处：当同一个受试者、同一次访视、同一个参数有多条 SDTM 记录（重复测量、ECG 复测）时，<code>--SEQ</code> 能精确定位“ADaM 这条衍生记录对应 SDTM 哪一条源记录”。</li>
+</ul>
+<p>实操建议：大多数场景用 <code>SRCDOM</code> + <code>SRCSEQ</code>（或者直接留 <code>--SEQ</code>）做一对一溯源就够了；担心重复测量对不上号的时候，建议保留 <code>--SEQ</code> 或改用 <code>SRCDOM</code>/<code>SRCSEQ</code>/<code>SRCVAR</code> 这套标准溯源变量，而不是硬留一个原始 VSSEQ 列名。</p>
+
+<h4>3. 什么样的 SDTM 变量“不用”保留？</h4>
+<p>还是回到 FDA 那把尺子：<b>“不参与任何衍生、也不影响追溯、对分析没意义”的变量，可以不保留。</b>常见的有这么几类：</p>
+<table class="kb-table">
+<col width="30%" />
+<col width="34%" />
+<col width="36%" />
+<thead>
+<tr><th>类别</th><th>例子</th><th>为什么不留</th></tr>
+</thead>
+<tbody>
+<tr><td>纯技术/内部管理性序号</td><td>没有重复场景下的 --SEQ、--SPID</td><td>不参与分析、无追溯价值</td></tr>
+<tr><td>已被 ADaM 衍生变量取代的原始字段</td><td>原始字符日期（如果 ADaM 已经用数值 ADY/ADT）</td><td>被衍生变量覆盖；但 ISO 8601 字符日期例外，见下</td></tr>
+<tr><td>与当前分析无关的采集字段</td><td>试验特定、但本次分析用不到的 --ORRES 补充字段</td><td>对分析没贡献</td></tr>
+<tr><td>为 SDTM 结构完整性存在的辅助变量</td><td>排序变量、控制术语映射变量</td><td>不承载临床信息</td></tr>
+</tbody>
+</table>
+<div class="callout">
+<p><b>有个反直觉但 FDA 特意强调的点：</b>SDTM 里 ISO 8601 格式的字符型日期（比如 VSDTC、AEDTC）<b>建议保留</b>，哪怕 ADaM 里已经有了数值型的日期/天数变量。因为字符日期是“原始采集状态”的直接体现，留了它，审评员才能核对“数值日期（ADY/ADT）是怎么从原始日期算出来的”。日期类原始字段别轻易当冗余删掉。</p>
+</div>
+
+<h3 id="example">落到 ADVS 上看一眼</h3>
+<table class="kb-table">
+<col width="18%" />
+<col width="40%" />
+<col width="42%" />
+<thead>
+<tr><th>处置</th><th>变量</th><th>说明</th></tr>
+</thead>
+<tbody>
+<tr><td rowspan="6">建议保留</td><td>PARAM / PARAMCD（来自 VSTEST / VSTESTCD）</td><td>必需，分析核心</td></tr>
+<tr><td>AVAL（来自 VSSTRESN）</td><td>分析值，必需</td></tr>
+<tr><td>ADY / ADT / ADTM（衍生）</td><td>分析时间</td></tr>
+<tr><td>AVISIT / AVISITN（衍生）</td><td>分析访视</td></tr>
+<tr><td>VSDTC（ISO 8601 字符日期）</td><td>为可追溯性保留</td></tr>
+<tr><td>SRCDOM("VS") + SRCSEQ(=VSSEQ)</td><td>溯源变量组，重复测量时尤其重要</td></tr>
+<tr><td rowspan="2">可不保留</td><td>VSSEQ（如果已用 SRCDOM/SRCSEQ 表达，或确无重复记录）</td><td>可选</td></tr>
+<tr><td>与生命体征分析无关的采集/辅助字段</td><td>—</td></tr>
+</tbody>
+</table>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>FDA, <a href="https://www.fda.gov/regulatory-information/search-fda-guidance-documents/study-data-technical-conformance-guide-technical-specifications-document" target="_blank" rel="noopener"><i>Study Data Technical Conformance Guide</i></a>。<span class="src">ADaM 章节：SDTM 变量纳入与 ISO 8601 字符日期的可追溯性要求。</span></li>
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/adam" target="_blank" rel="noopener"><i>ADaMIG v1.x</i></a>。<span class="src">PARAM/PARAMCD 必需变量、--SEQ 的 permissible 定位、SRCDOM/SRCSEQ/SRCVAR 溯源变量组。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

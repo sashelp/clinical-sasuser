@@ -1,0 +1,318 @@
+1                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      SAS license information omitted.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: Additional host information:
+
+ X64_10PRO WIN 10.0.19041  Workstation
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.16 秒
+      CPU 时间          0.12 秒
+      
+1          /*===============================================================================
+2           * lib_memlist_bug_typepattern.sas - Regression test: TYPE= + PATTERN= together
+3           *===============================================================================
+4           * Defect       : in dev/lib/lib_memlist.sas the parameter checks form a single
+5           *                %ELSE IF chain:
+6           *                    %else %if %quote(&type.)^=%str() %then %do; ... %end;
+7           *                    %else %if %bquote(&pattern.)^=%str() %then %do;
+8           *                      %let pat=%sysfunc(prxparse(...));
+9           *                    %end;
+10          *                As soon as TYPE= is non-empty the first branch is taken, so the
+11          *                PATTERN branch is skipped and %let pat=... never executes.
+12          *                The core loop then calls prxmatch(&pat.,...) with an EMPTY
+13          *                pattern, producing:
+14          *                    ERROR: The regular expression passed to PRXMATCH contains
+15          *                           a syntax error.
+16          *                and the macro terminates without returning a member list.
+17          * Root cause   : PATTERN validation must not be an %ELSE branch of the TYPE
+18          *                check; both must be evaluated (two independent %IF blocks).
+19          * Expected     : (once fixed) TYPE=DATA + PATTERN= returns the filtered list
+20          * Current      : DEFECT - the call aborts / emits ERROR instead of filtering
+21          *============================================================================*/
+22         
+23         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+24         %let _qcboot_=%sysfunc(getoption(sysin));
+25         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+26         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+27         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\)))-1));
+28         %include "&_qcboot_.\_framework\qc_env.sas";
+93         %let _qcboot_=;
+94         /*----------------------------------------------------------------------------*/
+95         
+96         %include "&_QCFW_.";
+389        %include "&_QCQC_.\_framework\qc_sandbox.sas";
+489        %include "&_QCDEV_LIB_.\lib_memlist.sas";
+546        %qc_sandbox_reset;
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+2                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\f1.txt" 
+      是:
+      
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\f1.tx
+      t,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分09秒,
+      创建时间=2026年11月09日 14时05分09秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\f1.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\f2.sas" 
+      是:
+      
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\f2.sa
+      s,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+3                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      上次修改时间=2026年11月09日 14时05分09秒,
+      创建时间=2026年11月09日 14时05分09秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\f2.sas" 中。
+      最小记录长度是 15。
+      最大记录长度是 15。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\sub1\f3.txt" 
+      是:
+      
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\sub1\
+      f3.txt,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分09秒,
+      创建时间=2026年11月09日 14时05分09秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\sub1\f3.txt" 
+      中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\sub1\f4.log" 
+      是:
+      
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\sub1\
+      f4.log,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分09秒,
+      创建时间=2026年11月09日 14时05分09秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\sub1\f4.log" 
+      中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\sub2\f5.csv" 
+      是:
+      
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\sub2\
+      f5.csv,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分09秒,
+      创建时间=2026年11月09日 14时05分09秒
+
+NOTE: 有 1 条记录写入到 FILE 
+4                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d1\sub2\f5.csv" 
+      中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: FILE ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d2\f6.txt" 
+      是:
+      
+      文件名=.\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d2\f6.tx
+      t,
+      RECFM=V,LRECL=32767,文件大小（字节）=0,
+      上次修改时间=2026年11月09日 14时05分09秒,
+      创建时间=2026年11月09日 14时05分09秒
+
+NOTE: 有 1 条记录写入到 FILE 
+      ".\codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\d2\f6.txt" 中。
+      最小记录长度是 13。
+      最大记录长度是 13。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+547        
+548        /* dedicated scratch library with a fixed, known content */
+549        %let _lmlib_=&_QCSB_.\_lib_memlist_bug;
+550        %_qc_sb_del(path=&_lmlib_.);
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+551        data _null_;
+552          rc=dcreate("_lib_memlist_bug","&_QCSB_.\");
+553        run;
+
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+554        libname lmb "&_lmlib_.";
+NOTE: 已成功分配逻辑库引用名“LMB”，如下所示: 
+       引擎:        V9 
+       物理名: .\_external\Users\sasuser\OneDrive\project
+      \codehub\macro\qc\_sandbox_tmp\lib_memlist_bug_typepattern_10052\_lib_memlist_bug
+555        data lmb.alpha; x=1; run;
+
+NOTE: 数据集 LMB.ALPHA 有 1 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+556        data lmb.beta;  y=2; run;
+
+NOTE: 数据集 LMB.BETA 有 1 个观测和 1 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+5                                                       SAS 系统       2026年11月 9日 星期一 下午02时05分00秒
+
+      
+
+557        proc sql;
+558          create view lmb.alphavw as select x from lmb.alpha;
+NOTE: SQL 视图 LMB.ALPHAVW 已定义。
+559        quit;
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+560        
+561        %qc_begin(prog=lib_memlist_bug_typepattern, macro=lib_memlist);
+#####QC_BEGIN prog=lib_memlist_bug_typepattern macro=lib_memlist
+562        %qc_case(desc=B1 TYPE plus PATTERN must return the filtered list);
+#####QC_CASE n=1 desc=B1 TYPE plus PATTERN must return the filtered list
+563        
+564        %let _syscc_before=&syscc.;
+565        %let _pat=%nrstr(/^ALPHA/);
+566        %let _r=%lib_memlist(library=lmb,type=data,pattern=%superq(_pat));
+567        %let _syscc_after=&syscc.;
+568        
+569        /* a non-zero syscc means the macro raised an ERROR instead of filtering */
+570        %qc_check_eq(actual=&_syscc_after., expect=&_syscc_before.,
+571          desc=B1 no ERROR raised for TYPE plus PATTERN);
+#####QC_PASS n=1 desc=B1 no ERROR raised for TYPE plus PATTERN
+572        
+573        /* expected result once fixed: only the data set ALPHA matches ^ALPHA in TYPE=DATA */
+574        %qc_check_eq(actual=&_r., expect=ALPHA,
+575          desc=B1 TYPE=DATA with pattern ^ALPHA returns ALPHA);
+#####QC_PASS n=1 desc=B1 TYPE=DATA with pattern ^ALPHA returns ALPHA
+576        
+577        %qc_end;
+#####QC_RESULT prog=lib_memlist_bug_typepattern macro=lib_memlist STATUS=PASS ncase=1 npass=2 nfail=0
+#####QC_END
+578        
+579        libname lmb clear;
+NOTE: 已取消对逻辑库引用名 LMB 的分配。
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.27 秒
+      CPU 时间          0.18 秒
+      

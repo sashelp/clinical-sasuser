@@ -1,0 +1,445 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>stat_countocc - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html" class="current">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / 统计分析</p>
+<h2>stat_countocc</h2>
+<p class="subtitle">针对发生数据计算受试者例数与事件数</p>
+<p class="dependency">依赖: <a href="var_exist.html">var_exist</a>, <a href="var_coexist.html">var_coexist</a>, <a href="ds_attr.html">ds_attr</a></p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>stat_countocc</code></p>
+
+<h3 id="brief">简介</h3>
+<p>针对发生（occurrence）数据，按 <code>CODE=</code> 变量的层级组合与 <code>CLASS=</code> 分组，计算每个组合的唯一受试者例数与事件数，并生成百分比及“例数(百分比)”文本。输出为宽表：每个 <code>CODE</code> 层级一行，<code>_TOTAL_</code> 汇总行位于同层级首位；<code>ns0</code>/<code>ne0</code>/<code>np0</code>/<code>nsp0</code> 为合计列，<code>ns1</code> 起的列对应各分组。可选择进行组间假设检验。宏不返回值，结果写入 <code>OUT=</code> 数据集。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%stat_countocc(data=&lt;dataset&gt;, class=&lt;variable&gt;, code=&lt;variables&gt;)</pre>
+<p>该宏为过程式宏，结果写入 <code>OUT=</code> 数据集，不返回值。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DATA=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>发生数据（如 AE、CM）的数据集名，仅支持数据集。</td>
+</tr>
+<tr>
+<td>DENOM=</td>
+<td>可选参数</td>
+<td>&amp;DATA.</td>
+<td>用于计算分母的数据集名（如 ADSL），默认与 <code>DATA=</code> 相同。</td>
+</tr>
+<tr>
+<td>OUT=</td>
+<td>可选参数</td>
+<td>_DATA_</td>
+<td>输出数据集名。</td>
+</tr>
+<tr>
+<td>CLASS=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>定义分组分析的变量，仅支持一个变量（如 <code>TRT</code>）。</td>
+</tr>
+<tr>
+<td>CODE=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>发生数据中的编码变量，多个变量以空格分隔，如 <code>AEBODSYS AEDECOD</code> 或 <code>ATC1 ATC2 ATC3</code>。</td>
+</tr>
+<tr>
+<td>SUBJECT=</td>
+<td>可选参数</td>
+<td>USUBJID</td>
+<td>用于计数的受试者标识变量。</td>
+</tr>
+<tr>
+<td>UNCODE=</td>
+<td>可选参数</td>
+<td>UNCODED</td>
+<td><code>CODE=</code> 变量缺失时用于填充的文本。</td>
+</tr>
+<tr>
+<td>TOTCODELAB=</td>
+<td>可选参数</td>
+<td>_TOTAL_</td>
+<td>各 <code>CODE=</code> 变量汇总行的显示文本。</td>
+</tr>
+<tr>
+<td>TEST=</td>
+<td>可选参数</td>
+<td>NONE</td>
+<td>组间假设检验方法，不区分大小写。<br/>
+NONE：不进行检验。<br/>
+CHISQ：卡方检验。<br/>
+FISHER：Fisher 精确检验。<br/>
+AUTO：先尝试卡方检验，出现卡方警告时改用 Fisher 精确检验。</td>
+</tr>
+<tr>
+<td>SORTCLASSNUM=</td>
+<td>可选参数</td>
+<td>0</td>
+<td>排序时所依据的分组序号，0 表示合计列。</td>
+</tr>
+<tr>
+<td>PCTFMT=</td>
+<td>可选参数</td>
+<td>8.1</td>
+<td>百分比输出的数值格式。</td>
+</tr>
+<tr>
+<td>DEBUG=</td>
+<td>可选参数</td>
+<td>0</td>
+<td>是否保留中间数据集。<br/>
+0：结束时删除中间数据集。<br/>
+1：保留中间数据集以便排查。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：计算各编码组合的受试者例数与事件数</h4>
+<pre class="code">data work.adsl1;
+  length usubjid $4 trt $1;
+  input usubjid $ trt $;
+  datalines;
+S01 A
+S02 A
+S03 A
+S04 A
+S05 B
+S06 B
+S07 B
+S08 B
+;
+run;
+
+data work.ae1;
+  length usubjid $4 trt $1 aebodsys $20 aedecod $20;
+  input usubjid $ trt $ aebodsys $ aedecod $;
+  datalines;
+S01 A Headache Headache
+S01 A Nausea Nausea
+S02 A Headache Headache
+S03 A Nausea Nausea
+S03 A Headache Headache
+S05 B Headache Headache
+S06 B Nausea Nausea
+S07 B Nausea Nausea
+S08 B Headache Headache
+;
+run;
+
+%stat_countocc(data=work.ae1,denom=work.adsl1,out=work.occ1,
+               class=trt,code=aebodsys aedecod,test=NONE)
+
+proc print data=work.occ1(keep=aebodsys aedecod ns0 ns1 ns2 nsp0 nsp1 nsp2);
+run;</pre>
+<p class="result-label">运行结果（WORK.OCC1）：</p>
+<table class="macro-table result-table">
+<col width="14%" />
+<col width="16%" />
+<col width="8%" />
+<col width="8%" />
+<col width="8%" />
+<col width="12%" />
+<col width="11%" />
+<col width="11%" />
+<thead>
+<tr><th>aebodsys</th><th>aedecod</th><th>ns0</th><th>ns1</th><th>ns2</th><th>nsp0</th><th>nsp1</th><th>nsp2</th></tr>
+</thead>
+<tbody>
+<tr><td>_TOTAL_</td><td>_TOTAL_</td><td>7</td><td>3</td><td>4</td><td>7(87.5)</td><td>3(75.0)</td><td>4(100.0)</td></tr>
+<tr><td>Headache</td><td>_TOTAL_</td><td>5</td><td>3</td><td>2</td><td>5(62.5)</td><td>3(75.0)</td><td>2(50.0)</td></tr>
+<tr><td>Headache</td><td>Headache</td><td>5</td><td>3</td><td>2</td><td>5(62.5)</td><td>3(75.0)</td><td>2(50.0)</td></tr>
+<tr><td>Nausea</td><td>_TOTAL_</td><td>4</td><td>2</td><td>2</td><td>4(50.0)</td><td>2(50.0)</td><td>2(50.0)</td></tr>
+<tr><td>Nausea</td><td>Nausea</td><td>4</td><td>2</td><td>2</td><td>4(50.0)</td><td>2(50.0)</td><td>2(50.0)</td></tr>
+</tbody>
+</table>
+<p><code>ns0</code> 为合计受试者例数，<code>ns1</code>、<code>ns2</code> 分别为 <code>TRT=A</code>、<code>TRT=B</code> 的例数；<code>ne</code> 为事件数，<code>nsp</code> 为“例数(百分比)”文本。每个 <code>CODE</code> 层级都会生成 <code>_TOTAL_</code> 汇总行。</p>
+
+<h4>示例 2：增加卡方检验</h4>
+<pre class="code">data work.adsl1;
+  length usubjid $4 trt $1;
+  input usubjid $ trt $;
+  datalines;
+S01 A
+S02 A
+S03 A
+S04 A
+S05 B
+S06 B
+S07 B
+S08 B
+;
+run;
+
+data work.ae1;
+  length usubjid $4 trt $1 aebodsys $20 aedecod $20;
+  input usubjid $ trt $ aebodsys $ aedecod $;
+  datalines;
+S01 A Headache Headache
+S01 A Nausea Nausea
+S02 A Headache Headache
+S03 A Nausea Nausea
+S03 A Headache Headache
+S05 B Headache Headache
+S06 B Nausea Nausea
+S07 B Nausea Nausea
+S08 B Headache Headache
+;
+run;
+
+%stat_countocc(data=work.ae1,denom=work.adsl1,out=work.occ2,
+               class=trt,code=aebodsys aedecod,test=CHISQ)
+
+proc print data=work.occ2(keep=aebodsys aedecod _testv_ _testp_ _testm_);
+run;</pre>
+<p class="result-label">运行结果（WORK.OCC2）：</p>
+<table class="macro-table result-table">
+<col width="16%" />
+<col width="18%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<thead>
+<tr><th>aebodsys</th><th>aedecod</th><th>_testv_</th><th>_testp_</th><th>_testm_</th></tr>
+</thead>
+<tbody>
+<tr><td>_TOTAL_</td><td>_TOTAL_</td><td>1.14286</td><td>0.28505</td><td>Chisq</td></tr>
+<tr><td>Headache</td><td>_TOTAL_</td><td>0.53333</td><td>0.46521</td><td>Chisq</td></tr>
+<tr><td>Headache</td><td>Headache</td><td>0.53333</td><td>0.46521</td><td>Chisq</td></tr>
+<tr><td>Nausea</td><td>_TOTAL_</td><td>0.00000</td><td>1.00000</td><td>Chisq</td></tr>
+<tr><td>Nausea</td><td>Nausea</td><td>0.00000</td><td>1.00000</td><td>Chisq</td></tr>
+</tbody>
+</table>
+<p><code>TEST=CHISQ</code> 对每个编码组合执行卡方检验，统计量、P 值与检验方法分别写入 <code>_testv_</code>、<code>_testp_</code>、<code>_testm_</code>。</p>
+
+<h4>示例 3：控制百分比输出格式</h4>
+<pre class="code">data work.adsl1;
+  length usubjid $4 trt $1;
+  input usubjid $ trt $;
+  datalines;
+S01 A
+S02 A
+S03 A
+S04 A
+S05 B
+S06 B
+S07 B
+S08 B
+;
+run;
+
+data work.ae1;
+  length usubjid $4 trt $1 aebodsys $20 aedecod $20;
+  input usubjid $ trt $ aebodsys $ aedecod $;
+  datalines;
+S01 A Headache Headache
+S01 A Nausea Nausea
+S02 A Headache Headache
+S03 A Nausea Nausea
+S03 A Headache Headache
+S05 B Headache Headache
+S06 B Nausea Nausea
+S07 B Nausea Nausea
+S08 B Headache Headache
+;
+run;
+
+%stat_countocc(data=work.ae1,denom=work.adsl1,out=work.occ3,
+               class=trt,code=aebodsys aedecod,test=NONE,pctfmt=8.2)
+
+proc print data=work.occ3(keep=aebodsys aedecod nsp0 nsp1 nsp2);
+run;</pre>
+<p class="result-label">运行结果（WORK.OCC3）：</p>
+<table class="macro-table result-table">
+<col width="16%" />
+<col width="18%" />
+<col width="22%" />
+<col width="22%" />
+<col width="22%" />
+<thead>
+<tr><th>aebodsys</th><th>aedecod</th><th>nsp0</th><th>nsp1</th><th>nsp2</th></tr>
+</thead>
+<tbody>
+<tr><td>_TOTAL_</td><td>_TOTAL_</td><td>7(87.50)</td><td>3(75.00)</td><td>4(100.00)</td></tr>
+<tr><td>Headache</td><td>_TOTAL_</td><td>5(62.50)</td><td>3(75.00)</td><td>2(50.00)</td></tr>
+<tr><td>Headache</td><td>Headache</td><td>5(62.50)</td><td>3(75.00)</td><td>2(50.00)</td></tr>
+<tr><td>Nausea</td><td>_TOTAL_</td><td>4(50.00)</td><td>2(50.00)</td><td>2(50.00)</td></tr>
+<tr><td>Nausea</td><td>Nausea</td><td>4(50.00)</td><td>2(50.00)</td><td>2(50.00)</td></tr>
+</tbody>
+</table>
+<p><code>PCTFMT=8.2</code> 使百分比保留两位小数，<code>nsp0</code>、<code>nsp1</code>、<code>nsp2</code> 中的百分比部分随之变化。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+
+<li><code>CLASS=</code> 仅支持一个变量。</li>
+<li><code>CODE=</code> 可指定多个变量，多个变量以空格分隔。</li>
+<li>受试者例数为当前编码组合下 <code>SUBJECT=</code> 的唯一值数量，事件数为当前编码组合的出现次数。</li>
+<li>输出按 CODE 变量 1 的受试者例数、名称，再按 CODE 变量 2 的受试者例数、名称依次排序；<code>SORTCLASSNUM=</code> 指定排序所用的分组。</li>
+<li>同一 CODE 变量的各水平中，合计水平排在最前，未编码水平排在最后。</li>
+<li><code>TEST=</code> 仅支持 <code>NONE</code>、<code>CHISQ</code>、<code>FISHER</code>、<code>AUTO</code>。</li>
+
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<p>以下列出当前版本的使用约束与冲突风险。</p>
+
+<h4>1. 对输入参数的强假设</h4>
+<ul class="notes">
+<li><code>DENOM=</code> 的分母须与 <code>DATA=</code> 的分组水平一致：每个分组水平都应包含该组全部受试者，<code>DATA=</code> 的 <code>CLASS=</code> 取值也应出现在 <code>DENOM=</code> 中。否则未进入分母的受试者仍计入分子，百分比可能超过 100%；分组取值不在分母范围内的记录不会进入任何分组。</li>
+<li><code>UNCODE=</code> 与 <code>TOTCODELAB=</code> 的长度不得超过 <code>CODE=</code> 各变量的长度。超长时值会被截断，导致不同编码被合并或汇总行无法识别，宏只输出一条 WARNING。</li>
+<li><code>CLASS=</code> 仅支持一个变量；<code>CODE=</code> 可指定多个变量并以空格分隔，按所列顺序构成层级。</li>
+</ul>
+
+<h4>2. 临时变量与临时数据集冲突风险</h4>
+<ul class="notes">
+<li>宏会创建并覆盖固定名称的中间数据集（名称以 <code>STAT_COUNTOCC_</code> 开头），并在 <code>DEBUG=0</code> 时删除 WORK 中所有以 <code>STAT_COUNTOCC</code> 开头的数据集；WORK 中该前缀的自有数据集会被覆盖或误删。<code>DEBUG=1</code> 时中间数据集保留。</li>
+<li>输出数据集保留由 <code>CODE=</code> 变量名派生的内部辅助列（以 <code>_</code> 开头、以 <code>_TYPE_</code> 或 <code>_NS_</code> 结尾）；与下游数据集按列合并时，这些列会与同名变量冲突或被覆盖。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/stat/stat_countocc.sas" download>stat_countocc.sas</a></p>
+<p class="download"><a href="../assets/macropackages/stat_countocc.zip" download>stat_countocc and its dependencies.zip</a></p>
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr>
+<th>日期</th>
+<th>修订人</th>
+<th>修订内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-11-07</td>
+<td>Luo Hao</td>
+<td>新增 <code>DEBUG=</code> 参数，用于保留中间数据集。</td>
+</tr>
+<tr>
+<td>2026-10-29</td>
+<td>Luo Hao</td>
+<td>新增 <code>PCTFMT=</code> 参数，用于控制百分比输出格式。</td>
+</tr>
+<tr>
+<td>2026-01-16</td>
+<td>Luo Hao</td>
+<td>原始版本。</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>

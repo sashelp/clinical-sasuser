@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta>
+  <title>$$NAME$$</title>
+  <link rel="stylesheet" type="text/css" href="../../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="..\..\assets\gallery_detail.css" />  
+</head>
+
+<body>
+  <!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="../index.html">示例</a>
+<a href="">资源</a>
+<a href="">文档</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+  <div id="nav">
+    <ul>
+      <li><a href="..\index.html#series">折线图</a></li>
+      <li><a href="..\index.html#scatter">散点图</a></li>
+      <li><a href="..\index.html#bar">条形图</a></li>
+      <li><a href="..\index.html#box">箱线图</a></li>
+      <li><a href="..\index.html#reg">回归分析图</a></li>
+      <li><a href="..\index.html#survival">生存分析图</a></li>
+      <li><a href="..\index.html#forest">森林图</a></li>
+      <li><a href="..\index.html#tumor">肿瘤分析图</a></li>
+      <li><a href="..\index.html#histogram">直方图</a></li>
+      <li><a href="..\index.html#panel">多面板图</a></li>
+      <li><a href="..\index.html#other">其它</a></li>
+    </ul>
+  </div>
+
+  <div id="section">    
+    <h2>$$NAME$$</h2>
+    <hr/>
+
+    <div class="graph">
+      <p><img src="$$GFILE$$" alt="$$GNAME$$"></p>
+    </div>
+
+    <div class="desc">
+      <h3>简介</h3>
+      <p>$$BRIEF$$</p>
+      <h3>参数</h3>
+      <table frame="hsides" width="100%" cellpadding="5">
+        <col width=20% />
+        <col width=15% />
+        <col width=65% />
+        <tr style="background-color:#333333;font-weight:bold;" frame="below">
+          <td>名称</td>
+          <td>类型</td>
+          <td>描述</td>
+        </tr>
+        $$PARAM$$
+      </table>
+
+      <h3>注意事项</h3>
+      <p>$$NOTE$$</p>
+      <h3>软件版本</h3>
+      <p>$$VERSION$$</p>
+
+      <h3>修订记录</h3>
+      <table frame="hsides" width="100%" cellpadding="5">
+      <col width=20% />
+      <col width=15% />
+      <col width=65% />
+      <tr style="background-color:#333333;font-weight:bold;" frame="below">
+        <td>修订日期</td>
+        <td>修订者</td>
+        <td>描述</td>
+      </tr>
+      $$HISTORY$$
+    </table>
+
+    <h3>源代码</h3>
+    <p><code><a href="$$PFILE$$" download>$$PNAME$$</a></code></p>
+
+    </div>
+  </div>
+
+</body>
+</html>

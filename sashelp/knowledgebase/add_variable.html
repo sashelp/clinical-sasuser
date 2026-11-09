@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>能不能加变量 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html" class="current">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SDTM</p>
+<h2>能不能往 SDTMIG 的数据集里加一个标准没列出的变量？</h2>
+<p class="subtitle">一般观察类可以加，但要先看这个类允许哪些 qualifier、以及 SDTM 里的 Usage Restrictions；“generally not used”只是不建议，不是禁止。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>看数据属于哪个类。<b>一般观察类</b>（Interventions、Events、Findings、Findings About）的域，只要变量本身是这一类的 qualifier，或者是一个 timing 变量、identifier，通常都可以加进来。真正的限制有两处：SDTM 各表里 <b>Usage Restrictions</b> 那一列写的硬性禁止，和 SDTMIG 各域 assumptions 里“generally not used”的软性建议。前者不能碰，后者可以碰，但要能说出理由。</p>
+</div>
+
+<h3 id="class">第一步：确认数据是哪一类</h3>
+<p>“能不能加变量”这个问题，只有在一般观察类里才有通用答案。SDTM 用类的概念来定义哪些 qualifier 能配哪些域，所以判断依据不在 SDTMIG 的域表格里，而在 SDTM 模型本身。</p>
+<ul class="notes">
+<li><b>Interventions</b>：给药、操作、暴露这类，比如 EX、CM、PR。</li>
+<li><b>Events</b>：发生了什么事，比如 AE、DS、MH。</li>
+<li><b>Findings</b>：测出来的结果，比如 LB、VS、EG、QS。</li>
+<li><b>Findings About</b>：对某个 findings 的补充说明，比如 FA。</li>
+</ul>
+<p>不属于这四类的（比如 DM、SV、SUPPQUAL 这些特殊用途域）不适用通用规则，要单独看。</p>
+
+<h3 id="restriction">第二步：查有没有硬性限制</h3>
+<p>SDTM v2.0 的域表格里新增了一列 <b>Usage Restrictions</b>，把散落在 SDTMIG 各处、以及积累下来的限制集中放在一起。最常被举的例子是：<b>AE 域不能加 --OCCUR</b>。因为不良事件本来就是“发生了”才建记录，有没有发生这个信息在 AE 域里没有意义，问了也是 Y。</p>
+<p>即使你按旧版本的 SDTMIG 准备提交，SDTM v2.0 这张表也能用：找到那条限制，再回到你用的 SDTMIG 版本里核对它在这一版是否也成立。</p>
+
+<h3 id="notused">第三步：分清“不建议”和“不允许”</h3>
+<p>很多域的 assumptions 最后会写一段“generally not used”，列出一串变量。以 MI（显微镜检查）域为例，列的是 <code>--POS</code>、<code>--MODIFY</code>、<code>--ORNRLO</code>、<code>--ORNRHI</code>、<code>--STNRLO</code>、<code>--STNRHI</code>、<code>--STNRC</code>、<code>--NRIND</code>、<code>--LEAD</code>、<code>--CSTATE</code>、<code>--BLFL</code>、<code>--FAST</code>、<code>--DRVFL</code>、<code>--LLOQ</code>、<code>--ULOQ</code>。</p>
+<div class="callout">
+<p>“The fact that a variable is listed in a 'generally not used' assumption does not prohibit its use; it simply reflects the experience of the SDS team.”</p>
+</div>
+<p>换句话说，这是“我们想不出这里有什么场景要用它”，不是“不许用”。真要用，写清理由，在 define.xml 和 reviewer guide 里说明就行。</p>
+<p>EG 域的说法更重一点：“It is recommended that --LOINC not be used.” 用了 recommended 这个词，态度更强，但仍然是建议，并不禁止 EGLOINC。</p>
+
+<h3 id="flow">判断顺序</h3>
+<div class="flow">
+<p class="flow-title">想加一个变量，按这个顺序问自己</p>
+<svg viewBox="0 0 680 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="av-ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <rect x="150" y="8" width="300" height="42" rx="4" fill="#0070C0" stroke="#005a9e"/>
+  <text x="300" y="34" text-anchor="middle" fill="#ffffff" font-size="14">想加一个变量</text>
+
+  <line x1="300" y1="50" x2="300" y2="76" stroke="#8a8a8a" marker-end="url(#av-ar)"/>
+
+  <rect x="60" y="76" width="460" height="46" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="300" y="104" text-anchor="middle" fill="#e6e6e6" font-size="13">1. 这个域属于一般观察类吗？</text>
+
+  <line x1="300" y1="122" x2="300" y2="148" stroke="#8a8a8a" marker-end="url(#av-ar)"/>
+  <text x="314" y="140" fill="#8a8a8a" font-size="12">是</text>
+
+  <rect x="60" y="148" width="460" height="46" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="300" y="176" text-anchor="middle" fill="#e6e6e6" font-size="13">2. 它是该类的 qualifier / timing / identifier 吗？</text>
+
+  <line x1="300" y1="194" x2="300" y2="220" stroke="#8a8a8a" marker-end="url(#av-ar)"/>
+
+  <rect x="60" y="220" width="460" height="46" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="300" y="248" text-anchor="middle" fill="#e6e6e6" font-size="13">3. SDTM 表里 Usage Restrictions 有没有禁止？</text>
+
+  <line x1="300" y1="266" x2="300" y2="292" stroke="#8a8a8a" marker-end="url(#av-ar)"/>
+  <text x="314" y="284" fill="#8a8a8a" font-size="12">没有</text>
+
+  <rect x="110" y="292" width="380" height="46" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="300" y="313" text-anchor="middle" fill="#ffffff" font-size="13">可以加，写清理由</text>
+  <text x="300" y="331" text-anchor="middle" fill="#e8f5e0" font-size="11">“generally not used”不影响</text>
+
+  <line x1="520" y1="243" x2="554" y2="243" stroke="#8a8a8a" marker-end="url(#av-ar)"/>
+  <text x="537" y="235" text-anchor="middle" fill="#c0504d" font-size="11">有</text>
+  <rect x="556" y="220" width="114" height="46" rx="4" fill="#c0504d" stroke="#9c3f3d"/>
+  <text x="613" y="241" text-anchor="middle" fill="#ffffff" font-size="12">不能加</text>
+  <text x="613" y="258" text-anchor="middle" fill="#f5dcdb" font-size="11">换别的表达</text>
+
+  <text x="340" y="372" text-anchor="middle" fill="#8a8a8a" font-size="11">不属于一般观察类（DM、SV、SUPPQUAL 等）要单独看对应域的规则</text>
+</svg>
+</div>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>CDISC, <a href="https://www.cdisc.org/kb/articles/can-i-add-variable-my-sdtmig-dataset" target="_blank" rel="noopener"><i>Can I add this variable to my SDTMIG dataset?</i></a>（CDISC 知识库文章，cdisc.org/kb）。<span class="src">一般观察类 qualifier 的添加规则、AE 不能加 --OCCUR、MI 与 EG 域的“generally not used”表述。</span></li>
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/sdtm/sdtm-v2-0" target="_blank" rel="noopener"><i>SDTM v2.0</i></a>。<span class="src">各域表格的 Usage Restrictions 列。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

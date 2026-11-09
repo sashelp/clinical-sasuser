@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>ADaM 文档怎么配 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html" class="current">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / ADaM</p>
+<h2>ADaM 的文档一大堆，到底该看哪几本、怎么配？</h2>
+<p class="subtitle">先定 ADaMIG 版本，再用对应的 Release Package 一整套拿；文档之间打架时以发布日期最新的为准，示例文档不是标准。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>不用一本本去挑。<b>先决定用哪个版本的 ADaMIG，然后下载那个版本对应的 Release Package（一个 zip），里面就是这一版配套的全部文档</b>，一套用就行。版本怎么定看申报对象：查他们的 Data Standards Catalog。文档之间出现说法不一致时，<b>看发布日期的先后，以最新的为准</b>。</p>
+</div>
+
+<h3 id="why">为什么会有这么多文档</h3>
+<p>ADaM 团队的做法是把工作拆成小块，分给不同的小组，谁先做完谁先发布。这样做开发快了，代价是文档越出越多，新人一进来看花眼。</p>
+<p>举一个具体例子就明白了：ADaMIG 里写了 ADSL 和 BDS 这两种结构的细节，但 OCCDS（发生事件数据结构）的细节要去另一份文档看。原因是 ADSL 和 BDS 从 2009 年就有了，OCCDS 一直到 2016 年才正式化。当时团队没有把 OCCDS 塞回 ADaMIG，而是单独出了一份文档。</p>
+
+<h3 id="package">Release Package：按版本打包</h3>
+<p>为了治这个乱，ADaM 团队给每个 ADaMIG 版本做了一个 zip，里面是<b>打算配合使用</b>的全部文档。以 ADaMIG v1.3 为例，包里有七份：</p>
+<ul class="notes">
+<li>ADaM v2.1（2009-12-17）</li>
+<li>Important Considerations When Using ADaM v2.1（2021-11-29）</li>
+<li>ADaM Implementation Guide v1.3（2021-11-29）</li>
+<li>ADaM Structure for Occurrence Data Implementation Guide v1.1（2021-11-29）</li>
+<li>ADaM Implementation Guide for Non-compartmental Analysis Input Data v1.0（2021-11-29）</li>
+<li>ADaM Implementation Guide for Medical Devices v1.0（2021-11-29）</li>
+<li>ADaM Conformance Rules v4.0（2021-11-29）</li>
+</ul>
+<p>v1.2、v1.1、v1.0 也各有自己的包，内容略有不同。</p>
+
+<h4>那份"Important Considerations"一定要先读</h4>
+<p>ADaM v2.1 是 2009 年出的，里面的类别、子类、元数据示例早就过时了。这份短文就是为了补这个洞：它把你引到更新的 CDISC 文档去看这些内容。用它之前先读这份，否则会照着一份十几年前的描述去建数据集。</p>
+
+<h3 id="chart">版本对应关系</h3>
+<p>ADaMIG v1.1 及以后，第 1.3 节有一张图，列出每份文档适用于哪个 ADaMIG 版本。下面是从 v1.3 那张图整理出来的简表：</p>
+
+<table class="kb-table">
+<col width="42%" />
+<col width="20%" />
+<col width="38%" />
+<thead>
+<tr><th>文档</th><th>状态</th><th>怎么用</th></tr>
+</thead>
+<tbody>
+<tr><td>ADaM v2.1（模型本体）</td><td>基础文档</td><td>所有版本都适用，但要配 Important Considerations 一起读</td></tr>
+<tr><td>ADaMIG v1.3</td><td>当前实现指南</td><td>主文档，先定它</td></tr>
+<tr><td>OCCDS IG v1.1</td><td>适用</td><td>做 AE、CM、MH 这类发生事件数据集时看</td></tr>
+<tr><td>ADNCA v1.0（非房室分析）</td><td>适用</td><td>做 PK 参数数据集时看</td></tr>
+<tr><td>ADaMIG-MD v1.0（器械）</td><td>适用</td><td>器械研究才用</td></tr>
+<tr><td>BDS for Time-to-Event v1.0</td><td>示例</td><td>不是标准，参考写法</td></tr>
+<tr><td>ADaM Statistical Examples v1.0</td><td>示例</td><td>不是标准，参考写法</td></tr>
+<tr><td>Conformance Rules v4.0</td><td>适用</td><td>自查和跑校验工具时用</td></tr>
+</tbody>
+</table>
+
+<p>表里出现“Superseded by”的组合不要用。比如 ADaM Data Structure for Adverse Event Analysis v1.0 已经被 OCCDS 取代了，别再用。标着“Not written for”的要谨慎——不是不能用，而是那份文档成文时还没有这个 ADaMIG 版本，配套关系没有经过确认。</p>
+
+<h3 id="choose">实际怎么选</h3>
+<ol class="notes">
+<li><b>先定 ADaMIG 和 Define-XML 的版本。</b>这决定后面所有事情，别跳过。</li>
+<li><b>看申报对象的要求。</b>交 FDA 查 FDA 的 Study Data Standards Catalog，交 PMDA 查 PMDA 的目录，里面写明接受哪些版本。</li>
+<li><b>考虑用最新的 ADaMIG。</b>新版向后兼容做得很好：你可以用最新版里的新变量，申报时仍按旧版报，校验工具也按旧版跑。由此产生的少量差异（比如某个变量标签改了）在 ADRG 里说明一句就行，通常值得换取用上新内容的好处。</li>
+<li><b>下对应的 Release Package。</b>里面文档齐全，不用东拼西凑。</li>
+</ol>
+
+<h3 id="std">标准和示例要分清</h3>
+<p>ADaM 的文档分两类，混了容易出事：</p>
+<ul class="notes">
+<li><b>标准类</b>：模型本体（ADaM v2.1）和各份 IG。它们规定什么能做、什么不能做。</li>
+<li><b>示例类</b>：BDS for Time-to-Event、ADaM Statistical Examples，还有一些 TAUG 里的 ADaM 示例。它们演示怎么用标准里的结构和变量。</li>
+</ul>
+<p>示例不是标准，不要求照做。它的价值是在你设计类似数据集时给个起点。不管参考哪个示例，ADaM 的基本原则还是要守。</p>
+
+<h3 id="conflict">文档打架怎么办</h3>
+<p>同一个概念在不同文档里都写过，而文档的发布日期不同，措辞就可能不一样。处理办法很简单：<b>看发布日期，用最新的那份</b>。老文档里过时的说法不代表现在的立场。</p>
+<p>还有一句值得记住：这些文档未来会合并成更少、更一致的几份，但在那之前，信息就是分散的。</p>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>CDISC, <a href="https://www.cdisc.org/kb/articles/making-sense-various-adam-documents" target="_blank" rel="noopener"><i>Making Sense of the Various ADaM Documents</i></a>（CDISC 知识库文章，cdisc.org/kb）。<span class="src">文档分散的历史原因、ADaMIG v1.3 Release Package 的七份文档、适用性简表、版本选择与冲突处理。</span></li>
+<li>CDISC, <a href="https://www.cdisc.org/standards/foundational/adam/adamig-v1-3" target="_blank" rel="noopener"><i>ADaMIG v1.3</i></a>，Section 1.3。<span class="src">各 ADaM 文档与 ADaMIG 版本的对应关系图。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

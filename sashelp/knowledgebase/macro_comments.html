@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>宏里的注释 - 知识库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/knowledgebase.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">知识目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">SDTM</li>
+<li><a href="orres_stat_empty.html">--ORRES / --STAT 双空</a></li>
+<li><a href="variable_labels.html">变量标签要不要一字不差</a></li>
+<li><a href="add_variable.html">能不能加变量</a></li>
+<li><a href="qnam_domain_code.html">QNAM 要不要带域代码</a></li>
+<li><a href="iso8601_interval.html">ISO8601 区间格式</a></li>
+<li><a href="physical_exam_performed.html">体检做没做</a></li>
+<li><a href="site_transfer.html">转中心怎么记</a></li>
+<li><a href="prior_ongo_timing.html">PRIOR / ONGO 映射</a></li>
+<li><a href="sdtm_and_cdash.html">SDTM 与 CDASH</a></li>
+<li><a href="study_subject_term.html">subject 还是 participant</a></li>
+<li class="nav-cat">ADaM</li>
+<li><a href="sdtm_var_in_adam.html">SDTM 变量保留</a></li>
+<li><a href="population_flags.html">population flags</a></li>
+<li><a href="multiple_participations.html">多次参与（ADPL）</a></li>
+<li><a href="adam_criteria_vars.html">准则变量怎么选</a></li>
+<li><a href="adam_documents.html">ADaM 文档怎么配</a></li>
+<li class="nav-cat">临床提交</li>
+<li><a href="reproducibility.html">程序文件可复现</a></li>
+<li><a href="external_macro.html">避免外部宏调用</a></li>
+<li class="nav-cat">SAS 编程</li>
+<li><a href="macro_comments.html" class="current">宏里的注释</a></li>
+<li><a href="numeric_precision.html">浮点数精度</a></li>
+<li><a href="contrast_estimate.html">CONTRAST / ESTIMATE 系数</a></li>
+<li><a href="interval_overlap.html">区间重叠怎么判</a></li>
+<li><a href="special_symbols.html">图里的特殊符号</a></li>
+<li><a href="split_200_bytes.html">200 字节切变量</a></li>
+<li><a href="rtf_two_fonts.html">宋体 + 新罗马</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="rate_ratio.html">率与率比</a></li>
+<li><a href="relative_risk.html">相对风险</a></li>
+<li><a href="difference_in_differences.html">双重差分</a></li>
+<li class="nav-cat">性能与调优</li>
+<li><a href="hardware_tuning.html">硬件与系统调优</a></li>
+<li><a href="performance_monitoring.html">性能问题怎么查</a></li>
+<li><a href="mixed_glimmix_memory.html">MIXED / GLIMMIX 太慢</a></li>
+<li class="nav-cat">客户端</li>
+<li><a href="eg_dual_monitor.html">EG 双显示器问题</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">知识库</a> / SAS 编程</p>
+<h2>在宏里写注释，为什么一个星号会把后面的代码也吃掉？</h2>
+<p class="subtitle">三种注释走三条不同的解析路径：斜杠星号逐字符读，星号和百分号星号都是读到分号为止。宏里只用斜杠星号，就不会出这种事。</p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="conclusion">结论</h3>
+<div class="conclusion">
+<p>宏定义里写注释，只用 <code>/* 注释 */</code>。星号注释和宏注释都是“一路读到分号为止”，中间碰上引号、<code>%</code>、<code>&amp;</code> 还会按各自的规则继续解析，很容易把后面几条语句一起吞掉，最后报一个看不懂的 <code>ERROR 180-322</code>。</p>
+</div>
+
+<h3 id="three">三种注释，三种读法</h3>
+<p>SAS 处理一段代码要过好几道工序，不同的注释写法在不同工序上被处理，行为就完全不一样了。先认识一个词：token，也就是“词”。SAS 把代码切成一个个有意义的词，名字、数字、字符串、特殊符号各算一类，一个词不能再往下拆。</p>
+
+<table class="kb-table">
+<col width="20%" />
+<col width="20%" />
+<col width="34%" />
+<col width="26%" />
+<thead>
+<tr><th>写法</th><th>谁在处理</th><th>怎么读</th><th>什么时候出事</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/* … */</code></td>
+<td>word scanner</td>
+<td>逐字符读，见到 <code>*/</code> 就停</td>
+<td>基本不出事，引号和 <code>%</code>、<code>&amp;</code> 都当普通字符</td>
+</tr>
+<tr>
+<td><code>* … ;</code></td>
+<td>tokenizer</td>
+<td>逐词读，读到分号停；引号在这里不算字符串，只是一个普通符号</td>
+<td>写进宏定义后，整段先被当成常量文本收起来，规则又变了</td>
+</tr>
+<tr>
+<td><code>%* … ;</code></td>
+<td>宏设施</td>
+<td>逐词读，读到分号停；引号会组成字符串，必须成对</td>
+<td>注释里有一个撇号，就会一路吃下去</td>
+</tr>
+</tbody>
+</table>
+
+<p>关键差别在最后一行：斜杠星号是逐字符，另外两种是逐词。逐词就意味着“要等一个分号”，而分号在 SAS 代码里满地都是。</p>
+
+<h3 id="asterisk">星号注释怎么把 DATA 语句吃掉的</h3>
+<p>看这段宏：</p>
+<pre class="code">%macro one;
+   * This is a test %let x = this would not work;
+   data new;
+      set one;
+   run;
+%mend;
+%one</pre>
+
+<p>编译这个宏的时候，SAS 从 <code>%macro</code> 一路扫到 <code>%mend</code>，把内容分成两类：宏语句（<code>%let</code>、<code>%do</code> 这些）当成待执行的代码，其余的都是普通文本，等调用时再推出去。</p>
+
+<ol class="notes">
+<li><code>* This is a test </code> 这一段被当成普通文本收起来。</li>
+<li><code>%let x = this would not work;</code> 被识别成宏语句，先执行掉，宏变量 x 就这么建出来了。</li>
+<li>剩下的 <code>data new; set one; run;</code> 继续当文本收着。</li>
+</ol>
+
+<p>真正调用 <code>%one</code> 的时候，这些文本被依次推到输入流里。第一段 <code>* This is a test</code> 推出来之后开始找分号结束注释，可它自己后面没有分号，只能继续往下吃，于是 <code>data new;</code> 的分号成了注释的终点——DATA 语句就这么变成注释的一部分了。剩下 <code>set one;</code> 孤零零留在外面，直接报错：</p>
+
+<pre class="code">ERROR 180-322: Statement is not valid or it is used out of proper order.</pre>
+
+<p>很多人看到这个错会去查 SET 语句写错没有，其实问题在两行之前的那个星号。</p>
+
+<h3 id="quote">宏注释碰上撇号，更隐蔽</h3>
+<pre class="code">%macro test(dsin);
+   %* Shouldn't the single quotation mark be ignored since comment?;
+   proc print data=&amp;dsin;
+   run;
+%mend;</pre>
+
+<p><code>%*</code> 是由宏设施逐词读的，引号在这里要组成字符串，所以必须成对。读的过程是这样：先拿到 <code>Shouldn</code>，接着遇到那个撇号，宏设施认为“字符串开始了”，开始找下一个撇号。可注释里只有这一个撇号，后面整段代码里也没有，于是它就一直往下读，把 <code>proc print</code>、<code>run</code>、<code>%mend</code>、后面所有提交的代码全并进这个字符串里。日志里只会给你一句提示：</p>
+
+<pre class="code">WARNING 32-169: The quoted string currently being processed has become
+       more than 262 characters long. You may have unbalanced quotation marks.</pre>
+
+<p>到这一步，宏已经不成立了，但报错位置离真正的原因很远，非常难查。同样的注释改成 <code>/* Shouldn't ... */</code> 就一点问题没有，因为斜杠星号是逐字符读的，撇号只是个普通字符。</p>
+
+<div class="flow">
+<p class="flow-title">宏注释里有引号时会发生什么</p>
+<svg viewBox="0 0 680 380" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="mc-ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <rect x="70" y="10" width="300" height="44" rx="4" fill="#0070C0" stroke="#005a9e"/>
+  <text x="220" y="37" text-anchor="middle" fill="#ffffff" font-size="14">在宏定义里写 %* 注释</text>
+
+  <line x1="220" y1="54" x2="220" y2="82" stroke="#8a8a8a" marker-end="url(#mc-ar)"/>
+
+  <rect x="20" y="82" width="400" height="52" rx="4" fill="#1c1c1c" stroke="#555555"/>
+  <text x="220" y="113" text-anchor="middle" fill="#e6e6e6" font-size="14">注释文字里有引号吗？</text>
+
+  <line x1="420" y1="108" x2="446" y2="108" stroke="#8a8a8a" marker-end="url(#mc-ar)"/>
+  <text x="433" y="100" text-anchor="middle" fill="#c0504d" font-size="12">有</text>
+
+  <rect x="448" y="82" width="218" height="52" rx="4" fill="#c0504d" stroke="#9c3f3d"/>
+  <text x="557" y="104" text-anchor="middle" fill="#ffffff" font-size="13">引号被当成字符串开头</text>
+  <text x="557" y="122" text-anchor="middle" fill="#f5dcdb" font-size="11">开始找闭合的引号</text>
+
+  <line x1="220" y1="134" x2="220" y2="164" stroke="#8a8a8a" marker-end="url(#mc-ar)"/>
+  <text x="234" y="154" fill="#8a8a8a" font-size="12">没有</text>
+
+  <rect x="70" y="164" width="300" height="48" rx="4" fill="#70AD47" stroke="#5c8e39"/>
+  <text x="220" y="186" text-anchor="middle" fill="#ffffff" font-size="13">读到分号，注释正常结束</text>
+  <text x="220" y="203" text-anchor="middle" fill="#e8f5e0" font-size="11">宏体原样保留</text>
+
+  <line x1="557" y1="134" x2="557" y2="164" stroke="#8a8a8a" marker-end="url(#mc-ar)"/>
+
+  <rect x="448" y="164" width="218" height="90" rx="4" fill="#333333" stroke="#555555"/>
+  <text x="557" y="186" text-anchor="middle" fill="#e6e6e6" font-size="12">把后面的语句一起并进字符串</text>
+  <text x="557" y="205" text-anchor="middle" fill="#cccccc" font-size="11">proc print、run、%mend 全被吞</text>
+  <text x="557" y="223" text-anchor="middle" fill="#cccccc" font-size="11">直到再出现一个引号才停</text>
+
+  <line x1="557" y1="254" x2="557" y2="284" stroke="#8a8a8a" marker-end="url(#mc-ar)"/>
+
+  <rect x="448" y="284" width="218" height="50" rx="4" fill="#c0504d" stroke="#9c3f3d"/>
+  <text x="557" y="305" text-anchor="middle" fill="#ffffff" font-size="12">WARNING 32-169</text>
+  <text x="557" y="322" text-anchor="middle" fill="#f5dcdb" font-size="11">提示引号可能没配对</text>
+
+  <rect x="20" y="284" width="390" height="50" rx="4" fill="#1a1a1a" stroke="#00B0F0"/>
+  <text x="215" y="304" text-anchor="middle" fill="#00B0F0" font-size="12">同样的注释改成 /* … */ 就没事</text>
+  <text x="215" y="322" text-anchor="middle" fill="#00B0F0" font-size="11">逐字符读，撇号只是普通字符</text>
+</svg>
+</div>
+
+<h3 id="practice">实际怎么用</h3>
+<ul class="notes">
+<li><b>宏里统一用 <code>/* */</code></b>。这是唯一一条必须记住的规矩，其余都是它的理由。</li>
+<li><b>临时屏蔽一段代码，也用 <code>/* */</code></b>。星号注释只适合顶格写一行说明、且内容里没有引号和宏触发符的场合，实际写起来很难保证。</li>
+<li><b>注释里想写什么就写什么</b>。<code>/* */</code> 里面出现撇号、引号、<code>%let</code>、<code>&amp;var</code> 都没关系，它们不会被执行，也不会开一个字符串。</li>
+<li><b>看到 <code>ERROR 180-322</code> 先往回找注释</b>。特别是错误位置指向一条看起来完全正常的 SET 或 DATA 语句时，往上翻几行，多半有个没写分号的星号注释。</li>
+<li><b>看到 <code>WARNING 32-169</code> 不要只盯着引号</b>。代码里明明没有不配对的引号却报这个警告，就去检查宏注释里有没有撇号，比如 don't、shouldn't 这种英文缩写。</li>
+</ul>
+
+<h3 id="refs">参考出处</h3>
+<ul class="refs">
+<li>SAS Support, <a href="https://sas.service-now.com/csm?id=kb_article_view&sys_kb_id=baf709c2936e1e18c978f8566aba1094" target="_blank" rel="noopener"><i>Using comments within a macro</i></a>（SAS 知识库文章，sas.service-now.com）。<span class="src">三种注释的处理层级、星号注释吞掉 DATA 语句的示例、宏注释撇号示例与 WARNING 32-169。</span></li>
+<li>SAS Institute, <a href="https://support.sas.com/en/software/base-sas-support.html#documentation" target="_blank" rel="noopener"><i>SAS 9.4 Macro Language: Reference</i></a>。<span class="src">宏注释 %* 与宏定义内常量文本的编译规则。</span></li>
+</ul>
+
+</div>
+</div>
+
+<script src="../assets/knowledgebase_copy.js"></script>
+</body>
+</html>

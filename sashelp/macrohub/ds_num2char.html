@@ -1,0 +1,299 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>ds_num2char - 宏程序库</title>
+<link rel="stylesheet" type="text/css" href="../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="../assets/macrohub.css" />
+</head>
+
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="index.html">宏目录</a>
+<a href="">文档</a>
+<a href="conventions.html">开发约定</a>
+</div>
+</div>
+<!--/#HEADER#-->
+
+<!--#NAV#-->
+<div id="nav">
+<ul>
+<li class="nav-cat">变量操作</li>
+<li><a href="var_attr.html">var_attr</a></li>
+<li><a href="var_coexist.html">var_coexist</a></li>
+<li><a href="var_exist.html">var_exist</a></li>
+<li><a href="var_nlevel.html">var_nlevel</a></li>
+<li class="nav-cat">数据集操作</li>
+<li><a href="ds_attr.html">ds_attr</a></li>
+<li><a href="ds_num2char.html" class="current">ds_num2char</a></li>
+<li><a href="ds_varlist.html">ds_varlist</a></li>
+<li><a href="ds_zipvarlen.html">ds_zipvarlen</a></li>
+<li class="nav-cat">逻辑库操作</li>
+<li><a href="lib_memlist.html">lib_memlist</a></li>
+<li><a href="lib_zipvarlen.html">lib_zipvarlen</a></li>
+<li class="nav-cat">目录操作</li>
+<li><a href="dir_attr.html">dir_attr</a></li>
+<li><a href="dir_exist.html">dir_exist</a></li>
+<li><a href="dir_memlist.html">dir_memlist</a></li>
+<li class="nav-cat">文件操作</li>
+<li><a href="file_attr.html">file_attr</a></li>
+<li class="nav-cat">CDISC 标准</li>
+<li><a href="sdtm_epoch.html">sdtm_epoch</a></li>
+<li><a href="sdtm_fulldomain.html">sdtm_fulldomain</a></li>
+<li><a href="sdtm_lobxfl.html">sdtm_lobxfl</a></li>
+<li class="nav-cat">统计分析</li>
+<li><a href="stat_countocc.html">stat_countocc</a></li>
+<li><a href="stat_rateci.html">stat_rateci</a></li>
+<li><a href="stat_summaryc.html">stat_summaryc</a></li>
+<li><a href="stat_summaryn.html">stat_summaryn</a></li>
+<li class="nav-cat">开源宏</li>
+<li><a href="for.html">for</a></li>
+<li><a href="nodup.html">nodup</a></li>
+<li><a href="parmv.html">parmv</a></li>
+<li><a href="prefix.html">prefix</a></li>
+<li><a href="range.html">range</a></li>
+<li><a href="seplist.html">seplist</a></li>
+<li><a href="sorted.html">sorted</a></li>
+<li><a href="splitmac.html">splitmac</a></li>
+<li><a href="suffix.html">suffix</a></li>
+<li><a href="suffix_counter.html">suffix_counter</a></li>
+<li><a href="windex.html">windex</a></li>
+<li><a href="words.html">words</a></li>
+</ul>
+</div>
+<!--/#NAV#-->
+
+<div id="section">
+<p class="crumb"><a href="index.html">宏程序库</a> / 数据集操作</p>
+<h2>ds_num2char</h2>
+<p class="subtitle">将数值变量转换为字符变量</p>
+<p class="dependency">依赖: <a href="var_coexist.html">var_coexist</a>, <a href="ds_varlist.html">ds_varlist</a></p>
+<hr/>
+
+<div class="detail">
+
+<h3 id="toc">目录</h3>
+<ul class="toc">
+<li><a href="#name">名称</a></li>
+<li><a href="#brief">简介</a></li>
+<li><a href="#syntax">语法</a></li>
+<li><a href="#parameters">参数说明</a></li>
+<li><a href="#examples">用法示例</a></li>
+<li><a href="#notes">注意事项</a></li>
+<li><a href="#risks">已知风险</a></li>
+<li><a href="#source">源代码</a></li>
+<li><a href="#history">修订记录</a></li>
+</ul>
+
+<h3 id="name">名称</h3>
+<p><code>ds_num2char</code></p>
+
+<h3 id="brief">简介</h3>
+<p>将 <code>DATA=</code> 中指定的数值变量转换为字符变量，并写入 <code>OUT=</code> 数据集。转换后的字符变量长度固定为 200，并在输出数据集中排在其余原始变量之前；变量顺序按 <code>VAR=</code> 的书写顺序排列。宏不返回值，结果保存在输出数据集中。</p>
+
+<h3 id="syntax">语法</h3>
+<pre class="code">%ds_num2char(data=&lt;dataset&gt;, var=&lt;variables&gt;)</pre>
+<p>该宏为过程式宏，直接创建输出数据集，不返回值。</p>
+
+<h3 id="parameters">参数说明</h3>
+<table class="macro-table">
+<col width="18%" />
+<col width="12%" />
+<col width="12%" />
+<col width="58%" />
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>默认值</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DATA=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>输入 SAS 数据集名，仅支持数据集，不支持视图。</td>
+</tr>
+<tr>
+<td>VAR=</td>
+<td>必需参数</td>
+<td>无</td>
+<td>待转换的数值变量列表，多个变量以空格分隔。源程序虽将其列为可选参数，但省略时内部校验会终止提交，因此实际必须指定。</td>
+</tr>
+<tr>
+<td>OUT=</td>
+<td>可选参数</td>
+<td>&amp;DATA.</td>
+<td>输出数据集名。默认与输入数据集同名，会覆盖输入数据集，建议显式指定。</td>
+</tr>
+<tr>
+<td>VALUE=</td>
+<td>可选参数</td>
+<td>FORMATTED</td>
+<td>转换取值方式。<br/>
+FORMATTED：使用格式化后的显示值；变量未赋格式时按 BEST12. 输出。<br/>
+INTERNAL：使用数值的内部表示。</td>
+</tr>
+<tr>
+<td>MISSING=</td>
+<td>可选参数</td>
+<td>NULL</td>
+<td>缺失值处理方式。<br/>
+NULL：将缺失值转换为空字符串。<br/>
+ASIS：保留格式化后的缺失表示，如 <code>.</code>、<code>.A</code> 等。</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="examples">用法示例</h3>
+
+<h4>示例 1：将两个数值变量转换为字符变量</h4>
+<pre class="code">%ds_num2char(data=sashelp.class,out=work.class_c,var=age height)
+
+proc print data=work.class_c(obs=3);
+run;</pre>
+<p class="result-label">运行结果（WORK.CLASS_C 前 3 行）：</p>
+<table class="macro-table result-table">
+<col width="8%" />
+<col width="10%" />
+<col width="10%" />
+<col width="16%" />
+<col width="10%" />
+<col width="12%" />
+<thead>
+<tr><th>观测</th><th>Age</th><th>Height</th><th>Name</th><th>Sex</th><th>Weight</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>14</td><td>69</td><td>Alfred</td><td>M</td><td>112.5</td></tr>
+<tr><td>2</td><td>13</td><td>56.5</td><td>Alice</td><td>F</td><td>84.0</td></tr>
+<tr><td>3</td><td>13</td><td>65.3</td><td>Barbara</td><td>F</td><td>98.0</td></tr>
+</tbody>
+</table>
+<p><code>Age</code> 与 <code>Height</code> 已转为字符型并按 <code>VAR=</code> 顺序排在输出数据集前面，其余变量 <code>Name</code>、<code>Sex</code>、<code>Weight</code> 保持原顺序；转换后的变量长度为 200。</p>
+
+<h4>示例 2：保留内部值并保留缺失表示</h4>
+<pre class="code">data work.num;
+  length id $4;
+  id='01'; x=1.25; output;
+  id='02'; x=.;    output;
+run;
+
+%ds_num2char(data=work.num,out=work.num_i,var=x,value=INTERNAL,missing=ASIS)
+
+proc print data=work.num_i;
+run;</pre>
+<p class="result-label">运行结果（WORK.NUM_I）：</p>
+<table class="macro-table result-table">
+<col width="12%" />
+<col width="28%" />
+<col width="20%" />
+<thead>
+<tr><th>观测</th><th>x</th><th>id</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>1.25</td><td>01</td></tr>
+<tr><td>2</td><td>.</td><td>02</td></tr>
+</tbody>
+</table>
+<p><code>VALUE=INTERNAL</code> 直接取数值的内部值，不受格式影响；<code>MISSING=ASIS</code> 使缺失值保留为 <code>.</code> 文本。转换变量 <code>x</code> 排在原变量 <code>id</code> 之前。</p>
+
+<h4>示例 3：转换全部数值变量</h4>
+<pre class="code">%let nvars=%ds_varlist(data=sashelp.class,type=N);
+%put NOTE: 数值变量 = &amp;nvars.;
+%ds_num2char(data=sashelp.class,out=work.class_c2,var=&amp;nvars.)
+
+proc sql;
+  select name, type, length
+  from dictionary.columns
+  where libname='WORK' and memname='CLASS_C2'
+  order by varnum;
+quit;</pre>
+<p class="result-label">运行结果：</p>
+<pre class="result">NOTE: 数值变量 = Age Height Weight</pre>
+<p class="result-label">运行结果（WORK.CLASS_C2 变量清单）：</p>
+<table class="macro-table result-table">
+<col width="30%" />
+<col width="20%" />
+<col width="20%" />
+<thead>
+<tr><th>变量名</th><th>类型</th><th>长度</th></tr>
+</thead>
+<tbody>
+<tr><td>Age</td><td>char</td><td>200</td></tr>
+<tr><td>Height</td><td>char</td><td>200</td></tr>
+<tr><td>Weight</td><td>char</td><td>200</td></tr>
+<tr><td>Name</td><td>char</td><td>8</td></tr>
+<tr><td>Sex</td><td>char</td><td>1</td></tr>
+</tbody>
+</table>
+<p><code>%ds_varlist</code> 返回全部数值变量 <code>Age Height Weight</code>，宏将其依次转换为长度为 200 的字符变量，未转换的 <code>Name</code>、<code>Sex</code> 保持原长度。</p>
+
+<h3 id="notes">注意事项</h3>
+<ul class="notes">
+
+<li><code>VAR=</code> 指定待转换的数值变量，多个变量以空格分隔。</li>
+<li><code>OUT=</code> 默认与 <code>DATA=</code> 相同。</li>
+<li><code>VALUE=</code> 仅支持 <code>FORMATTED</code>、<code>INTERNAL</code>；<code>MISSING=</code> 仅支持 <code>NULL</code>、<code>ASIS</code>。</li>
+<li>宏内部使用 <code>_eof_</code>、<code>_chr_</code>、<code>_num_</code>、<code>__tmp:</code> 等名称，输入数据集变量名不能与之冲突，否则宏可能失败。</li>
+<li>转换后变量顺序会改变。</li>
+
+</ul>
+
+<h3 id="risks">已知风险</h3>
+<p>以下列出当前版本的使用约束与冲突风险。</p>
+
+<h4>1. 对输入参数的强假设</h4>
+<ul class="notes">
+<li><code>OUT=</code> 指定的数据集会被直接覆盖，宏不检查其是否已存在；默认 <code>OUT=&amp;DATA.</code> 意味着未指定 <code>OUT=</code> 时输入数据集被原地替换。</li>
+</ul>
+
+<h4>2. 临时变量与临时数据集冲突风险</h4>
+<ul class="notes">
+<li>宏内部固定使用 <code>_eof_</code>、<code>_chr_</code>、<code>_num_</code> 以及 <code>__tmp1</code> … <code>__tmpN</code> 作为工作变量。输入数据集若含同名变量，宏不会事先检测，运行会直接失败且得不到输出结果。</li>
+</ul>
+
+<h3 id="source">源代码</h3>
+<p class="download"><a href="../../codehub/macro/dev/ds/ds_num2char.sas" download>ds_num2char.sas</a></p>
+<p class="download"><a href="../assets/macropackages/ds_num2char.zip" download>ds_num2char and its dependencies.zip</a></p>
+
+<h3 id="history">修订记录</h3>
+<table class="macro-table">
+<col width="16%" />
+<col width="12%" />
+<col width="72%" />
+<thead>
+<tr>
+<th>日期</th>
+<th>修订人</th>
+<th>修订内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-10-28</td>
+<td>Luo Hao</td>
+<td>修复问题：增加 <code>/minoperator</code> 选项，使 <code>VALUE=</code> 与 <code>MISSING=</code> 的 <code>IN</code> 参数校验正常工作。</td>
+</tr>
+<tr>
+<td>2026-10-23</td>
+<td>Luo Hao</td>
+<td>原始版本。</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+<script src="../assets/macrohub_copy.js"></script>
+</body>
+</html>
