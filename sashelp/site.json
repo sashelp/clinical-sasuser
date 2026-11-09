@@ -175,17 +175,6 @@
           ]
         }
       ]
-    },
-    "gallery": {
-      "label": "Gallery",
-      "home": "index.html",
-      "css": "assets/gallery_index.css",
-      "headerLinks": [
-        { "text": "示例", "href": "index.html" },
-        { "text": "资源", "href": "" },
-        { "text": "文档", "href": "" }
-      ],
-      "staticNav": true
     }
   }
 }

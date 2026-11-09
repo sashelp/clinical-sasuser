@@ -591,6 +591,7 @@ function Invoke-Conventions([string]$SectionName) {
 # -------------------------------------------------------------------- gallery
 function Invoke-Gallery {
   $galleryDir = Join-Path $Root 'gallery'
+  if (-not (Test-Path -LiteralPath $galleryDir -PathType Container)) { return }
   $targets = @()
   Get-ChildItem -LiteralPath $galleryDir -Recurse -Filter *.html -File | ForEach-Object {
     $rel = $_.FullName.Substring($galleryDir.Length).TrimStart('\', '/')
