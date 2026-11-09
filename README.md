@@ -8,12 +8,9 @@ SAS programming resources and the **SAS/HELP** visual reference site.
 | --- | --- |
 | [`codehub/macro/dev/`](codehub/macro/dev/) | SAS macro source library |
 | [`codehub/macro/qc/`](codehub/macro/qc/) | Macro acceptance tests and test harness |
-| [`codehub/Gallery/`](codehub/Gallery/) | SAS graph programs and example outputs |
-| [`codehub/Script/`](codehub/Script/) | Utility scripts and bundled tools |
 | [`sashelp/`](sashelp/) | Static documentation site, gallery, and macro reference |
 
-`Gallery` and `Script` retain their existing directory names as requested.
-The other directory names use lowercase spelling.
+The local-only `codehub/Gallery/` and `codehub/Script/` directories are excluded from this repository. The files `sashelp/design/gen_gallery_html.sas` and `sashelp/design/SASUSER.pptx` are also excluded.
 
 ## Visual site
 
