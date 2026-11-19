@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>关于 - SASHELP</title>
+<link rel="stylesheet" type="text/css" href="assets/base.css" />
+<style>
+  #section.about {
+    margin-left: 0;
+    height: auto;
+    min-height: calc(100vh - 4rem);
+    padding: 1.8rem 2rem 4rem;
+    box-sizing: border-box;
+  }
+  #section.about .detail { max-width: 980px; }
+  #section.about h2 { margin: 0 0 0.3rem; font-size: 1.7rem; }
+  #section.about .subtitle { color: #8a8a8a; margin: 0 0 1rem; }
+
+  .about-links { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.2rem 0 0.6rem; max-width: 980px; }
+  .about-card {
+    flex: 1 1 240px;
+    background-color: #1c1c1c;
+    border-left: 3px solid #0070C0;
+    padding: 0.9rem 1.1rem;
+  }
+  .about-card h4 { margin: 0 0 0.4rem; color: #ffffff; font-size: 1rem; }
+  .about-card p { margin: 0; color: #bdbdbd; font-size: 0.9rem; line-height: 1.6; }
+  .about-card a { color: inherit; text-decoration: none; }
+  .about-card a:hover { color: #00B0F0; font-weight: bold; }
+
+  .feedback-box {
+    max-width: 760px;
+    background-color: #1c1c1c;
+    border: 1px solid #333333;
+    border-left: 3px solid #70AD47;
+    padding: 1rem 1.2rem;
+  }
+  .feedback-box p { margin: 0 0 0.8rem; line-height: 1.7; }
+  .btn {
+    display: inline-block;
+    padding: 0.42rem 0.9rem;
+    margin: 0 0.6rem 0.4rem 0;
+    border: 1px solid #555555;
+    border-radius: 3px;
+    background-color: #262626;
+    color: #dddddd;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .btn:hover { color: #00B0F0; border-color: #00B0F0; }
+  .btn.primary { background-color: #0070C0; border-color: #0070C0; color: #ffffff; }
+  .btn.primary:hover { background-color: #0086e0; color: #ffffff; }
+  .btn.disabled { opacity: 0.45; pointer-events: none; }
+  .hint { color: #8a8a8a; font-size: 0.85rem; margin: 0.3rem 0 0; }
+
+  .profile-table td:first-child { width: 7rem; color: #8a8a8a; white-space: nowrap; }
+  .profile-table a { color: #00B0F0; text-decoration: none; }
+  .profile-table a:hover { text-decoration: underline; }
+</style>
+</head>
+
+<body>
+<div id="header">
+<div class="left">
+<a href="index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="macrohub/index.html">宏程序库</a>
+<a href="gallery/index.html">图形库</a>
+<a href="knowledgebase/index.html">知识库</a>
+<a href="about.html" class="current">关于</a>
+</div>
+</div>
+
+<div id="section" class="about">
+<p class="crumb"><a href="index.html">首页</a> / 关于</p>
+<h2>关于本站</h2>
+<p class="subtitle">临床试验 SAS 编程的本地可视化知识库</p>
+<hr/>
+
+<h3 id="purpose">站点用途</h3>
+<p>SAS/HELP 面向临床试验数据分析场景，把日常编程中最常用的宏、结论与图形模板集中到一个可直接浏览的静态站点中，便于查询、复用与团队共享。</p>
+
+<div class="about-links">
+  <div class="about-card">
+    <h4><a href="macrohub/index.html">宏程序库</a></h4>
+    <p>收录可复用的 SAS 宏，提供参数说明、用法示例与依赖包下载。</p>
+  </div>
+  <div class="about-card">
+    <h4><a href="knowledgebase/index.html">知识库</a></h4>
+    <p>沉淀 SDTM、ADaM、SAS 编程与统计分析中的常见问题及结论。</p>
+  </div>
+  <div class="about-card">
+    <h4><a href="gallery/index.html">图形库</a></h4>
+    <p>提供 GTL 图形模板与 RTF 输出，覆盖条形图、箱线图、散点图、折线图与生存曲线。</p>
+  </div>
+</div>
+
+<p>站点为纯静态页面，无后端依赖，可直接从本地打开，也可部署到 GitHub Pages。页面内容由 <code>sashelp\site.json</code> 与 <code>codehub</code> 下的源文件驱动。</p>
+
+<h3 id="feedback">意见与建议</h3>
+<div class="feedback-box">
+  <p>发现内容错误、希望补充某个宏或图形模板，或对站点有其他建议，欢迎通过 GitHub Issues 留言。提交前需要登录 GitHub 账号；也可以直接发送邮件。</p>
+  <p>
+    <a id="gh-new-issue" class="btn primary" href="#" target="_blank" rel="noopener">在 GitHub 提交意见</a>
+    <a id="gh-issues" class="btn" href="#" target="_blank" rel="noopener">查看已有讨论</a>
+    <a class="btn" href="mailto:sasuser@qq.com?subject=SAS%2FHELP%20%E7%AB%99%E7%82%B9%E6%84%8F%E8%A7%81">发送邮件</a>
+  </p>
+  <p id="gh-hint" class="hint" hidden>GitHub 仓库地址尚未配置：请在 <code>about.html</code> 中把 <code>GITHUB_REPO</code> 改为实际仓库后再使用。</p>
+</div>
+
+<h3 id="author">关于作者</h3>
+<table class="macro-table profile-table">
+<tbody>
+<tr>
+<td>网站归属</td>
+<td>罗浩</td>
+</tr>
+<tr>
+<td>地址</td>
+<td>北京市, 朝阳区</td>
+</tr>
+<tr>
+<td>邮箱</td>
+<td><a href="mailto:sasuser@qq.com">sasuser@qq.com</a></td>
+</tr>
+</tbody>
+</table>
+
+<h4>介绍</h4>
+<ul class="notes">
+<li>9+ 年临床试验统计编程经验</li>
+<li>精通SAS编程与CDISC实践</li>
+<li>70+ 项临床试验，涵盖Ⅰ期到Ⅳ期，向NMPA和FDA递交</li>
+<li>多个适应症项目经验，如实体瘤、非小细胞肺癌、红斑狼疮</li>
+<li>持有SAS科学家等多项全球认证证书</li>
+<li>长期AI编程经验</li>
+</ul>
+</div>
+
+<script>
+(function () {
+  var GITHUB_REPO = 'sashelp/clinical-sasuser';
+  var repoReady = GITHUB_REPO.indexOf('sashelp') === -1;
+  var newIssue = document.getElementById('gh-new-issue');
+  var issues = document.getElementById('gh-issues');
+  var hint = document.getElementById('gh-hint');
+
+  if (!repoReady) {
+    newIssue.className += ' disabled';
+    issues.className += ' disabled';
+    newIssue.removeAttribute('href');
+    issues.removeAttribute('href');
+    hint.hidden = false;
+    return;
+  }
+
+  var title = encodeURIComponent('[站点反馈] ');
+  var body = encodeURIComponent('页面：\n\n问题或建议：\n\n期望结果：\n');
+  newIssue.href = 'https://github.com/' + GITHUB_REPO + '/issues/new?title=' + title + '&body=' + body;
+  issues.href = 'https://github.com/' + GITHUB_REPO + '/issues';
+})();
+</script>
+</body>
+</html>

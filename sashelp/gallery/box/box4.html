@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>箱线图 - 例数坐标轴表(内置)</title>
+<link rel="stylesheet" type="text/css" href="../../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="..\..\assets\gallery_detail.css" />
+</head>
+ 
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="../index.html">示例</a>
+<a href="">资源</a>
+<a href="">文档</a>
+<a href="../../about.html">关于</a>
+</div>
+</div>
+<!--/#HEADER#-->
+ 
+<div id="nav">
+<ul>
+<li><a href="..\index.html#series">折线图</a></li>
+<li><a href="..\index.html#scatter">散点图</a></li>
+<li><a href="..\index.html#bar">条形图</a></li>
+<li><a href="..\index.html#box">箱线图</a></li>
+<li><a href="..\index.html#reg">回归分析图</a></li>
+<li><a href="..\index.html#survival">生存分析图</a></li>
+<li><a href="..\index.html#forest">森林图</a></li>
+<li><a href="..\index.html#tumor">肿瘤分析图</a></li>
+<li><a href="..\index.html#histogram">直方图</a></li>
+<li><a href="..\index.html#panel">多面板图</a></li>
+<li><a href="..\index.html#other">其它</a></li>
+</ul>
+</div>
+ 
+<div id="section">
+<h2>箱线图 - 例数坐标轴表(内置)</h2>
+<hr/>
+ 
+<div class="graph">
+<p><img src="box4.png" alt="box4.png"></p>
+</div>
+ 
+<div class="desc">
+<h3>简介</h3>
+<p><简介></p>
+<h3>参数</h3>
+<table frame="hsides" width="100%" cellpadding="5">
+<col width=20% />
+<col width=15% />
+<col width=65% />
+<tr style="background-color:#333333;font-weight:bold;" frame="below">
+<td>名称</td>
+<td>类型</td>
+<td>描述</td>
+</tr>
+<tr><td>X=<code>&lt;var&gt;</code></td><td>必需参数</td><td>X 轴变量</td></tr>
+<tr><td>Y=<code>&lt;var&gt;</code></td><td>必需参数</td><td>Y 轴变量</td></tr>
+<tr><td>CLASS=<code>&lt;var&gt;</code></td><td>可选参数</td><td>分组变量, 未指定时, 全部数据被视为属于同一组别</td></tr>
+<tr><td>YMIN=<code>&lt;num&gt;</code></td><td>可选参数</td><td>Y 轴最小刻度值, 刻度值相关参数未指定时, 程序使用内部算法计算</td></tr>
+<tr><td>YMAX=<code>&lt;num&gt;</code></td><td>可选参数</td><td>Y 轴最大刻度值</td></tr>
+<tr><td>YINC=<code>&lt;num&gt;</code></td><td>可选参数</td><td>Y 轴分度值</td></tr>
+<tr><td>ATX=<code>&lt;var&gt;</code></td><td>必需参数</td><td>坐标轴表 X 轴变量</td></tr>
+<tr><td>ATV=<code>&lt;var&gt;</code></td><td>必需参数</td><td>坐标轴表显示值</td></tr>
+<tr><td>ATCLS=<code>&lt;var&gt;</code></td><td>可选参数</td><td>坐标轴表分组变量, 未指定时, 全部数据被视为属于同一组别</td></tr>
+<tr><td>ATTIT=<code>&lt;str&gt;</code></td><td>可选参数</td><td>坐标轴表标题</td></tr>
+</table>
+ 
+<h3>注意事项</h3>
+<p>坐标轴表实际上是离散轴图形元素, 如轴刻度值(formatted value)相同, 则只有一处刻度会正常显示轴表值, 因此需要注意不要为不同的轴刻度值(data value)设置相同的显示值(formatted value), 这将给出非预期的结果.</p>
+<h3>软件版本</h3>
+<p>SAS 9.4M7</p>
+ 
+<h3>修订记录</h3>
+<table frame="hsides" width="100%" cellpadding="5">
+<col width=20% />
+<col width=15% />
+<col width=65% />
+<tr style="background-color:#333333;font-weight:bold;" frame="below">
+<td>修订日期</td>
+<td>修订者</td>
+<td>描述</td>
+</tr>
+<tr><td>2026-11-19</td><td> 罗浩</td><td> 初稿</td></tr>
+</table>
+ 
+<h3>源代码</h3>
+<p><code><a href="../../../codehub/gallery/box/box4.sas" download>box4.sas</a></code></p>
+ 
+</div>
+</div>
+ 
+</body>
+</html>

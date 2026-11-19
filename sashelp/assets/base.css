@@ -1,0 +1,321 @@
+/* SASHELP 公共骨架：页头、左侧导航、内容区、代码块与数据表格
+ * 所有分区页面先加载本文件，再加载各自的主题样式；主题只保留差异部分。 */
+
+/* 样式 - 整体 */
+body {
+  background-color: #222222;
+  color: white;
+  font-family: Calibri, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 样式 - 标题行 */
+#header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rem;
+  background-color: #1c1c1c;
+  text-align: left;
+  padding: 0 1rem;
+  box-shadow: 5px 5px 3px #111111;
+  z-index: 1000;
+}
+
+#header a {
+  text-decoration: none;
+  color: inherit;
+}
+
+#header .left {
+  float: left;
+  font-size: 2.5rem;
+  line-height: 4rem;
+}
+
+#header .right {
+  float: left;
+  margin-left: 4rem;
+  font-size: 1.5rem;
+  line-height: 4rem;
+}
+
+#header .right a {
+  margin-right: 2rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+#header .right a:hover {
+  font-weight: bold;
+  color: #00B0F0;
+  cursor: pointer;
+}
+
+/* 样式 - 左侧导航栏 */
+#nav {
+  position: fixed;
+  top: 4rem;
+  left: 0;
+  bottom: 0;
+  width: 220px;
+  background-color: #1c1c1c;
+  box-shadow: 5px 5px 3px #111111;
+  z-index: 900;
+  overflow: auto;
+}
+
+#nav ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+#nav li.nav-cat {
+  color: #8a8a8a;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  padding: 1.1rem 1rem 0.35rem;
+}
+
+#nav li a {
+  display: block;
+  padding: 0.45rem 1rem;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+#nav li a:hover,
+#nav li a.current {
+  font-weight: bold;
+  color: #00B0F0;
+  cursor: pointer;
+}
+
+/* 样式 - 右侧内容区 */
+#section {
+  position: relative;
+  margin-left: 220px;
+  margin-top: 4rem;
+  height: calc(100vh - 4rem);
+  overflow: auto;
+}
+
+#section hr {
+  border: 0;
+  height: 1px;
+  background-color: #555555;
+}
+
+#section code {
+  background-color: #333333;
+  color: #ffffff;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+#section .detail {
+  max-width: 980px;
+}
+
+#section .crumb {
+  color: #8a8a8a;
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+#section .crumb a {
+  color: #8a8a8a;
+  text-decoration: none;
+}
+
+#section .crumb a:hover {
+  color: #00B0F0;
+}
+
+#section .summary {
+  color: #8a8a8a;
+  font-size: 0.9rem;
+}
+
+#section h3 {
+  font-size: 1.1rem;
+  margin: 2rem 0 0.6rem;
+  padding-left: 0.6rem;
+  border-left: 3px solid #0070C0;
+  scroll-margin-top: 5rem;
+}
+
+#section h4 {
+  color: #cccccc;
+  font-size: 0.95rem;
+  font-weight: normal;
+  margin: 1.3rem 0 0.5rem;
+}
+
+/* 样式 - 目录 */
+ul.toc {
+  list-style: none;
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  background-color: #1c1c1c;
+  border-left: 3px solid #0070C0;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+ul.toc li::after {
+  content: "/";
+  color: #555555;
+  padding: 0 0.6rem;
+}
+
+ul.toc li:last-child::after {
+  content: "";
+  padding: 0;
+}
+
+ul.toc a {
+  color: #cccccc;
+  text-decoration: none;
+}
+
+ul.toc a:hover {
+  color: #00B0F0;
+  font-weight: bold;
+}
+
+/* 样式 - 代码块与复制按钮 */
+.code-block {
+  position: relative;
+  margin: 0.8rem 0;
+}
+
+pre.code {
+  background-color: #1c1c1c;
+  border: 1px solid #333333;
+  border-left: 3px solid #70AD47;
+  margin: 0;
+  padding: 0.9rem 4.5rem 0.9rem 1rem;
+  overflow-x: auto;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #e6e6e6;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.6rem;
+  background-color: #333333;
+  color: #cccccc;
+  border: 1px solid #555555;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.copy-btn:hover {
+  color: #00B0F0;
+  border-color: #00B0F0;
+}
+
+.copy-btn.is-copied {
+  color: #70AD47;
+  border-color: #70AD47;
+  background-color: #24301f;
+}
+
+.copy-btn.is-failed {
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+}
+
+/* 样式 - 列表 */
+ul.notes {
+  padding-left: 1.2rem;
+}
+
+ul.notes li {
+  margin: 0.45rem 0;
+  line-height: 1.7;
+}
+
+/* 样式 - 由 Markdown 生成的开发约定页 */
+.doc p {
+  line-height: 1.7;
+}
+
+.doc ul,
+.doc ol {
+  padding-left: 1.5rem;
+}
+
+.doc li {
+  margin: 0.35rem 0;
+  line-height: 1.7;
+}
+
+.doc li > ul,
+.doc li > ol {
+  margin: 0.3rem 0 0.3rem;
+}
+
+.doc table {
+  margin: 1rem 0 1.4rem;
+}
+
+.doc pre.code {
+  margin: 0.8rem 0 1rem;
+}
+
+/* 样式 - 数据表格（宏程序库、知识库共用） */
+table.macro-table,
+table.kb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  margin-top: 1rem;
+}
+
+table.macro-table th,
+table.kb-table th {
+  background-color: #333333;
+  text-align: left;
+  font-weight: bold;
+  padding: 0.65rem 0.8rem;
+  border-bottom: 1px solid #555555;
+}
+
+table.macro-table td,
+table.kb-table td {
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid #333333;
+  vertical-align: top;
+}
+
+table.macro-table tbody tr:hover td,
+table.kb-table tbody tr:hover td {
+  background-color: #2a2a2a;
+}
+
+table.macro-table a,
+table.kb-table a {
+  color: inherit;
+  text-decoration: none;
+}
+
+table.macro-table a:hover,
+table.kb-table a:hover {
+  font-weight: bold;
+  color: #00B0F0;
+  cursor: pointer;
+}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>折线图 - 平均血药浓度时间图(Y断轴图)</title>
+<link rel="stylesheet" type="text/css" href="../../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="..\..\assets\gallery_detail.css" />
+</head>
+ 
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="../index.html">示例</a>
+<a href="">资源</a>
+<a href="">文档</a>
+<a href="../../about.html">关于</a>
+</div>
+</div>
+<!--/#HEADER#-->
+ 
+<div id="nav">
+<ul>
+<li><a href="..\index.html#series">折线图</a></li>
+<li><a href="..\index.html#scatter">散点图</a></li>
+<li><a href="..\index.html#bar">条形图</a></li>
+<li><a href="..\index.html#box">箱线图</a></li>
+<li><a href="..\index.html#reg">回归分析图</a></li>
+<li><a href="..\index.html#survival">生存分析图</a></li>
+<li><a href="..\index.html#forest">森林图</a></li>
+<li><a href="..\index.html#tumor">肿瘤分析图</a></li>
+<li><a href="..\index.html#histogram">直方图</a></li>
+<li><a href="..\index.html#panel">多面板图</a></li>
+<li><a href="..\index.html#other">其它</a></li>
+</ul>
+</div>
+ 
+<div id="section">
+<h2>折线图 - 平均血药浓度时间图(Y断轴图)</h2>
+<hr/>
+ 
+<div class="graph">
+<p><img src="series7.png" alt="series7.png"></p>
+</div>
+ 
+<div class="desc">
+<h3>简介</h3>
+<p><简介></p>
+<h3>参数</h3>
+<table frame="hsides" width="100%" cellpadding="5">
+<col width=20% />
+<col width=15% />
+<col width=65% />
+<tr style="background-color:#333333;font-weight:bold;" frame="below">
+<td>名称</td>
+<td>类型</td>
+<td>描述</td>
+</tr>
+<tr><td>X=<code>&lt;var&gt;</code></td><td>必需参数</td><td>X 轴变量</td></tr>
+<tr><td>Y=<code>&lt;var&gt;</code></td><td>必需参数</td><td>Y 轴变量</td></tr>
+<tr><td>CLASS=<code>&lt;var&gt;</code></td><td>可选参数</td><td>分组变量, 未指定时, 全部数据被视为属于同一组别</td></tr>
+<tr><td>XMIN=<code>&lt;num&gt;</code></td><td>可选参数</td><td>X 轴最小刻度值, 刻度值相关参数未指定时, 程序使用内部算法计算</td></tr>
+<tr><td>XMAX=<code>&lt;num&gt;</code></td><td>可选参数</td><td>X 轴最大刻度值</td></tr>
+<tr><td>XINC=<code>&lt;num&gt;</code></td><td>可选参数</td><td>X 轴分度值</td></tr>
+<tr><td>YMIN=<code>&lt;num&gt;</code></td><td>可选参数</td><td>Y 轴最小刻度值</td></tr>
+<tr><td>YMAX=<code>&lt;num&gt;</code></td><td>可选参数</td><td>Y 轴最大刻度值</td></tr>
+<tr><td>YINC=<code>&lt;num&gt;</code></td><td>可选参数</td><td>Y 轴分度值</td></tr>
+<tr><td>YSTD=<code>&lt;str&gt;</code></td><td>可选参数</td><td>Y 轴变量标准差</td></tr>
+<tr><td>YLST=<code>&lt;str&gt;</code></td><td>可选参数</td><td>Y 轴刻度值列表</td></tr>
+<tr><td>YRANGE=<code>&lt;str&gt;</code></td><td>可选参数</td><td>Y 轴显示范围, 不在范围内的图形主体将体现为断轴</td></tr>
+</table>
+ 
+<h3>注意事项</h3>
+<p>断轴范围. YRANGE 的设置应考虑略微超出断轴处的 Y 轴刻度值, 以免刻度值在断轴处拥挤</p>
+<h3>软件版本</h3>
+<p>SAS 9.4M7</p>
+ 
+<h3>修订记录</h3>
+<table frame="hsides" width="100%" cellpadding="5">
+<col width=20% />
+<col width=15% />
+<col width=65% />
+<tr style="background-color:#333333;font-weight:bold;" frame="below">
+<td>修订日期</td>
+<td>修订者</td>
+<td>描述</td>
+</tr>
+<tr><td>2026-11-19</td><td> 罗浩</td><td> 初稿</td></tr>
+</table>
+ 
+<h3>源代码</h3>
+<p><code><a href="../../../codehub/gallery/series/series7.sas" download>series7.sas</a></code></p>
+ 
+</div>
+</div>
+ 
+</body>
+</html>

@@ -1,0 +1,70 @@
+/* Gallery 目录页样式（在 base.css 之后加载，只保留本分区的差异部分） */
+
+/* 样式 - 左侧导航栏 */
+#nav {
+  padding-top: 1rem;
+}
+
+#nav li {
+  margin: 25px 0;
+}
+
+#nav li a {
+  padding: 0 1rem;
+  font-size: 1rem;
+}
+
+/* 样式 - 右侧内容区 */
+#section {
+  padding-left: 2.5rem;
+}
+
+#section h2 {
+  font-size: 20px;
+  font-weight: normal;
+}
+
+#section p {
+  line-height: 0.8rem;
+}
+
+#section .graph {
+  height: 300px;
+  width: 400px;
+  color: #cccccc;
+}
+
+#section .graph img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+}
+
+#section .graph img:hover {
+  box-shadow: #00B0F0 5px 5px 5px;
+}
+
+#section .graph a {
+  text-decoration: none;
+  color: inherit;
+}
+
+#section .graph a:hover {
+  font-weight: bold;
+  color: #00B0F0;
+  cursor: pointer;
+}
+
+#section .col1,
+#section .col2,
+#section .col3 {
+  width: 400px;
+  height: 360px;
+  float: left;
+  padding-right: 20px;
+}
+
+#section .col3 { padding-right: 0; }
+
+#section .col4 { clear: left; }

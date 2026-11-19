@@ -1,0 +1,33 @@
+﻿SAS Macro Acceptance Test Summary
+Generated : 2026-11-14 22:37:04
+MACRO filter: stat_summaryn
+Total tests: 21   PASS: 20   FAIL: 0   ERROR: 0   DEFECT: 0   FIXED: 1
+
+Macro Summary
+THEME        MACRO            POSITIVE   NEGATIVE               BUG_TRACK        VERDICT
+-----        -----            --------   --------               --------         -------
+stat         stat_summaryn    PASS       19/19 PASS             0 DEFECT, 1 FIXED PASS
+
+STATUS   KIND            FILE                                                 DESCRIPTION                                                                  NCASE    NFAIL    DETAIL                                         REVISION
+------   ------------    ----                                                 -----------                                                                  -----    -----    -------                                        --------
+FIXED    bug-regression  stat\stat_summaryn\stat_summaryn_bug_gmlabel.sas     Bug regression: GM_LCLM and GM_UCLM expose internal variable names as labels 0        0        defect no longer reproduces (test now PASSES)  dev/stat/stat_summaryn.sas: LABEL 语句为 __stat_gm_lclm 与 __stat_gm_uclm 补标签（如 GM 95% CI Lower / Upper）
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_01.sas          Negative test: DATA= not specified                                           1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_02.sas          Negative test: input dataset does not exist                                  1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_03.sas          Negative test: OUT= not specified                                            1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_04.sas          Negative test: VAR= not specified                                            1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_05.sas          Negative test: VAR= variable is not numeric                                  1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_06.sas          Negative test: CI_ALPHA= out of range                                        1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_07.sas          Negative test: MAXDEC= out of range                                          1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_08.sas          Negative test: TEST= invalid value                                           1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_09.sas          Negative test: TEST_ALPHA= out of range                                      1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_10.sas          Negative test: TOTCLASSID= is not a non-negative integer                     1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_11.sas          Negative test: TOTCLASSLAB= not specified                                    1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_12.sas          Negative test: SHOWDENOM= invalid value                                      1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_13.sas          Negative test: RAWDECSOURCE= invalid value                                   1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_14.sas          Negative test: STATIS= not specified                                         1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_15.sas          Negative test: input dataset has 0 observations                              1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_16.sas          Negative test: STATIS= contains an invalid statistic                         1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_17.sas          Negative test: BY= variable does not exist                                   1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_18.sas          Negative test: CLASS= contains more than one variable                        1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_19.sas          Negative test: CLASS= variable does not exist                                1        0                                                       -
+PASS     positive        stat\stat_summaryn\stat_summaryn_test.sas            Positive (functional) acceptance tests                                       26       0                                                       -

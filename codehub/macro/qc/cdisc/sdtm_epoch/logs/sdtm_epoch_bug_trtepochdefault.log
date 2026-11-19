@@ -1,0 +1,133 @@
+1                                                            SAS 系统            2026年11月 9日 星期一 下午11时00分00秒
+
+NOTE: 无法打开 SASUSER.REGSTRY。系统将改为打开 WORK.REGSTRY。
+NOTE: 所有注册表的更改将在会话结束后丢失。
+
+WARNING: 无法将 SASUSER 注册表复制到 WORK 注册表中。因此在该会话过程中，
+         您不会看到注册表定制情况。
+NOTE: 无法打开 SASUSER.PROFILE。系统将改为打开 WORK.PROFILE。
+NOTE: 所有配置文件的更改将在会话结束后丢失。
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M7 MBCS3170) 
+      Licensed to SOOCHOW UNIVERSITY MEDICAL COLLEGE, Site 70338007.
+NOTE: 该会话正在平台 X64_10PRO  上执行。
+
+
+
+NOTE: Analytical products:
+      
+      SAS/STAT 15.2
+      SAS/ETS 15.2
+      SAS/OR 15.2
+      SAS/IML 15.2
+      SAS/QC 15.2
+
+NOTE: “SAS 初始化”所用时间:
+      实际时间          0.10 秒
+      CPU 时间          0.09 秒
+      
+1          /*===============================================================================
+2           * sdtm_epoch_bug_trtepochdefault.sas - Bug regression: TRTEPOCH= documented default
+3           *===============================================================================
+4           * Macro under test : %sdtm_epoch
+5           * Expected         : TRTEPOCH= is documented as optional with default "TREATMENT",
+6           *                    so a call without TRTEPOCH= maps the boundary to TREATMENT
+7           * Status           : OPEN 2026-11-09 - signature has trtepoch= with no default
+8           * Original defect  : Header says *Param(Opt) : (TRTEPOCH="TREATMENT") but
+9           *                    %macro declares trtepoch=, so the call aborts with
+10          *                    "ERROR: Parameter TRTEPOCH= not specified."
+11          * Fix              : either set trtepoch="TREATMENT" in the %macro statement,
+12          *                    or change the header to Param(Req) with no default
+13          * Test passes when  the defect is fixed (run_all then reports FIXED).
+14          *============================================================================*/
+15         /*--- bootstrap: derive repo root from SYSIN, no absolute paths (qc_env.sas) ---*/
+16         %let _qcboot_=%sysfunc(getoption(sysin));
+17         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+18         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+19         %let _qcboot_=%substr(&_qcboot_.,1,%eval(%length(&_qcboot_.)-%length(%scan(&_qcboot_.,-1,%str(\\)))-1));
+20         %include "&_qcboot_.\_framework\qc_env.sas";
+85         %let _qcboot_=;
+86         /*----------------------------------------------------------------------------*/
+87         
+88         %include "&_QCFW_.";
+381        %include "&_QCDEV_VAR_.\var_exist.sas";
+432        %include "&_QCDEV_VAR_.\var_coexist.sas";
+498        %include "&_QCDEV_DS_.\ds_attr.sas";
+550        %include "&_QCDEV_CDISC_.\sdtm_epoch.sas";
+644        
+645        data ae_def;
+646          length usubjid $10 aestdtc $20;
+647          usubjid='S01'; aestdtc='2024-02-01'; output;
+2                                                            SAS 系统            2026年11月 9日 星期一 下午11时00分00秒
+
+648        run;
+
+NOTE: 数据集 WORK.AE_DEF 有 1 个观测和 2 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.01 秒
+      
+
+649        data se_def;
+650          length usubjid $10 sestdtc seendtc $20 epoch $30;
+651          usubjid='S01'; sestdtc='2024-01-01'; seendtc='2024-01-15'; epoch='SCRN';      output;
+652          usubjid='S01'; sestdtc='2024-01-15'; seendtc='2024-02-01'; epoch='TREATMENT'; output;
+653          usubjid='S01'; sestdtc='2024-02-01'; seendtc='2024-03-01'; epoch='FU';        output;
+654        run;
+
+NOTE: 数据集 WORK.SE_DEF 有 3 个观测和 4 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+655        
+656        %qc_begin(prog=sdtm_epoch_bug_trtepochdefault, macro=sdtm_epoch);
+#####QC_BEGIN prog=sdtm_epoch_bug_trtepochdefault macro=sdtm_epoch
+657        %qc_case(desc=1 documented default TREATMENT applied at boundary);
+#####QC_CASE n=1 desc=1 documented default TREATMENT applied at boundary
+658        %sdtm_epoch(data=work.ae_def, se=work.se_def, dtc=aestdtc, out=work.def_out);
+
+NOTE: 已验证输入数据集的排序顺序。
+NOTE: 输入数据集已排序；已被复制到输出数据集。
+NOTE: 从数据集 WORK.SE_DEF. 读取了 3 个观测
+NOTE: 数据集 WORK.SDTM_EPOCH1 有 3 个观测和 4 个变量。
+NOTE: “PROCEDURE SORT”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+
+NOTE: 从数据集 WORK.SDTM_EPOCH1. 读取了 3 个观测
+NOTE: 从数据集 WORK.AE_DEF. 读取了 1 个观测
+NOTE: 数据集 WORK.DEF_OUT 有 1 个观测和 5 个变量。
+NOTE: “DATA 语句”所用时间（总处理时间）:
+      实际时间          0.01 秒
+      CPU 时间          0.01 秒
+      
+
+
+NOTE: 正在删除 WORK.SDTM_EPOCH1 (memtype=DATA)。
+NOTE: “PROCEDURE DELETE”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+      
+
+659        %qc_expect_colval(ds=work.def_out, var=epoch, where=usubjid='S01', expect=TREATMENT, desc=boundary uses documented
+659      ! default TREATMENT);
+NOTE: “PROCEDURE SQL”所用时间（总处理时间）:
+      实际时间          0.00 秒
+      CPU 时间          0.00 秒
+3                                                            SAS 系统            2026年11月 9日 星期一 下午11时00分00秒
+
+      
+
+#####QC_PASS n=1 desc=boundary uses documented default TREATMENT
+660        %qc_end;
+#####QC_RESULT prog=sdtm_epoch_bug_trtepochdefault macro=sdtm_epoch STATUS=PASS ncase=1 npass=1 nfail=0
+#####QC_END
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: “SAS 系统”所用时间:
+      实际时间          0.20 秒
+      CPU 时间          0.17 秒
+      

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta>
+<title>折线图 - 基本样式</title>
+<link rel="stylesheet" type="text/css" href="../../assets/base.css" />
+<link rel="stylesheet" type="text/css" href="..\..\assets\gallery_detail.css" />
+</head>
+ 
+<body>
+<!--#HEADER#-->
+<div id="header">
+<div class="left">
+<a href="../../index.html"><span style="color: #0070C0;">SAS</span>/<span style="color: #70AD47;">HELP</span></a>
+</div>
+<div class="right">
+<a href="../index.html">示例</a>
+<a href="">资源</a>
+<a href="">文档</a>
+<a href="../../about.html">关于</a>
+</div>
+</div>
+<!--/#HEADER#-->
+ 
+<div id="nav">
+<ul>
+<li><a href="..\index.html#series">折线图</a></li>
+<li><a href="..\index.html#scatter">散点图</a></li>
+<li><a href="..\index.html#bar">条形图</a></li>
+<li><a href="..\index.html#box">箱线图</a></li>
+<li><a href="..\index.html#reg">回归分析图</a></li>
+<li><a href="..\index.html#survival">生存分析图</a></li>
+<li><a href="..\index.html#forest">森林图</a></li>
+<li><a href="..\index.html#tumor">肿瘤分析图</a></li>
+<li><a href="..\index.html#histogram">直方图</a></li>
+<li><a href="..\index.html#panel">多面板图</a></li>
+<li><a href="..\index.html#other">其它</a></li>
+</ul>
+</div>
+ 
+<div id="section">
+<h2>折线图 - 基本样式</h2>
+<hr/>
+ 
+<div class="graph">
+<p><img src="series1.png" alt="series1.png"></p>
+</div>
+ 
+<div class="desc">
+<h3>简介</h3>
+<p>在折线图中，数据是递增还是递减、增减的速率、增减的规律（周期性、螺旋性等）、峰值等特征都可以清晰地反映出来。所以，折线图常用来分析数据随时间的变化趋势，也可用来分析多组数据随时间变化的相互作用和相互影响。</p>
+<h3>参数</h3>
+<table frame="hsides" width="100%" cellpadding="5">
+<col width=20% />
+<col width=15% />
+<col width=65% />
+<tr style="background-color:#333333;font-weight:bold;" frame="below">
+<td>名称</td>
+<td>类型</td>
+<td>描述</td>
+</tr>
+<tr><td>X=<code>&lt;var&gt;</code></td><td>必需参数</td><td>X 轴变量</td></tr>
+<tr><td>Y=<code>&lt;var&gt;</code></td><td>必需参数</td><td>Y 轴变量</td></tr>
+<tr><td>CLASS=<code>&lt;var&gt;</code></td><td>可选参数</td><td>分组变量, 未指定时, 全部数据被视为属于同一组别</td></tr>
+<tr><td>XMIN=<code>&lt;num&gt;</code></td><td>可选参数</td><td>X 轴最小刻度值, 刻度值相关参数未指定时, 程序使用内部算法计算</td></tr>
+<tr><td>XMAX=<code>&lt;num&gt;</code></td><td>可选参数</td><td>X 轴最大刻度值</td></tr>
+<tr><td>XINC=<code>&lt;num&gt;</code></td><td>可选参数</td><td>X 轴分度值</td></tr>
+<tr><td>YMIN=<code>&lt;num&gt;</code></td><td>可选参数</td><td>Y 轴最小刻度值</td></tr>
+<tr><td>YMAX=<code>&lt;num&gt;</code></td><td>可选参数</td><td>Y 轴最大刻度值</td></tr>
+<tr><td>YINC=<code>&lt;num&gt;</code></td><td>可选参数</td><td>Y 轴分度值</td></tr>
+</table>
+ 
+<h3>注意事项</h3>
+<p>默认地, 轴标签、轴刻度值格式都和轴变量的标签、格式相同. 要变更此行为, 可在proc sgrender 步骤中手动添加 label 和 format 语句.</p>
+<h3>软件版本</h3>
+<p>SAS 9.4M7</p>
+ 
+<h3>修订记录</h3>
+<table frame="hsides" width="100%" cellpadding="5">
+<col width=20% />
+<col width=15% />
+<col width=65% />
+<tr style="background-color:#333333;font-weight:bold;" frame="below">
+<td>修订日期</td>
+<td>修订者</td>
+<td>描述</td>
+</tr>
+<tr><td>2026-11-19</td><td> 罗浩</td><td> 初稿</td></tr>
+</table>
+ 
+<h3>源代码</h3>
+<p><code><a href="../../../codehub/gallery/series/series1.sas" download>series1.sas</a></code></p>
+ 
+</div>
+</div>
+ 
+</body>
+</html>

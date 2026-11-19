@@ -1,0 +1,28 @@
+﻿SAS Macro Acceptance Test Summary
+Generated : 2026-11-09 21:41:19
+MACRO filter: sdtm_epoch
+Total tests: 16   PASS: 12   FAIL: 1   ERROR: 1   DEFECT: 2   FIXED: 0
+
+Macro Summary
+THEME        MACRO            POSITIVE   NEGATIVE               BUG_TRACK        VERDICT
+-----        -----            --------   --------               --------         -------
+cdisc        sdtm_epoch       ERROR      12/13 PASS (1 FAIL)    2 DEFECT         FAIL
+
+STATUS   KIND            FILE                                                 DESCRIPTION                                       NCASE    NFAIL    DETAIL                                         REVISION
+------   ------------    ----                                                 -----------                                       -----    -----    -------                                        --------
+DEFECT   bug-regression  cdisc\sdtm_epoch\sdtm_epoch_bug_gatevar.sas          Bug regression: mapping gated on hard-coded VSDTC 0        0        known defect reproduced (macro fails to meet spec); fix then rerun to see FIXED 已修正 2026-11-09：第 61 行匹配门控改为 if &dtc.^=''，不再依赖 VSDTC；缺陷回归保留
+DEFECT   bug-regression  cdisc\sdtm_epoch\sdtm_epoch_bug_trtepochdefault.sas  Bug regression: TRTEPOCH= documented default      0        0        known defect reproduced (macro fails to meet spec); fix then rerun to see FIXED dev/cdisc/sdtm_epoch.sas：宏头将 TRTEPOCH= 写为 Param(Opt) 默认 "TREATMENT"，但 %macro 声明为 trtepoch= 无默认值；如确为必填请改宏头为 Param(Req)，否则在 %macro 中补默认值
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_01.sas               Negative test: DATA= empty                        1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_02.sas               Negative test: DATA= dataset does not exist       1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_03.sas               Negative test: SE= empty                          1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_04.sas               Negative test: SE= dataset does not exist         1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_05.sas               Negative test: SUBJECT= variable missing in DATA= 1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_06.sas               Negative test: DTC= variable missing in DATA=     1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_07.sas               Negative test: SUBJECT= variable missing in SE=   1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_08.sas               Negative test: SE= missing EPOCH                  1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_09.sas               Negative test: SE= has 0 observations             1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_10.sas               Negative test: DATA= and SE= are the same dataset 1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_11.sas               Negative test: DTC= empty                         1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_12.sas               Negative test: TRTEPOCH= empty                    1        0                                                       -
+FAIL     negative        cdisc\sdtm_epoch\sdtm_epoch_err_13.sas               Negative test: TRTEPOCH= not quoted               1        1        macro did NOT abort (unexpected continue / result produced) 修复宏：使非法/缺失参数按预期报错并 %abort cancel
+ERROR    positive        cdisc\sdtm_epoch\sdtm_epoch_test.sas                 Positive (functional) acceptance tests            0        0        no QC_RESULT marker - job aborted early or crashed 检查日志定位原因

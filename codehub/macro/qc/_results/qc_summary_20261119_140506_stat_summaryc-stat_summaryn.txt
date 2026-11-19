@@ -1,0 +1,60 @@
+﻿SAS Macro Acceptance Test Summary
+Generated : 2026-11-19 14:05:06
+MACRO filter: stat_summaryc, stat_summaryn
+Total tests: 47   PASS: 41   FAIL: 2   ERROR: 0   DEFECT: 2   FIXED: 2
+
+Macro Summary
+THEME        MACRO            POSITIVE   NEGATIVE               BUG_TRACK        VERDICT
+-----        -----            --------   --------               --------         -------
+stat         stat_summaryc    FAIL       21/21 PASS             2 DEFECT, 1 FIXED FAIL
+stat         stat_summaryn    FAIL       20/20 PASS             0 DEFECT, 1 FIXED FAIL
+
+STATUS   KIND            FILE                                                 DESCRIPTION                                                                    NCASE    NFAIL    DETAIL                                         REVISION
+------   ------------    ----                                                 -----------                                                                    -----    -----    -------                                        --------
+DEFECT   bug-regression  stat\stat_summaryc\stat_summaryc_bug_allmissvar.sas  Bug regression: VAR= entirely missing produces no classified columns           0        0        known defect reproduced (macro fails to meet spec); fix then rerun to see FIXED dev/stat/stat_summaryc.sas：VAR= 全缺失时 PROC FREQ 不生成 crosstabfreqs，需在 2.3 前判空并直接构造总计行
+DEFECT   bug-regression  stat\stat_summaryc\stat_summaryc_bug_noclass_testnone.sas Bug regression: TEST= not forced to NONE when CLASS= identifies a single group 0        0        known defect reproduced (macro fails to meet spec); fix then rerun to see FIXED 修复缺陷后重跑，预期转为 FIXED
+FIXED    bug-regression  stat\stat_summaryc\stat_summaryc_bug_teststat.sas    Bug regression: TEST= statistics not attached to the analysis variable         0        0        defect no longer reproduces (test now PASSES)  -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_01.sas          Negative test: DATA= not specified                                             1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_02.sas          Negative test: DATA= dataset does not exist                                    1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_03.sas          Negative test: DATA= dataset has 0 observations                                1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_04.sas          Negative test: OUT= not specified                                              1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_05.sas          Negative test: VAR= not specified                                              1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_06.sas          Negative test: VAR= variable does not exist                                    1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_07.sas          Negative test: PERCENT= has an invalid value                                   1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_08.sas          Negative test: PCTDENOM= has an invalid value                                  1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_09.sas          Negative test: TEST= has an invalid value                                      1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_10.sas          Negative test: TEST0FREQ= has an invalid value                                 1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_11.sas          Negative test: ALPHA= is outside the range 0 to 1                              1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_12.sas          Negative test: TOTCLASSID= is not a non-negative integer                       1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_13.sas          Negative test: TOTLEVELID= is not a non-negative integer                       1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_14.sas          Negative test: TOTLEVELSTAT= has an invalid value                              1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_15.sas          Negative test: SHOWDENOM= has an invalid value                                 1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_16.sas          Negative test: DEBUG= has an invalid value                                     1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_17.sas          Negative test: BY= variable does not exist                                     1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_18.sas          Negative test: CLASS= variable does not exist                                  1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_19.sas          Negative test: DEBUG= invalid value with TEST=CHISQ                            1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_20.sas          Negative test: TOTCLASSLAB= not quoted                                         1        0                                                       -
+PASS     negative        stat\stat_summaryc\stat_summaryc_err_21.sas          Negative test: TOTLEVELLAB= not quoted                                         1        0                                                       -
+FAIL     positive        stat\stat_summaryc\stat_summaryc_test.sas            Positive (functional) acceptance tests                                         22       40       failed assertions                              检查日志，修复宏输出或修正测试断言
+FIXED    bug-regression  stat\stat_summaryn\stat_summaryn_bug_gmlabel.sas     Bug regression: GM_LCLM and GM_UCLM expose internal variable names as labels   0        0        defect no longer reproduces (test now PASSES)  dev/stat/stat_summaryn.sas: LABEL 语句为 __stat_gm_lclm 与 __stat_gm_uclm 补标签（如 GM 95% CI Lower / Upper）
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_01.sas          Negative test: DATA= not specified                                             1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_02.sas          Negative test: input dataset does not exist                                    1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_03.sas          Negative test: OUT= not specified                                              1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_04.sas          Negative test: VAR= not specified                                              1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_05.sas          Negative test: VAR= variable is not numeric                                    1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_06.sas          Negative test: CI_ALPHA= out of range                                          1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_07.sas          Negative test: MAXDEC= out of range                                            1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_08.sas          Negative test: TEST= invalid value                                             1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_09.sas          Negative test: TEST_ALPHA= out of range                                        1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_10.sas          Negative test: TOTCLASSID= is not a non-negative integer                       1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_11.sas          Negative test: TOTCLASSLAB= not specified                                      1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_12.sas          Negative test: SHOWDENOM= invalid value                                        1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_13.sas          Negative test: RAWDECSOURCE= invalid value                                     1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_14.sas          Negative test: STATIS= not specified                                           1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_15.sas          Negative test: input dataset has 0 observations                                1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_16.sas          Negative test: STATIS= contains an invalid statistic                           1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_17.sas          Negative test: BY= variable does not exist                                     1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_18.sas          Negative test: CLASS= contains more than one variable                          1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_19.sas          Negative test: CLASS= variable does not exist                                  1        0                                                       -
+PASS     negative        stat\stat_summaryn\stat_summaryn_err_20.sas          Negative test: TOTCLASSLAB= not quoted                                         1        0                                                       -
+FAIL     positive        stat\stat_summaryn\stat_summaryn_test.sas            Positive (functional) acceptance tests                                         27       71       failed assertions                              检查日志，修复宏输出或修正测试断言

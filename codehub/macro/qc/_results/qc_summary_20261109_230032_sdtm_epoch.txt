@@ -1,0 +1,29 @@
+﻿SAS Macro Acceptance Test Summary
+Generated : 2026-11-09 23:00:32
+MACRO filter: sdtm_epoch
+Total tests: 17   PASS: 13   FAIL: 1   ERROR: 0   DEFECT: 0   FIXED: 3
+
+Macro Summary
+THEME        MACRO            POSITIVE   NEGATIVE               BUG_TRACK        VERDICT
+-----        -----            --------   --------               --------         -------
+cdisc        sdtm_epoch       PASS       12/13 PASS (1 FAIL)    0 DEFECT, 3 FIXED FAIL
+
+STATUS   KIND            FILE                                                 DESCRIPTION                                       NCASE    NFAIL    DETAIL                                         REVISION
+------   ------------    ----                                                 -----------                                       -----    -----    -------                                        --------
+FIXED    bug-regression  cdisc\sdtm_epoch\sdtm_epoch_bug_gatevar.sas          Bug regression: mapping gated on hard-coded VSDTC 0        0        defect no longer reproduces (test now PASSES)  VSDTC 门控缺陷已于 2026-11-09 修复；当前 DEFECT 由第 40 行 TRTEPOCH= 引号校验取反阻塞，修复该行后本回归应恢复 FIXED
+FIXED    bug-regression  cdisc\sdtm_epoch\sdtm_epoch_bug_trtepochdefault.sas  Bug regression: TRTEPOCH= documented default      0        0        defect no longer reproduces (test now PASSES)  dev/cdisc/sdtm_epoch.sas：宏头将 TRTEPOCH= 写为 Param(Opt) 默认 "TREATMENT"，但 %macro 声明为 trtepoch= 无默认值；如确为必填请改宏头为 Param(Req)，否则在 %macro 中补默认值
+FIXED    bug-regression  cdisc\sdtm_epoch\sdtm_epoch_bug_trtstale.sas         Bug regression: stale TRT values when unmatched   0        0        defect no longer reproduces (test now PASSES)  dev/cdisc/sdtm_epoch.sas：第 71-78 行 TRT 分支缺少收尾的 else call missing(sestdtc,seendtc,epoch)，TRT 为末条 SE 记录且 DTC 不匹配时残留该记录值；在 do 块末尾补齐
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_01.sas               Negative test: DATA= empty                        1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_02.sas               Negative test: DATA= dataset does not exist       1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_03.sas               Negative test: SE= empty                          1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_04.sas               Negative test: SE= dataset does not exist         1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_05.sas               Negative test: SUBJECT= variable missing in DATA= 1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_06.sas               Negative test: DTC= variable missing in DATA=     1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_07.sas               Negative test: SUBJECT= variable missing in SE=   1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_08.sas               Negative test: SE= missing EPOCH                  1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_09.sas               Negative test: SE= has 0 observations             1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_10.sas               Negative test: DATA= and SE= are the same dataset 1        0                                                       -
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_11.sas               Negative test: DTC= empty                         1        0                                                       -
+FAIL     negative        cdisc\sdtm_epoch\sdtm_epoch_err_12.sas               Negative test: TRTEPOCH= empty                    1        1        macro did NOT abort (unexpected continue / result produced) 修复宏：使非法/缺失参数按预期报错并 %abort cancel
+PASS     negative        cdisc\sdtm_epoch\sdtm_epoch_err_13.sas               Negative test: TRTEPOCH= not quoted               1        0                                                       dev/cdisc/sdtm_epoch.sas：第 40 行引号校验条件取反，未加引号的 TRTEPOCH= 未报错；改为 %if NOT %sysfunc(prxmatch(...)) 后再复核
+PASS     positive        cdisc\sdtm_epoch\sdtm_epoch_test.sas                 Positive (functional) acceptance tests            16       0                                                       dev/cdisc/sdtm_epoch.sas：第 40 行引号校验条件取反（缺少否定），导致带引号的合法 TRTEPOCH= 被拒绝；改为 %if NOT %sysfunc(prxmatch(...)) 后再复核
