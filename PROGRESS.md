@@ -87,9 +87,8 @@
    确认是补齐还是删除。
 5. `opensource` 12 个导入宏是否需要抽检，待定（当前定位为外部维护代码）。
 6. `be` / `log` / `report` 三个主题目录为空，确认是预留还是可删除。
-7. **首次上传 GitHub 前完成站点配置**：把 `sashelp\about.html` 中的 `GITHUB_REPO`
-   改为实际仓库（如 `<用户名>/clinical-sasuser`），启用 Issues 与 GitHub Pages；
-   并确定 `codehub\script\docx2pdf\node.exe`（88.2 MB）的提交策略（忽略 / Git LFS）。
+7. **GitHub 后续配置**：仓库已上传并启用 Issues；GitHub Pages 尚未启用。
+   `codehub\script\docx2pdf\node.exe`（88.2 MB）已随初始提交上传，如需瘦身需重写历史或迁移 LFS。
 
 ## 变更记录
 
@@ -112,6 +111,8 @@
 - 新增站点「关于」页 `sashelp\about.html`：沿用 `base.css` 与固定页头，含站点用途、
   GitHub Issues 意见入口（仓库地址未配置时自动回退为邮件）与作者简介；
   根页「关于」改为链接，三个板块页头加入「关于」；浏览器验证通过。
+- 仓库已上传 GitHub：`https://github.com/sashelp/clinical-sasuser`（Public，Issues 已启用），
+  初始提交 `af77e0d`；关于页反馈入口已指向实际仓库（`b8328e2`）。
 
 ### 2026-11-19
 
