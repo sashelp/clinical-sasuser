@@ -111,7 +111,7 @@
   6 条 `UNDECLARED-DEP` 误报消除，`-Check` 无警告（33 macros、31 knowledge entries）。
 - 新增站点「关于」页 `sashelp\about.html`：沿用 `base.css` 与固定页头，含站点用途、
   GitHub Issues 意见入口（仓库地址未配置时自动回退为邮件）与作者简介；
-  根页「关于」改为链接，三个板块页头加入「关于」；浏览器验证通过。
+  「关于」入口仅保留在首页，宏程序库、图形库、知识库页头不再显示；浏览器验证通过。
 - 仓库已上传 GitHub：`https://github.com/sashelp/clinical-sasuser`（Public，Issues 已启用），
   初始提交 `af77e0d`；关于页反馈入口已指向实际仓库（`b8328e2`）。
 - 新增根目录 `index.html`（跳转到 `sashelp/index.html`）与 `.nojekyll`，

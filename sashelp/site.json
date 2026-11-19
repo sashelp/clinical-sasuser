@@ -12,8 +12,7 @@
       "headerLinks": [
         { "text": "宏目录", "href": "index.html" },
         { "text": "文档", "href": "" },
-        { "text": "开发约定", "href": "conventions.html" },
-        { "text": "关于", "href": "../about.html" }
+        { "text": "开发约定", "href": "conventions.html" }
       ],
       "extras": [ "conventions" ],
       "conventionsSource": "design/macrohub-conventions.md",
@@ -100,8 +99,7 @@
       "headerLinks": [
         { "text": "知识目录", "href": "index.html" },
         { "text": "文档", "href": "" },
-        { "text": "开发约定", "href": "conventions.html" },
-        { "text": "关于", "href": "../about.html" }
+        { "text": "开发约定", "href": "conventions.html" }
       ],
       "extras": [ "conventions" ],
       "conventionsSource": "design/knowledgebase-conventions.md",
@@ -185,8 +183,7 @@
       "headerLinks": [
         { "text": "示例", "href": "index.html" },
         { "text": "资源", "href": "" },
-        { "text": "文档", "href": "" },
-        { "text": "关于", "href": "../about.html" }
+        { "text": "文档", "href": "" }
       ],
       "staticNav": true
     }
