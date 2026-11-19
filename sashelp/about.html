@@ -142,7 +142,7 @@
 <script>
 (function () {
   var GITHUB_REPO = 'sashelp/clinical-sasuser';
-  var repoReady = GITHUB_REPO.indexOf('sashelp') === -1;
+  var repoReady = GITHUB_REPO.indexOf('/') > 0 && GITHUB_REPO.indexOf('YOUR_') === -1;
   var newIssue = document.getElementById('gh-new-issue');
   var issues = document.getElementById('gh-issues');
   var hint = document.getElementById('gh-hint');
