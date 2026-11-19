@@ -87,7 +87,8 @@
    确认是补齐还是删除。
 5. `opensource` 12 个导入宏是否需要抽检，待定（当前定位为外部维护代码）。
 6. `be` / `log` / `report` 三个主题目录为空，确认是预留还是可删除。
-7. **GitHub 后续配置**：仓库已上传并启用 Issues；GitHub Pages 尚未启用。
+7. **GitHub 后续配置**：仓库已上传并启用 Issues；GitHub Pages 已启用，
+   根地址通过 `index.html` 跳转到 `sashelp/index.html`。
    `codehub\script\docx2pdf\node.exe`（88.2 MB）已随初始提交上传，如需瘦身需重写历史或迁移 LFS。
 
 ## 变更记录
@@ -113,6 +114,9 @@
   根页「关于」改为链接，三个板块页头加入「关于」；浏览器验证通过。
 - 仓库已上传 GitHub：`https://github.com/sashelp/clinical-sasuser`（Public，Issues 已启用），
   初始提交 `af77e0d`；关于页反馈入口已指向实际仓库（`b8328e2`）。
+- 新增根目录 `index.html`（跳转到 `sashelp/index.html`）与 `.nojekyll`，
+  修正 GitHub Pages 根地址被 Jekyll 渲染成 README 的问题；
+  站点地址 `https://sashelp.github.io/clinical-sasuser/`。
 
 ### 2026-11-19
 
