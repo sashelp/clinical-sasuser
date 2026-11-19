@@ -74,7 +74,7 @@
 
 <div id="section" class="about">
 <p class="crumb"><a href="index.html">首页</a> / 关于</p>
-<h2>关于本站</h2>
+<h2 id="site">关于本站</h2>
 <p class="subtitle">临床试验 SAS 编程的本地可视化知识库</p>
 <hr/>
 
@@ -106,30 +106,17 @@
     <a id="gh-issues" class="btn" href="#" target="_blank" rel="noopener">查看已有讨论</a>
     <a class="btn" href="mailto:sasuser@qq.com?subject=SAS%2FHELP%20%E7%AB%99%E7%82%B9%E6%84%8F%E8%A7%81">发送邮件</a>
   </p>
-  <p id="gh-hint" class="hint" hidden>GitHub 仓库地址尚未配置：请在 <code>about.html</code> 中把 <code>GITHUB_REPO</code> 改为实际仓库后再使用。</p>
 </div>
 
-<h3 id="author">关于作者</h3>
-<table class="macro-table profile-table">
-<tbody>
-<tr>
-<td>网站归属</td>
-<td>罗浩</td>
-</tr>
-<tr>
-<td>地址</td>
-<td>北京市, 朝阳区</td>
-</tr>
-<tr>
-<td>邮箱</td>
-<td><a href="mailto:sasuser@qq.com">sasuser@qq.com</a></td>
-</tr>
-</tbody>
-</table>
+<br>
+<br>
+<h2 id="author">关于作者</h2>
+<p class="subtitle">罗浩，临床试验数据分析师，住在北京市朝阳区，这是我的邮箱：<a href="mailto:whymath@foxmail.com" style="color: #0070C0;">whymath@foxmail.com</a></p>
+<hr/>
 
-<h4>介绍</h4>
+<h3 id="intro">介绍</h3>
 <ul class="notes">
-<li>9+ 年临床试验统计编程经验</li>
+<li>10+ 年临床试验统计编程经验</li>
 <li>精通SAS编程与CDISC实践</li>
 <li>70+ 项临床试验，涵盖Ⅰ期到Ⅳ期，向NMPA和FDA递交</li>
 <li>多个适应症项目经验，如实体瘤、非小细胞肺癌、红斑狼疮</li>
@@ -141,7 +128,7 @@
 <script>
 (function () {
   var GITHUB_REPO = 'sashelp/clinical-sasuser';
-  var repoReady = GITHUB_REPO.indexOf('/') > 0 && GITHUB_REPO.indexOf('YOUR_') === -1;
+  var repoReady = GITHUB_REPO.indexOf('/') > 0 && GITHUB_REPO.indexOf('YOUR_GITHUB_REPO') === -1;
   var newIssue = document.getElementById('gh-new-issue');
   var issues = document.getElementById('gh-issues');
   var hint = document.getElementById('gh-hint');
